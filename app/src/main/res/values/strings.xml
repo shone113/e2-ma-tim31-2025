@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">HabitQuest</string>
+    <string-array name="task_categories">
+        <item>Zdravlje</item>
+        <item>Učenje</item>
+        <item>Zabava</item>
+        <item>Sređivanje</item>
+    </string-array>
+    <string-array name="frequency_units">
+        <item>Dani</item>
+        <item>Nedelje</item>
+    </string-array>
 </resources>
