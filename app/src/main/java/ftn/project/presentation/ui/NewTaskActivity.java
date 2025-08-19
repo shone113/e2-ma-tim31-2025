@@ -1,6 +1,7 @@
 package ftn.project.presentation.ui;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CalendarView;
@@ -18,15 +19,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 import ftn.project.R;
+import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Task;
 import ftn.project.data.database.DatabaseHelper;
 
 public class NewTaskActivity extends AppCompatActivity {
 
     // polja
-    private EditText etNaziv, etOpis;
+    private EditText etNaziv, etOpis, etInterval;
     private RadioGroup rgUestalost, rgTezina, rgBitnost;
     private CalendarView calendarViewStart, calendarViewEnd;
     private TimePicker timePicker;
@@ -49,6 +52,7 @@ public class NewTaskActivity extends AppCompatActivity {
         calendarViewEnd = findViewById(R.id.calendarViewEnd);
         timePicker = findViewById(R.id.timePicker);
         spinnerFrequencyUnit = findViewById(R.id.spinnerFrequencyUnit);
+        etInterval = findViewById(R.id.intervalText);
 
         // pamti izabrane datume
         calendarViewStart.setOnDateChangeListener((view, year, month, dayOfMonth) ->
@@ -68,11 +72,13 @@ public class NewTaskActivity extends AppCompatActivity {
         LinearLayout timeLinearLayout = findViewById(R.id.timeContainer);
         LinearLayout frequencyLayout = findViewById(R.id.frequencyUnitContainer);
         TextView tvPocetniDatum = findViewById(R.id.tvPocetniDatum);
+        EditText intervalNumber = findViewById(R.id.intervalText);
 
         startDateContainer.setVisibility(View.GONE);
         endDateContainer.setVisibility(View.GONE);
         timeLinearLayout.setVisibility(View.GONE);
         frequencyLayout.setVisibility(View.GONE);
+        intervalNumber.setVisibility(View.GONE);
 
         rgUestalost.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rbJednokratna) {
@@ -81,11 +87,13 @@ public class NewTaskActivity extends AppCompatActivity {
                 frequencyLayout.setVisibility(View.GONE);
                 tvPocetniDatum.setText("Datum izvršavanja");
                 timeLinearLayout.setVisibility(View.VISIBLE);
+                intervalNumber.setVisibility(View.GONE);
             } else if (checkedId == R.id.rbPonavljajuci) {
                 startDateContainer.setVisibility(View.VISIBLE);
                 endDateContainer.setVisibility(View.VISIBLE);
                 timeLinearLayout.setVisibility(View.VISIBLE);
                 frequencyLayout.setVisibility(View.VISIBLE);
+                intervalNumber.setVisibility(View.VISIBLE);
             }
         });
     }
@@ -116,7 +124,17 @@ public class NewTaskActivity extends AppCompatActivity {
             frequency = Task.FrequencyEnum.REPEATING;
             String selectedUnit = spinnerFrequencyUnit.getSelectedItem().toString();
             frequencyUnit = selectedUnit.equals("DAY") ? Task.FrequencyUnitEnum.DAY : Task.FrequencyUnitEnum.WEEK;
-            interval = 1; // možeš kasnije dodati input za interval
+
+            String intervalStr = etInterval.getText().toString();
+            if (!intervalStr.isEmpty()) {
+                try {
+                    interval = Integer.parseInt(intervalStr);
+                } catch (NumberFormatException e) {
+                    interval = 1; // podrazumevana vrednost ako unos nije validan
+                }
+            } else {
+                interval = 1; // podrazumevana vrednost ako ništa nije uneto
+            }
         }
 
         // Datum + vreme
@@ -146,9 +164,28 @@ public class NewTaskActivity extends AppCompatActivity {
         );
 
         // Snimi u bazu
-        DatabaseHelper db = new DatabaseHelper(this);
-        db.insertTask(task);
+        AppDatabase db = AppDatabase.getInstance(this);
+        db.taskRepository().insert(task);
+        List<Task> sviTaskovi = db.taskRepository().getAllTasks();
+        for (Task t : sviTaskovi) {
+            Log.d("ROOM_CHECK", "Task: id=" + t.getId() +
+                    ", name=" + t.getName() +
+                    ", description=" + t.getDescription() +
+                    ", userId=" + t.getUserId() +
+                    ", categoryId=" + t.getCategoryId() +
+                    ", difficulty=" + t.getDifficulty() +
+                    ", importance=" + t.getImportance() +
+                    ", frequency=" + t.getFrequency() +
+                    ", interval=" + t.getInterval() +
+                    ", frequencyUnit=" + t.getFrequencyUnit() +
+                    ", startDate=" + t.getStartDate() +
+                    ", endDate=" + t.getEndDate() +
+                    ", executionTime=" + t.getExecutionTime() +
+                    ", status=" + t.getStatus() +
+                    ", valueXP=" + t.getValueXP());
+        }
 
-        Toast.makeText(this, "Zadatak sačuvan!", Toast.LENGTH_SHORT).show();
+
+        Toast.makeText(this, "Zadatak sačuvan (Room)!", Toast.LENGTH_SHORT).show();
     }
 }

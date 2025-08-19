@@ -275,6 +275,20 @@
                 android:entries="@array/frequency_units"/>
         </LinearLayout>
 
+        <EditText
+            android:id="@+id/intervalText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:hint="Interval"
+            android:layout_marginTop="8dp"
+            android:padding="8dp"
+            android:background="@android:drawable/edit_text"
+            android:textSize="16sp"
+            app:layout_constraintTop_toBottomOf="@id/frequencyUnitContainer"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
         <!-- Vreme izvršavanja -->
         <LinearLayout
             android:id="@+id/timeContainer"
@@ -282,7 +296,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@id/frequencyUnitContainer"
+            app:layout_constraintTop_toBottomOf="@id/intervalText"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
