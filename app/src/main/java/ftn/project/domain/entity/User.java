@@ -10,4 +10,10 @@ public class User {
 
     public String username;
     public String password;
+
+    public Integer powerPoints;
+    public Integer experiencePoints;
+    public Long coins;
+
+
 }

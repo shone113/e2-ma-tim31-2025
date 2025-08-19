@@ -1,4 +1,4 @@
-package ftn.project;
+package ftn.project.presentation.ui;
 
 import android.os.Bundle;
 
@@ -8,7 +8,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-public class MyProfile extends AppCompatActivity {
+import ftn.project.R;
+
+public class MyProfileActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

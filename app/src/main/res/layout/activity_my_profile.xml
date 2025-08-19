@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MyProfile">
+    tools:context=".presentation.ui.MyProfileActivity">
 
 
     <!-- Username -->
@@ -19,92 +19,168 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
 
-    <!-- QR dugme (ikona) -->
-    <ImageView
-        android:id="@+id/btnQR"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:src="@android:drawable/ic_menu_camera"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
     <!-- Avatar -->
     <ImageView
         android:id="@+id/imgAvatar"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
+        android:layout_width="240dp"
+        android:layout_height="240dp"
         android:src="@mipmap/ic_launcher"
         android:scaleType="centerCrop"
+        android:layout_margin="12dp"
         app:layout_constraintTop_toBottomOf="@id/tvUsername"
         app:layout_constraintStart_toStartOf="parent"/>
 
-    <!-- Titula -->
-    <TextView
-        android:id="@+id/tvTitula"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Titula"
-        android:textSize="16sp"
-        app:layout_constraintTop_toBottomOf="@id/btnQR"
-        app:layout_constraintEnd_toEndOf="parent"/>
+    <!-- QR dugme (gore desno od avatara) -->
+    <ImageView
+        android:id="@+id/btnQR"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:src="@android:drawable/ic_menu_camera"
+        android:background="@drawable/round_button"
+        android:padding="4dp"
+        app:layout_constraintTop_toTopOf="@id/imgAvatar"
+        app:layout_constraintStart_toEndOf="@id/imgAvatar"
+        android:layout_marginStart="30dp" />
 
-    <!-- LEVEL -->
     <TextView
-        android:id="@+id/tvLevel"
+        android:id="@+id/tvQR"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Level"
+        android:text="QR"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/btnQR"
+        app:layout_constraintStart_toStartOf="@id/btnQR"
+        app:layout_constraintEnd_toEndOf="@id/btnQR"
+        android:layout_marginTop="8dp"/>
+
+    <ImageView
+        android:id="@+id/imgTitle"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:src="@android:drawable/ic_menu_camera"
+        android:background="@drawable/round_button"
+        android:padding="4dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/tvQR"
+        app:layout_constraintStart_toEndOf="@id/imgAvatar"
+        android:layout_marginStart="30dp" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sova bebac"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@id/imgTitle"
+        app:layout_constraintStart_toStartOf="@id/imgTitle"
+        app:layout_constraintEnd_toEndOf="@id/imgTitle"
+        android:layout_marginTop="8dp"/>
+
+    <!-- 1. Box -->
+    <TextView
+        android:id="@+id/tvLevelBox"
+        android:layout_width="80dp"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        android:background="@drawable/text_border"
+        android:gravity="center"
+        android:text="10"
+        android:textColor="#FFA500"
+        android:textSize="18sp"
+        android:layout_margin="12dp"
         app:layout_constraintTop_toBottomOf="@id/imgAvatar"
         app:layout_constraintStart_toStartOf="parent"/>
 
-    <!-- PP -->
     <TextView
-        android:id="@+id/tvPP"
+        android:id="@+id/tvLevelLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="LEVEL"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        app:layout_constraintTop_toBottomOf="@id/tvLevelBox"
+        app:layout_constraintStart_toStartOf="@id/tvLevelBox"
+        app:layout_constraintEnd_toEndOf="@id/tvLevelBox"/>
+
+    <!-- 2. Box -->
+    <TextView
+        android:id="@+id/tvPowerBox"
+        android:layout_width="80dp"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        android:background="@drawable/text_border"
+        android:gravity="center"
+        android:text="20"
+        android:textColor="#FFA500"
+        android:textSize="18sp"
+        android:layout_margin="12dp"
+        app:layout_constraintTop_toBottomOf="@id/imgAvatar"
+        app:layout_constraintStart_toEndOf="@id/tvLevelBox"/>
+
+    <TextView
+        android:id="@+id/tvPowerLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="PP"
-        app:layout_constraintTop_toBottomOf="@id/imgAvatar"
-        app:layout_constraintStart_toEndOf="@id/tvLevel"
-        app:layout_constraintEnd_toStartOf="@id/tvXP"
-        app:layout_constraintHorizontal_chainStyle="spread"/>
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        app:layout_constraintTop_toBottomOf="@id/tvPowerBox"
+        app:layout_constraintStart_toStartOf="@id/tvPowerBox"
+        app:layout_constraintEnd_toEndOf="@id/tvPowerBox"/>
 
-    <!-- XP -->
+    <!-- 3. Box -->
     <TextView
-        android:id="@+id/tvXP"
+        android:id="@+id/tvExperienceBox"
+        android:layout_width="80dp"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        android:background="@drawable/text_border"
+        android:gravity="center"
+        android:text="92"
+        android:textColor="#FFA500"
+        android:textSize="18sp"
+        android:layout_margin="12dp"
+        app:layout_constraintTop_toBottomOf="@id/imgAvatar"
+        app:layout_constraintStart_toEndOf="@id/tvPowerBox"/>
+
+    <TextView
+        android:id="@+id/tvExperienceLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="XP"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        app:layout_constraintTop_toBottomOf="@id/tvExperienceBox"
+        app:layout_constraintStart_toStartOf="@id/tvExperienceBox"
+        app:layout_constraintEnd_toEndOf="@id/tvExperienceBox"/>
+
+    <!-- 4. Box -->
+    <TextView
+        android:id="@+id/tvCoinsBox"
+        android:layout_width="80dp"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="1:1"
+        android:background="@drawable/text_border"
+        android:gravity="center"
+        android:text="16000"
+        android:textColor="#FFA500"
+        android:textSize="18sp"
+        android:layout_margin="12dp"
         app:layout_constraintTop_toBottomOf="@id/imgAvatar"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintStart_toEndOf="@id/tvExperienceBox"/>
 
-    <!-- Coins -->
     <TextView
-        android:id="@+id/tvCoins"
+        android:id="@+id/tvCoinsLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Coins"
-        app:layout_constraintTop_toBottomOf="@id/tvLevel"
-        app:layout_constraintStart_toStartOf="parent"/>
-
-    <!-- Bedž -->
-    <TextView
-        android:id="@+id/tvBedz"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Bedž"
-        app:layout_constraintTop_toBottomOf="@id/tvPP"
-        app:layout_constraintStart_toEndOf="@id/tvCoins"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- Oprema -->
-    <TextView
-        android:id="@+id/tvOprema"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Oprema..."
-        app:layout_constraintTop_toBottomOf="@id/tvCoins"
-        app:layout_constraintStart_toStartOf="parent"/>
-
+        android:text="COINS"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        app:layout_constraintTop_toBottomOf="@id/tvCoinsBox"
+        app:layout_constraintStart_toStartOf="@id/tvCoinsBox"
+        app:layout_constraintEnd_toEndOf="@id/tvCoinsBox"/>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
