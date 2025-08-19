@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Naslov -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Kreiraj zadatak"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Kategorija zadatka -->
+        <TextView
+            android:id="@+id/tvCategoryLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Kategorija zadatka"
+            android:textSize="16sp"
+            app:layout_constraintTop_toBottomOf="@id/tvTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerCategory"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:entries="@array/task_categories"
+            app:layout_constraintTop_toBottomOf="@id/tvCategoryLabel"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"/>
+
+
+        <TextView
+            android:id="@+id/tvUestalost"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Učestalost"
+            android:textSize="16sp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/spinnerCategory"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <RadioGroup
+            android:id="@+id/rgUestalost"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            app:layout_constraintTop_toBottomOf="@id/tvUestalost"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <RadioButton
+                android:id="@+id/rbJednokratna"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Jednokratna"/>
+
+            <RadioButton
+                android:id="@+id/rbPonavljajuci"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ponavljajući"
+                android:layout_marginStart="16dp"/>
+        </RadioGroup>
+
+        <!-- Težina -->
+        <TextView
+            android:id="@+id/tvTezina"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Težina"
+            android:textSize="16sp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/rgUestalost"
+            app:layout_constraintStart_toStartOf="parent"/>
+
+        <RadioGroup
+            android:id="@+id/rgTezina"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintTop_toBottomOf="@id/tvTezina"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/rgBitnost"
+            app:layout_constraintHorizontal_weight="1">
+
+            <RadioButton
+                android:id="@+id/rbVeomaLak"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Veoma lak - 1 XP" />
+
+            <RadioButton
+                android:id="@+id/rbLak"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lak - 3 XP" />
+
+            <RadioButton
+                android:id="@+id/rbTezak"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Težak - 7 XP" />
+
+            <RadioButton
+                android:id="@+id/rbEkstremnoTezak"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ekstremno težak - 20 XP" />
+        </RadioGroup>
+
+        <!-- Bitnost -->
+        <TextView
+            android:id="@+id/tvBitnost"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Bitnost zadatka"
+            android:textSize="16sp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/rgUestalost"
+            app:layout_constraintStart_toEndOf="@id/rgTezina"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <RadioGroup
+            android:id="@+id/rgBitnost"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintTop_toBottomOf="@id/tvBitnost"
+            app:layout_constraintStart_toEndOf="@id/rgTezina"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_weight="1">
+
+            <RadioButton
+                android:id="@+id/rbNormalan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Normalan - 1 XP" />
+
+            <RadioButton
+                android:id="@+id/rbVazan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Važan - 3 XP" />
+
+            <RadioButton
+                android:id="@+id/rbEkstremnoVazan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ekstremno važan - 10 XP" />
+
+            <RadioButton
+                android:id="@+id/rbSpecijalan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Specijalan - 100 XP" />
+        </RadioGroup>
+
+        <!-- Naziv -->
+        <EditText
+            android:id="@+id/etNaziv"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Naziv"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/rgTezina"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Opis -->
+        <EditText
+            android:id="@+id/etOpis"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="Opis (opciono)"
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            android:gravity="top"
+            android:layout_marginTop="12dp"
+            app:layout_constraintTop_toBottomOf="@id/etNaziv"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- Start Date -->
+        <!-- Start Date Section -->
+        <LinearLayout
+            android:id="@+id/startDateContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/etOpis"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <TextView
+                android:id="@+id/tvPocetniDatum"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Početni datum"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <CalendarView
+                android:id="@+id/calendarViewStart"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+
+
+        <!-- End Date Section -->
+        <LinearLayout
+            android:id="@+id/endDateContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="20dp"
+            app:layout_constraintTop_toBottomOf="@id/startDateContainer"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Krajnji datum"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <CalendarView
+                android:id="@+id/calendarViewEnd"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+        <!-- Jedinica učestalosti -->
+        <LinearLayout
+            android:id="@+id/frequencyUnitContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/endDateContainer"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <TextView
+                android:id="@+id/tvFrequencyUnit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Jedinica učestalosti"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <Spinner
+                android:id="@+id/spinnerFrequencyUnit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:entries="@array/frequency_units"/>
+        </LinearLayout>
+
+        <!-- Vreme izvršavanja -->
+        <LinearLayout
+            android:id="@+id/timeContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/frequencyUnitContainer"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <TextView
+                android:id="@+id/tvVremeIzvrsavanja"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vreme izvršavanja"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <TimePicker
+                android:id="@+id/timePicker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:timePickerMode="spinner"
+                android:layout_gravity="center"/>
+        </LinearLayout>
+
+
+        <!-- Dugme Sačuvaj -->
+        <Button
+            android:id="@+id/btnSacuvaj"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Sačuvaj"
+            android:textColor="@android:color/white"
+            android:layout_marginTop="20dp"
+            app:layout_constraintTop_toBottomOf="@id/timeContainer"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>
