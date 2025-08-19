@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MyProfile">
+
+
+    <!-- Username -->
+    <TextView
+        android:id="@+id/tvUsername"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Username"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <!-- QR dugme (ikona) -->
+    <ImageView
+        android:id="@+id/btnQR"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@android:drawable/ic_menu_camera"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Avatar -->
+    <ImageView
+        android:id="@+id/imgAvatar"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:src="@mipmap/ic_launcher"
+        android:scaleType="centerCrop"
+        app:layout_constraintTop_toBottomOf="@id/tvUsername"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <!-- Titula -->
+    <TextView
+        android:id="@+id/tvTitula"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Titula"
+        android:textSize="16sp"
+        app:layout_constraintTop_toBottomOf="@id/btnQR"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- LEVEL -->
+    <TextView
+        android:id="@+id/tvLevel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Level"
+        app:layout_constraintTop_toBottomOf="@id/imgAvatar"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <!-- PP -->
+    <TextView
+        android:id="@+id/tvPP"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="PP"
+        app:layout_constraintTop_toBottomOf="@id/imgAvatar"
+        app:layout_constraintStart_toEndOf="@id/tvLevel"
+        app:layout_constraintEnd_toStartOf="@id/tvXP"
+        app:layout_constraintHorizontal_chainStyle="spread"/>
+
+    <!-- XP -->
+    <TextView
+        android:id="@+id/tvXP"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="XP"
+        app:layout_constraintTop_toBottomOf="@id/imgAvatar"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Coins -->
+    <TextView
+        android:id="@+id/tvCoins"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Coins"
+        app:layout_constraintTop_toBottomOf="@id/tvLevel"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <!-- Bedž -->
+    <TextView
+        android:id="@+id/tvBedz"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bedž"
+        app:layout_constraintTop_toBottomOf="@id/tvPP"
+        app:layout_constraintStart_toEndOf="@id/tvCoins"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- Oprema -->
+    <TextView
+        android:id="@+id/tvOprema"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Oprema..."
+        app:layout_constraintTop_toBottomOf="@id/tvCoins"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
