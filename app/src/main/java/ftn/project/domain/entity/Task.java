@@ -1,11 +1,17 @@
 package ftn.project.domain.entity;
 
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+import androidx.room.TypeConverters;
+
 import java.time.LocalDateTime;
 import java.time.LocalDateTime;
 
+@Entity(tableName = "tasks")
 public class Task {
 
     // Identifikacija
+    @PrimaryKey(autoGenerate = true)
     private int id;
     private int userId;
     private int categoryId;
@@ -18,12 +24,16 @@ public class Task {
     // Parametri ponavljanja
     private int interval;
     private FrequencyUnitEnum frequencyUnit;
+    @TypeConverters({Converters.class})
     private LocalDateTime startDate;
+
+    @TypeConverters({Converters.class})
     private LocalDateTime endDate;
 
     // Osnovni podaci
     private String name;
     private String description;       // može biti null
+    @TypeConverters({Converters.class})
     private LocalDateTime executionTime;
     private TaskStatusEnum status;
 

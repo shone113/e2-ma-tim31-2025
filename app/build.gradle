@@ -27,9 +27,12 @@ android {
         targetCompatibility JavaVersion.VERSION_11
     }
 }
+def room_version = "2.6.1"
 
 dependencies {
 
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
     implementation libs.appcompat
     implementation libs.material
     implementation libs.activity
