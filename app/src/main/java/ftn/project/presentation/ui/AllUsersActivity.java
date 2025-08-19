@@ -12,13 +12,13 @@ import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.User;
 
-public class MainActivity extends AppCompatActivity {
+public class AllUsersActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_all_users);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -30,6 +30,9 @@ public class MainActivity extends AppCompatActivity {
         testKlijent.username = "Marko";
         testKlijent.password = "555";
         testKlijent.experiencePoints = 10;
+        testKlijent.powerPoints = 20;
+        testKlijent.coins = 33L;
+
         db.userRepository().insert(testKlijent);
     }
 }

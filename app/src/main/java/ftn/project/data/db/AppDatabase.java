@@ -13,7 +13,7 @@ import ftn.project.domain.entity.User;
 import ftn.project.domain.repositoryInterface.TaskRepositoryInterface;
 import ftn.project.domain.repositoryInterface.UserRepositoryInterface;
 
-@Database(entities = {User.class, Task.class}, version = 1)
+@Database(entities = {User.class, Task.class}, version = 2, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -24,7 +24,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public static AppDatabase getInstance(Context context) {
         if (INSTANCE == null) {
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                            AppDatabase.class, "habit_quest_baza.db")
+                            AppDatabase.class, "habit.db")
                     .allowMainThreadQueries()
                     .build();
         }

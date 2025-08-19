@@ -15,5 +15,7 @@ public class User {
     public Integer experiencePoints;
     public Long coins;
 
-
+    public String getUsername(){
+        return username;
+    }
 }
