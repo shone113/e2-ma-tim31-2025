@@ -10,28 +10,48 @@
         android:id="@+id/tabContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
         android:orientation="horizontal">
 
         <Button
             android:id="@+id/btnJednokratni"
             android:layout_width="0dp"
             android:layout_weight="1"
+            android:layout_marginEnd="20dp"
             android:text="Jednokratni"
             android:layout_height="wrap_content"/>
 
         <Button
             android:id="@+id/btnPonavljajuci"
             android:layout_width="0dp"
+            android:layout_marginStart="20dp"
             android:layout_weight="1"
             android:text="Ponavljajući"
             android:layout_height="wrap_content"/>
     </LinearLayout>
 
     <!-- RecyclerView -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewTasks"
+    <LinearLayout
+        android:id="@+id/taskContainer"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:paddingTop="8dp"/>
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/taskTypeText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Svi zadaci"
+            android:textStyle="bold"
+            android:textAlignment="center"
+            android:textSize="20dp"
+            />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewTasks"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingTop="8dp"/>
+    </LinearLayout>
 </LinearLayout>

@@ -15,4 +15,10 @@ public interface TaskRepositoryInterface {
 
     @Query("SELECT * FROM tasks")
     List<Task> getAllTasks();
+
+    @Query("UPDATE tasks SET status = :status WHERE id = :taskId")
+    void updateTaskStatus(int taskId, Task.TaskStatusEnum status);
+
+    @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
+    Task getTaskById(int id);
 }

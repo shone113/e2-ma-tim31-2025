@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.time.LocalDateTime;
 
 @Entity(tableName = "tasks")
-public class Task {
+public class Task  {
 
     // Identifikacija
     @PrimaryKey(autoGenerate = true)
@@ -46,15 +46,27 @@ public class Task {
     public enum DifficultyEnum {
         VERY_EASY(1), EASY(3), HARD(7), EXTREME(20);
         private final int xp;
-        DifficultyEnum(int xp) { this.xp = xp; }
-        public int getXp() { return xp; }
+
+        DifficultyEnum(int xp) {
+            this.xp = xp;
+        }
+
+        public int getXp() {
+            return xp;
+        }
     }
 
     public enum ImportanceEnum {
         NORMAL(1), IMPORTANT(3), VERY_IMPORTANT(10), SPECIAL(100);
         private final int xp;
-        ImportanceEnum(int xp) { this.xp = xp; }
-        public int getXp() { return xp; }
+
+        ImportanceEnum(int xp) {
+            this.xp = xp;
+        }
+
+        public int getXp() {
+            return xp;
+        }
     }
 
     public enum FrequencyEnum {
@@ -208,7 +220,9 @@ public class Task {
         this.status = status;
     }
 
-    public int getValueXP() { return valueXP; }
+    public int getValueXP() {
+        return valueXP;
+    }
 
     // Ostale gettere/settere dodaj po potrebi
 }
