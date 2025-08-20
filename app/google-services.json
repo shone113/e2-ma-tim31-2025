@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "245120549395",
+    "project_id": "habitquest-4f07f",
+    "storage_bucket": "habitquest-4f07f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:245120549395:android:bf25778622b58f89cc35e6",
+        "android_client_info": {
+          "package_name": "ftn.project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOoOdySYYsx1lLKpwrO2MahMbjov_Ux6k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
