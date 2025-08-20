@@ -31,7 +31,7 @@ public class TaskListActivity extends AppCompatActivity {
     private TaskAdapter adapter;
     private List<TaskInstanceWithTask> allTasks = new ArrayList<>();
     private List<TaskInstanceWithTask> filteredTasks = new ArrayList<>();
-    private ActivityResultLauncher<Intent> taskDetailsLauncher;
+    //private ActivityResultLauncher<Intent> taskDetailsLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

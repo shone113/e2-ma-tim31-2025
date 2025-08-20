@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -84,20 +85,62 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
 
             itemView.setOnClickListener(v -> listener.onTaskClick(taskInstanceWithTask));
             // Klik listeneri za dugmad
-            btnDone.setOnClickListener(v -> updateStatus(taskInstanceWithTask.taskInstance, TaskInstance.TaskStatusEnum.DONE));
-            btnCancel.setOnClickListener(v -> updateStatus(taskInstanceWithTask.taskInstance, TaskInstance.TaskStatusEnum.CANCELED));
-            btnPause.setOnClickListener(v -> updateStatus(taskInstanceWithTask.taskInstance, TaskInstance.TaskStatusEnum.PAUSED));
-            btnPlay.setOnClickListener(v -> updateStatus(taskInstanceWithTask.taskInstance, TaskInstance.TaskStatusEnum.ACTIVE));
+            configureStatusButtons(taskInstanceWithTask);
+            
+        }
+        private void configureStatusButtons(TaskInstanceWithTask taskInstanceWithTask){
+            LocalDateTime now = LocalDateTime.now();
+            if (taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.ACTIVE &&
+                    taskInstanceWithTask.taskInstance.getEndExecutionTime().plusDays(3).isBefore(now))
+            {
+                updateStatus(taskInstanceWithTask,TaskInstance.TaskStatusEnum.UNFINISHED);
+                btnDone.setEnabled(false);
+                btnPause.setEnabled(false);
+                btnCancel.setEnabled(false);
+                btnPlay.setEnabled(false);
+                return;
+            }
+            if(taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.CANCELED ||
+                    taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.UNFINISHED)
+            {
+                btnDone.setEnabled(false);
+                btnPause.setEnabled(false);
+                btnCancel.setEnabled(false);
+                btnPlay.setEnabled(false);
+            }
+            if(taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.PAUSED &&
+                    taskInstanceWithTask.task.getFrequency() == Task.FrequencyEnum.REPEATING)
+            {
+                btnDone.setEnabled(false);
+                btnCancel.setEnabled(false);
+                btnPause.setEnabled(false);
+                btnPlay.setEnabled(true);
+            }
+            if(taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.ACTIVE)
+            {
+                if(taskInstanceWithTask.task.getFrequency() == Task.FrequencyEnum.REPEATING)
+                    btnPause.setEnabled(true);
+                else
+                    btnPause.setEnabled(false);
+                btnDone.setEnabled(true);
+                btnCancel.setEnabled(true);
+                btnPlay.setEnabled(false);
+            }
+            btnDone.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.DONE));
+            btnCancel.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.CANCELED));
+            btnPause.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.PAUSED));
+            btnPlay.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.ACTIVE));
         }
 
-        private void updateStatus(TaskInstance taskInstance, TaskInstance.TaskStatusEnum newStatus) {
-            taskInstance.setStatus(newStatus);
+        private void updateStatus(TaskInstanceWithTask taskInstanceWithTask, TaskInstance.TaskStatusEnum newStatus) {
+            taskInstanceWithTask.taskInstance.setStatus(newStatus);
             tvStatus.setText("Status: " + newStatus.name());
 
             Executors.newSingleThreadExecutor().execute(() -> {
                 AppDatabase db = AppDatabase.getInstance(itemView.getContext());
-                db.taskInstanceRepository().updateStatus(taskInstance.getId(), taskInstance.getStatus());
+                db.taskInstanceRepository().updateStatus(taskInstanceWithTask.taskInstance.getId(), taskInstanceWithTask.taskInstance.getStatus());
             });
+            configureStatusButtons(taskInstanceWithTask);
         }
 
     }

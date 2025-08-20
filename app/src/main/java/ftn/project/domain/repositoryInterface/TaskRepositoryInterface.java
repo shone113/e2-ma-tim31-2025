@@ -1,6 +1,7 @@
 package ftn.project.domain.repositoryInterface;
 
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
@@ -19,6 +20,9 @@ public interface TaskRepositoryInterface {
 
     @Update
     void update(Task task);
+
+    @Delete
+    void delete(Task task);
 /*
     @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
     Task getTaskById(int id);*/

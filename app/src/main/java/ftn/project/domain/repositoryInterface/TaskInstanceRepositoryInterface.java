@@ -6,6 +6,7 @@ import androidx.room.Query;
 import androidx.room.Transaction;
 import androidx.room.Update;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import ftn.project.domain.entity.Task;
@@ -24,6 +25,15 @@ public interface TaskInstanceRepositoryInterface {
 
     @Query("UPDATE task_instances SET status = :status WHERE id = :id")
     void updateStatus(int id, TaskInstance.TaskStatusEnum status);
+
+    @Query("DELETE FROM task_instances WHERE taskId = :taskId")
+    void deleteByTaskId(int taskId);
+
+    @Query("SELECT EXISTS(SELECT 1 FROM task_instances WHERE taskId = :taskId AND status = 'DONE')")
+    boolean hasCompletedInstances(int taskId);
+
+    @Query("DELETE FROM task_instances WHERE taskId = :taskId AND startExecutionTime > :fromDate")
+    void deleteFutureInstances(int taskId, LocalDateTime fromDate);
 
     @Transaction
     @Query("SELECT * FROM task_instances")
