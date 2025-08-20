@@ -9,6 +9,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -16,6 +17,7 @@ import ftn.project.R;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -45,6 +47,11 @@ public class AuthActivity extends AppCompatActivity {
 
     private boolean isRegisterMode = false;
 
+    private LottieAnimationView animView;
+    private Handler verifyHandler = new Handler();
+    private Runnable verifyTask;
+    private static final long POLL_MS = 4000;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +66,7 @@ public class AuthActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
 
+        animView = findViewById(R.id.animView);
         toggleAuth = findViewById(R.id.toggleAuth);
         etEmail = findViewById(R.id.etEmail);
         etPass = findViewById(R.id.etPass);
@@ -137,13 +145,13 @@ public class AuthActivity extends AppCompatActivity {
                                                     Toast.makeText(AuthActivity.this,
                                                             "Poslat je verifikacioni email. Proveri inbox/spam.",
                                                             Toast.LENGTH_LONG).show();
+                                                            startVerificationPolling();
                                                 } else {
                                                     Toast.makeText(AuthActivity.this,
                                                             "Greška pri slanju verifikacije: " +
                                                                     (t.getException() != null ? t.getException().getMessage() : ""),
                                                             Toast.LENGTH_LONG).show();
                                                 }
-                                                mAuth.signOut();
                                             }
                                         });
                             }
@@ -207,6 +215,59 @@ public class AuthActivity extends AppCompatActivity {
                         // Email sent
                     }
                 });
+    }
+
+    private void showVerifyUI(boolean show) {
+        animView.setVisibility(show ? View.VISIBLE : View.GONE);
+
+        // sakrij/disable polja dok čekamo verifikaciju
+        etEmail.setEnabled(!show);
+        etPass.setEnabled(!show);
+        etConfirm.setEnabled(!show);
+        etUsername.setEnabled(!show);
+        spAvatar.setEnabled(!show);
+        toggleAuth.setEnabled(!show);
+        btnSubmit.setEnabled(!show);
+    }
+
+    private void startVerificationPolling() {
+        showVerifyUI(true);
+        animView.playAnimation();
+
+        verifyTask = new Runnable() {
+            @Override public void run() {
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                if (user == null) {
+                    // neočekivano: nema usera – prekini čekanje
+                    showVerifyUI(false);
+                    return;
+                }
+                user.reload().addOnCompleteListener(t -> {
+                    if (user.isEmailVerified()) {
+                        // verified → idi dalje
+                        animView.cancelAnimation();
+                        showVerifyUI(false);
+                        startActivity(new Intent(AuthActivity.this, AllUsersActivity.class));
+                        finish();
+                    } else {
+                        // nastavi da čekaš
+                        verifyHandler.postDelayed(verifyTask, POLL_MS);
+                    }
+                });
+            }
+        };
+        verifyHandler.post(verifyTask);
+    }
+
+    private void stopVerificationPolling() {
+        verifyHandler.removeCallbacksAndMessages(null);
+        animView.cancelAnimation();
+        showVerifyUI(false);
+    }
+
+    @Override protected void onDestroy() {
+        super.onDestroy();
+        stopVerificationPolling();
     }
 
 }
