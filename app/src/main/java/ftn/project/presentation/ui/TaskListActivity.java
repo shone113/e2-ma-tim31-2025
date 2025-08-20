@@ -1,4 +1,4 @@
-package ftn.project.presentation.ui;
+/*package ftn.project.presentation.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -116,3 +116,4 @@ public class TaskListActivity extends AppCompatActivity {
 
 
 }
+*/

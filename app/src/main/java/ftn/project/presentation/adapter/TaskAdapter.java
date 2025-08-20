@@ -1,4 +1,4 @@
-package ftn.project.presentation.adapter;
+/*package ftn.project.presentation.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -116,3 +116,4 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
 
     }
 }
+*/

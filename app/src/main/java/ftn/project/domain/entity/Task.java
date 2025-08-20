@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.time.LocalDateTime;
 
 @Entity(tableName = "tasks")
-public class Task  {
+public class Task {
 
     // Identifikacija
     @PrimaryKey(autoGenerate = true)
@@ -23,8 +23,8 @@ public class Task  {
     private FrequencyEnum frequency;
 
     // Parametri ponavljanja
-    private int interval;
-    private FrequencyUnitEnum frequencyUnit;
+    private int interval; // npr. na 2 dana
+    private FrequencyUnitEnum frequencyUnit; // DAN / NEDELJA
     @TypeConverters({Converters.class})
     private LocalDateTime startDate;
 
@@ -33,10 +33,7 @@ public class Task  {
 
     // Osnovni podaci
     private String name;
-    private String description;       // može biti null
-    @TypeConverters({Converters.class})
-    private LocalDateTime executionTime;
-    private TaskStatusEnum status;
+    private String description;  // može biti null
 
     // XP vrednost
     @Ignore
@@ -46,48 +43,26 @@ public class Task  {
     public enum DifficultyEnum {
         VERY_EASY(1), EASY(3), HARD(7), EXTREME(20);
         private final int xp;
-
-        DifficultyEnum(int xp) {
-            this.xp = xp;
-        }
-
-        public int getXp() {
-            return xp;
-        }
+        DifficultyEnum(int xp) { this.xp = xp; }
+        public int getXp() { return xp; }
     }
 
     public enum ImportanceEnum {
         NORMAL(1), IMPORTANT(3), VERY_IMPORTANT(10), SPECIAL(100);
         private final int xp;
-
-        ImportanceEnum(int xp) {
-            this.xp = xp;
-        }
-
-        public int getXp() {
-            return xp;
-        }
+        ImportanceEnum(int xp) { this.xp = xp; }
+        public int getXp() { return xp; }
     }
 
-    public enum FrequencyEnum {
-        ONE_TIME, REPEATING
-    }
-
-    public enum FrequencyUnitEnum {
-        DAY, WEEK
-    }
-
-    public enum TaskStatusEnum {
-        ACTIVE, DONE, UNFINISHED, PAUSED, CANCELED
-    }
+    public enum FrequencyEnum { ONE_TIME, REPEATING }
+    public enum FrequencyUnitEnum { DAY, WEEK }
 
     // Konstruktor
     public Task(int id, int userId, int categoryId,
                 DifficultyEnum difficulty, ImportanceEnum importance,
                 FrequencyEnum frequency, int interval, FrequencyUnitEnum frequencyUnit,
                 LocalDateTime startDate, LocalDateTime endDate,
-                String name, String description, LocalDateTime executionTime,
-                TaskStatusEnum status) {
+                String name, String description) {
 
         this.id = id;
         this.userId = userId;
@@ -101,10 +76,8 @@ public class Task  {
         this.endDate = endDate;
         this.name = name;
         this.description = description;
-        this.executionTime = executionTime;
-        this.status = status;
 
-        // Izračunavanje vrednosti XP
+        // XP računanje
         this.valueXP = difficulty.getXp() + importance.getXp();
     }
 
@@ -203,23 +176,6 @@ public class Task  {
     public void setDescription(String description) {
         this.description = description;
     }
-
-    public LocalDateTime getExecutionTime() {
-        return executionTime;
-    }
-
-    public void setExecutionTime(LocalDateTime executionTime) {
-        this.executionTime = executionTime;
-    }
-
-    public TaskStatusEnum getStatus() {
-        return status;
-    }
-
-    public void setStatus(TaskStatusEnum status) {
-        this.status = status;
-    }
-
     public int getValueXP() {
         return valueXP;
     }

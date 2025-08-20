@@ -11,14 +11,14 @@ import ftn.project.domain.entity.Task;
 @Dao
 public interface TaskRepositoryInterface {
     @Insert
-    void insert(Task task);
+    long insert(Task task);
 
     @Query("SELECT * FROM tasks")
     List<Task> getAllTasks();
 
-    @Query("UPDATE tasks SET status = :status WHERE id = :taskId")
+    /*@Query("UPDATE tasks SET status = :status WHERE id = :taskId")
     void updateTaskStatus(int taskId, Task.TaskStatusEnum status);
 
     @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
-    Task getTaskById(int id);
+    Task getTaskById(int id);*/
 }
