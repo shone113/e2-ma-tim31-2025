@@ -1,11 +1,14 @@
 package ftn.project.presentation.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
 
@@ -17,16 +20,17 @@ import ftn.project.domain.entity.TaskInstanceWithTask;
 
 public class TaskDetailsActivity extends AppCompatActivity {
 
-    private TextView tvName, tvDescription, tvStatus, tvStartExecutionTime,tvEndExecutionTime,
+    private TextView tvName, tvDescription, tvStatus, tvStartExecutionTime, tvEndExecutionTime,
             tvDifficulty, tvImportance, tvFrequency, tvXP;
-    private Button btnDone, btnCanceled, btnPaused;
+    private Button btnDone, btnCanceled, btnPaused, btnUpdateTask;
+
+    private int taskInstanceId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.task_details);
 
-        // Inicijalizacija TextView-a
         tvName = findViewById(R.id.tvTaskName);
         tvDescription = findViewById(R.id.tvTaskDescription);
         tvStatus = findViewById(R.id.tvTaskStatus);
@@ -37,53 +41,93 @@ public class TaskDetailsActivity extends AppCompatActivity {
         tvFrequency = findViewById(R.id.tvTaskFrequency);
         tvXP = findViewById(R.id.tvTaskXP);
 
-        // Inicijalizacija dugmadi
         btnDone = findViewById(R.id.btnDone);
         btnCanceled = findViewById(R.id.btnCanceled);
         btnPaused = findViewById(R.id.btnPaused);
+        btnUpdateTask = findViewById(R.id.btnUpdateTask);
 
-        // Dobijamo taskId iz intent-a
-        int taskInstanceId = getIntent().getIntExtra("task_instance_id", -1);
+        // Čuvamo taskInstanceId
+        taskInstanceId = getIntent().getIntExtra("task_instance_id", -1);
+
+        btnUpdateTask.setOnClickListener(v -> {
+            Intent intent = new Intent(TaskDetailsActivity.this, TaskEditActivity.class);
+            intent.putExtra("task_instance_id", taskInstanceId);
+            startActivity(intent);
+        });
 
         if (taskInstanceId != -1) {
-            Executors.newSingleThreadExecutor().execute(() -> {
-                AppDatabase db = AppDatabase.getInstance(this);
-                TaskInstanceWithTask taskAndInstance = db.taskInstanceRepository().getTaskInstanceWithTaskById(taskInstanceId); // metoda u DAO
-
-                runOnUiThread(() -> {
-                    if (taskAndInstance != null) {
-                        // Popunjavanje TextView-a
-                        tvName.setText(taskAndInstance.task.getName());
-                        tvDescription.setText(taskAndInstance.task.getDescription());
-                        tvStatus.setText("Status: " + taskAndInstance.taskInstance.getStatus().name());
-                        tvStartExecutionTime.setText("Datum i vreme pocetka zadatka: " +
-                                taskAndInstance.taskInstance.getStartExecutionTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
-                        tvEndExecutionTime.setText("Datum i vreme kraja zadatka: " +
-                                taskAndInstance.taskInstance.getEndExecutionTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
-                        tvDifficulty.setText("Težina: " + taskAndInstance.task.getDifficulty().name());
-                        tvImportance.setText("Važnost: " + taskAndInstance.task.getImportance().name());
-                        tvFrequency.setText("Tip zadatka: " + taskAndInstance.task.getFrequency().name());
-                        tvXP.setText("Vrednost XP: " + taskAndInstance.task.getValueXP());
-
-                        // Klik listeneri za dugmad
-                        btnDone.setOnClickListener(v -> updateTaskStatus(taskAndInstance.taskInstance, TaskInstance.TaskStatusEnum.DONE));
-                        btnCanceled.setOnClickListener(v -> updateTaskStatus(taskAndInstance.taskInstance, TaskInstance.TaskStatusEnum.CANCELED));
-                        btnPaused.setOnClickListener(v -> updateTaskStatus(taskAndInstance.taskInstance, TaskInstance.TaskStatusEnum.PAUSED));
-                    }
-                });
-            });
+            loadTaskDetails(taskInstanceId);
         }
     }
 
-    // Metoda za ažuriranje statusa zadatka u bazi i osvežavanje prikaza
-    private void updateTaskStatus(TaskInstance taskInstance, TaskInstance.TaskStatusEnum newStatus) {
-        taskInstance.setStatus(newStatus);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (taskInstanceId != -1) {
+            loadTaskDetails(taskInstanceId);
+        }
+    }
+
+    private void loadTaskDetails(int taskInstanceId) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            TaskInstanceWithTask taskAndInstance = db.taskInstanceRepository().getTaskInstanceWithTaskById(taskInstanceId);
+
+            runOnUiThread(() -> {
+                if (taskAndInstance != null) {
+                    tvName.setText(taskAndInstance.task.getName());
+                    tvDescription.setText(taskAndInstance.task.getDescription());
+                    tvStatus.setText("Status: " + taskAndInstance.taskInstance.getStatus().name());
+                    tvStartExecutionTime.setText("Datum i vreme pocetka zadatka: " +
+                            taskAndInstance.taskInstance.getStartExecutionTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+                    tvEndExecutionTime.setText("Datum i vreme kraja zadatka: " +
+                            taskAndInstance.taskInstance.getEndExecutionTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+                    tvDifficulty.setText("Težina: " + taskAndInstance.task.getDifficulty().name());
+                    tvImportance.setText("Važnost: " + taskAndInstance.task.getImportance().name());
+                    tvFrequency.setText("Tip zadatka: " + taskAndInstance.task.getFrequency().name());
+                    tvXP.setText("Vrednost XP: " + taskAndInstance.task.getValueXP());
+
+                    configureUpdateButton(taskAndInstance);
+                    configureStatusButtons(taskAndInstance);
+                }
+            });
+        });
+    }
+
+    private void configureUpdateButton(TaskInstanceWithTask taskAndInstance) {
+        TaskInstance.TaskStatusEnum status = taskAndInstance.taskInstance.getStatus();
+        LocalDateTime now = LocalDateTime.now();
+
+        if (status == TaskInstance.TaskStatusEnum.DONE || taskAndInstance.taskInstance.getEndExecutionTime().isBefore(now)) {
+            btnUpdateTask.setEnabled(false);
+        } else if (taskAndInstance.task.getFrequency() == Task.FrequencyEnum.REPEATING &&
+                ((now.isBefore(taskAndInstance.taskInstance.getEndExecutionTime()) &&
+                        now.isAfter(taskAndInstance.taskInstance.getStartExecutionTime()))
+                        || taskAndInstance.taskInstance.getEndExecutionTime().isBefore(now))) {
+            btnUpdateTask.setEnabled(false);
+        } else {
+            btnUpdateTask.setEnabled(true);
+        }
+    }
+
+    private void configureStatusButtons(TaskInstanceWithTask taskAndInstance) {
+        btnDone.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.DONE));
+        btnCanceled.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.CANCELED));
+        btnPaused.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.PAUSED));
+    }
+
+    private void updateTaskStatus(TaskInstanceWithTask taskAndInstance, TaskInstance.TaskStatusEnum newStatus) {
+        taskAndInstance.taskInstance.setStatus(newStatus);
 
         Executors.newSingleThreadExecutor().execute(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
-            db.taskInstanceRepository().updateStatus(taskInstance.getId(), taskInstance.getStatus());
+            db.taskInstanceRepository().updateStatus(taskAndInstance.taskInstance.getId(), taskAndInstance.taskInstance.getStatus());
         });
 
-        tvStatus.setText("Status: " + newStatus.name());
+        runOnUiThread(() -> {
+            tvStatus.setText("Status: " + newStatus.name());
+            Toast.makeText(this, "Status uspešno ažuriran!", Toast.LENGTH_SHORT).show();
+            configureUpdateButton(taskAndInstance);
+        });
     }
 }

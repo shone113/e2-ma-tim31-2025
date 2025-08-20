@@ -3,6 +3,7 @@ package ftn.project.domain.repositoryInterface;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import java.util.List;
 
@@ -16,9 +17,9 @@ public interface TaskRepositoryInterface {
     @Query("SELECT * FROM tasks")
     List<Task> getAllTasks();
 
-    /*@Query("UPDATE tasks SET status = :status WHERE id = :taskId")
-    void updateTaskStatus(int taskId, Task.TaskStatusEnum status);
-
+    @Update
+    void update(Task task);
+/*
     @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
     Task getTaskById(int id);*/
 }

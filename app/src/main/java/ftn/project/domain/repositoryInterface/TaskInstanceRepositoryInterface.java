@@ -4,6 +4,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Transaction;
+import androidx.room.Update;
 
 import java.util.List;
 
@@ -15,6 +16,9 @@ import ftn.project.domain.entity.TaskInstanceWithTask;
 public interface TaskInstanceRepositoryInterface {
     @Insert
     void insert(TaskInstance taskInstance);
+
+    @Update
+    void update(TaskInstance taskInstance);
     @Query("SELECT * FROM task_instances")
     List<TaskInstance> getAllTasksInstances();
 

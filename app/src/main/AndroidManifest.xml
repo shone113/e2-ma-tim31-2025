@@ -22,6 +22,7 @@
         </activity>
         <activity android:name=".presentation.ui.TaskDetailsActivity" />
         <activity android:name=".presentation.ui.NewTaskActivity" />
+        <activity android:name=".presentation.ui.TaskEditActivity" />
     </application>
 
 </manifest>
