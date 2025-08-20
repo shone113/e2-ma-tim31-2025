@@ -34,8 +34,6 @@ public class AllUsersActivity extends AppCompatActivity {
         });
 
         AppDatabase db = AppDatabase.getInstance(this);
-        User user1 = new User();
-        User user2 = new User();
         users = new ArrayList<>();
 
         ListView lvUsers = findViewById(R.id.lvUsers);

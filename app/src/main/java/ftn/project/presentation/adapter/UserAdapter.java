@@ -1,5 +1,6 @@
 package ftn.project.presentation.adapter;
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +21,7 @@ import java.util.List;
 import ftn.project.R;
 
 import ftn.project.domain.entity.User;
+import ftn.project.presentation.ui.ProfileActivity;
 
 public class UserAdapter extends ArrayAdapter<User> {
     public interface OnAddFriendClick {
@@ -65,6 +67,10 @@ public class UserAdapter extends ArrayAdapter<User> {
         if(user != null){
             tvName.setText(user.getUsername());
             userCard.setOnClickListener(v -> {
+                Context ctx = v.getContext();
+                Intent i = new Intent(ctx, ProfileActivity.class);
+                i.putExtra(ProfileActivity.EXTRA_USER_ID, user.getUserId());
+                ctx.startActivity(i);
                 Log.i("All users", "Clicked: " + user.getUsername());
             });
         }

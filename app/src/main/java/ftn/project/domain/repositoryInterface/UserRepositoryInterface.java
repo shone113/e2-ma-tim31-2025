@@ -15,4 +15,7 @@ public interface UserRepositoryInterface {
 
     @Query("SELECT * FROM User")
     List<User> getAll();
+
+    @Query("SELECT * FROM User WHERE userId = :id LIMIT 1")
+    User getById(int id);
 }
