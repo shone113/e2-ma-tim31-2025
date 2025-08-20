@@ -1,6 +1,8 @@
 package ftn.project.presentation.ui;
 
 import android.os.Bundle;
+import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -8,11 +10,17 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.util.ArrayList;
+
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.User;
+import ftn.project.presentation.adapter.UserAdapter;
 
 public class AllUsersActivity extends AppCompatActivity {
+
+    private ArrayList<User> users;
+    private UserAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,13 +34,20 @@ public class AllUsersActivity extends AppCompatActivity {
         });
 
         AppDatabase db = AppDatabase.getInstance(this);
-        User testKlijent = new User();
-        testKlijent.username = "Marko";
-        testKlijent.password = "555";
-        testKlijent.experiencePoints = 10;
-        testKlijent.powerPoints = 20;
-        testKlijent.coins = 33L;
+        User user1 = new User();
+        User user2 = new User();
+        users = new ArrayList<>();
 
-        db.userRepository().insert(testKlijent);
+        ListView lvUsers = findViewById(R.id.lvUsers);
+
+        users = new ArrayList<>(db.userRepository().getAll());
+
+        adapter = new UserAdapter(this, users, user -> {
+            Toast.makeText(this,
+                    "Dodao prijatelja:",
+                    Toast.LENGTH_SHORT).show();
+        });
+
+        lvUsers.setAdapter(adapter);
     }
 }

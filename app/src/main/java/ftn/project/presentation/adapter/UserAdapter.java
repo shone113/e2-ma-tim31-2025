@@ -1,12 +1,17 @@
 package ftn.project.presentation.adapter;
+import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Button; // za MaterialButton koristi import com.google.android.material.button.MaterialButton;
+
 import com.google.android.material.button.MaterialButton;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -16,50 +21,53 @@ import ftn.project.R;
 
 import ftn.project.domain.entity.User;
 
-public class UserAdapter extends RecyclerView.Adapter<UserAdapter.VH> {
+public class UserAdapter extends ArrayAdapter<User> {
     public interface OnAddFriendClick {
         void onAdd(User user);
     }
 
-    private final List<User> items = new ArrayList<>();
+    private ArrayList<User> aUsers;
     private final OnAddFriendClick listener;
 
-    public UserAdapter(OnAddFriendClick listener) {
+    public UserAdapter(Context context, ArrayList<User> users, OnAddFriendClick listener) {
+        super(context, R.layout.user_card, users);
+        aUsers = users;
         this.listener = listener;
     }
 
-    public void setItems(List<User> newItems) {
-        items.clear();
-        items.addAll(newItems);
-        notifyDataSetChanged(); // kasnije može DiffUtil
+    @Override
+    public int getCount(){
+        return aUsers.size();
     }
 
-    @NonNull @Override
-    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.user_item, parent, false);
-        return new VH(v);
+    @Nullable
+    @Override
+    public User getItem(int position){
+        return aUsers.get(position);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH h, int position) {
-        User u = items.get(position);
-        h.tvName.setText(u.getUsername());
-        h.btnAddFriend.setOnClickListener(v -> {
-            if (listener != null) listener.onAdd(u);
-        });
+    public long getItemId(int position){
+        return  position;
     }
 
+    @NonNull
     @Override
-    public int getItemCount() { return items.size(); }
-
-    static class VH extends RecyclerView.ViewHolder {
-        final TextView tvName;
-        final MaterialButton btnAddFriend;
-        VH(@NonNull View itemView) {
-            super(itemView);
-            tvName = itemView.findViewById(R.id.tvName);
-            btnAddFriend = itemView.findViewById(R.id.btnAddFriend);
+    public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent){
+        User user = getItem(position);
+        if(convertView == null){
+            convertView = LayoutInflater.from(getContext()).inflate(R.layout.user_card,
+                    parent, false);
         }
+        LinearLayout userCard = convertView.findViewById(R.id.user_card_item);
+        TextView tvName = convertView.findViewById(R.id.tvName);
+
+        if(user != null){
+            tvName.setText(user.getUsername());
+            userCard.setOnClickListener(v -> {
+                Log.i("All users", "Clicked: " + user.getUsername());
+            });
+        }
+    return convertView;
     }
 }

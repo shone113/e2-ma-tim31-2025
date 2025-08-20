@@ -16,6 +16,7 @@
         >
 
         <LinearLayout
+            android:id="@+id/user_card_item"
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:orientation="horizontal"
