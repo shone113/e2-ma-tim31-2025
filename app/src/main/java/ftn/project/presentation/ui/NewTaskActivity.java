@@ -24,7 +24,7 @@ import java.util.List;
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Task;
-import ftn.project.data.database.DatabaseHelper;
+import ftn.project.domain.entity.TaskInstance;
 
 public class NewTaskActivity extends AppCompatActivity {
 
@@ -32,7 +32,7 @@ public class NewTaskActivity extends AppCompatActivity {
     private EditText etNaziv, etOpis, etInterval;
     private RadioGroup rgUestalost, rgTezina, rgBitnost;
     private CalendarView calendarViewStart, calendarViewEnd;
-    private TimePicker timePicker;
+    private TimePicker startTimeExecution, endTimeExecution;
     private Spinner spinnerFrequencyUnit;
 
     private LocalDate startDate, endDate;
@@ -50,9 +50,10 @@ public class NewTaskActivity extends AppCompatActivity {
         rgBitnost = findViewById(R.id.rgBitnost);
         calendarViewStart = findViewById(R.id.calendarViewStart);
         calendarViewEnd = findViewById(R.id.calendarViewEnd);
-        timePicker = findViewById(R.id.timePicker);
         spinnerFrequencyUnit = findViewById(R.id.spinnerFrequencyUnit);
         etInterval = findViewById(R.id.intervalText);
+        startTimeExecution = findViewById(R.id.timePickerStart);
+        endTimeExecution = findViewById(R.id.timePickerEnd);
 
         // pamti izabrane datume
         calendarViewStart.setOnDateChangeListener((view, year, month, dayOfMonth) ->
@@ -69,14 +70,16 @@ public class NewTaskActivity extends AppCompatActivity {
         // logika za sakrivanje/prikazivanje delova
         LinearLayout startDateContainer = findViewById(R.id.startDateContainer);
         LinearLayout endDateContainer = findViewById(R.id.endDateContainer);
-        LinearLayout timeLinearLayout = findViewById(R.id.timeContainer);
+        LinearLayout timeStartLinearLayout = findViewById(R.id.timeContainer);
+        LinearLayout timeEndLinearLayout = findViewById(R.id.timeContainer2);
         LinearLayout frequencyLayout = findViewById(R.id.frequencyUnitContainer);
         TextView tvPocetniDatum = findViewById(R.id.tvPocetniDatum);
         EditText intervalNumber = findViewById(R.id.intervalText);
 
         startDateContainer.setVisibility(View.GONE);
         endDateContainer.setVisibility(View.GONE);
-        timeLinearLayout.setVisibility(View.GONE);
+        timeStartLinearLayout.setVisibility(View.GONE);
+        timeEndLinearLayout.setVisibility(View.GONE);
         frequencyLayout.setVisibility(View.GONE);
         intervalNumber.setVisibility(View.GONE);
 
@@ -86,12 +89,14 @@ public class NewTaskActivity extends AppCompatActivity {
                 endDateContainer.setVisibility(View.GONE);
                 frequencyLayout.setVisibility(View.GONE);
                 tvPocetniDatum.setText("Datum izvršavanja");
-                timeLinearLayout.setVisibility(View.VISIBLE);
+                timeStartLinearLayout.setVisibility(View.VISIBLE);
+                timeEndLinearLayout.setVisibility(View.VISIBLE);
                 intervalNumber.setVisibility(View.GONE);
             } else if (checkedId == R.id.rbPonavljajuci) {
                 startDateContainer.setVisibility(View.VISIBLE);
                 endDateContainer.setVisibility(View.VISIBLE);
-                timeLinearLayout.setVisibility(View.VISIBLE);
+                timeStartLinearLayout.setVisibility(View.VISIBLE);
+                timeEndLinearLayout.setVisibility(View.VISIBLE);
                 frequencyLayout.setVisibility(View.VISIBLE);
                 intervalNumber.setVisibility(View.VISIBLE);
             }
@@ -123,28 +128,30 @@ public class NewTaskActivity extends AppCompatActivity {
         if (rgUestalost.getCheckedRadioButtonId() == R.id.rbPonavljajuci) {
             frequency = Task.FrequencyEnum.REPEATING;
             String selectedUnit = spinnerFrequencyUnit.getSelectedItem().toString();
-            frequencyUnit = selectedUnit.equals("DAY") ? Task.FrequencyUnitEnum.DAY : Task.FrequencyUnitEnum.WEEK;
+            frequencyUnit = selectedUnit.equals("Dani") ? Task.FrequencyUnitEnum.DAY : Task.FrequencyUnitEnum.WEEK;
 
             String intervalStr = etInterval.getText().toString();
             if (!intervalStr.isEmpty()) {
                 try {
                     interval = Integer.parseInt(intervalStr);
                 } catch (NumberFormatException e) {
-                    interval = 1; // podrazumevana vrednost ako unos nije validan
+                    interval = 1;
                 }
             } else {
-                interval = 1; // podrazumevana vrednost ako ništa nije uneto
+                interval = 1;
             }
         }
 
-        // Datum + vreme
-        int hour = timePicker.getHour();
-        int minute = timePicker.getMinute();
-        LocalTime time = LocalTime.of(hour, minute);
+        int startHour = startTimeExecution.getHour();
+        int startMinute = startTimeExecution.getMinute();
+        LocalTime startTime = LocalTime.of(startHour, startMinute);
 
-        LocalDateTime startDateTime = startDate != null ? startDate.atTime(time) : null;
-        LocalDateTime endDateTime = (frequency == Task.FrequencyEnum.REPEATING && endDate != null) ? endDate.atTime(time) : null;
+        int endHour = endTimeExecution.getHour();
+        int endMinute = endTimeExecution.getMinute();
+        LocalTime endTime = LocalTime.of(endHour, endMinute);
 
+        LocalDateTime startDateTime = startDate != null ? startDate.atTime(startTime) : null;
+        LocalDateTime endDateTime = endDate != null ? endDate.atTime(endTime) : null;
         // Napravi task
         Task task = new Task(
                 0,
@@ -158,14 +165,41 @@ public class NewTaskActivity extends AppCompatActivity {
                 startDateTime,
                 endDateTime,
                 name,
-                description,
-                startDateTime,
-                Task.TaskStatusEnum.ACTIVE
+                description
         );
 
         // Snimi u bazu
         AppDatabase db = AppDatabase.getInstance(this);
-        db.taskRepository().insert(task);
+        long taskId = db.taskRepository().insert(task); // insert vraća id
+
+        // Kreiraj TaskInstance-e
+        if (frequency == Task.FrequencyEnum.REPEATING && startDateTime != null && endDateTime != null) {
+            LocalDateTime current = startDateTime;
+            while (!current.isAfter(endDateTime)) {
+                TaskInstance instance = new TaskInstance(
+                        0,
+                        (int)taskId,
+                        current,
+                        current.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
+                        TaskInstance.TaskStatusEnum.ACTIVE
+                );
+                db.taskInstanceRepository().insert(instance);
+
+                // povećaj datum po intervalu
+                if (frequencyUnit == Task.FrequencyUnitEnum.DAY) current = current.plusDays(interval);
+                else current = current.plusWeeks(interval);
+            }
+        } else if (startDateTime != null) {
+            TaskInstance instance = new TaskInstance(
+                    0,
+                    (int)taskId,
+                    startDateTime,
+                    startDateTime.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
+                    TaskInstance.TaskStatusEnum.ACTIVE
+            );
+            db.taskInstanceRepository().insert(instance);
+        }
+
         List<Task> sviTaskovi = db.taskRepository().getAllTasks();
         for (Task t : sviTaskovi) {
             Log.d("ROOM_CHECK", "Task: id=" + t.getId() +
@@ -180,10 +214,18 @@ public class NewTaskActivity extends AppCompatActivity {
                     ", frequencyUnit=" + t.getFrequencyUnit() +
                     ", startDate=" + t.getStartDate() +
                     ", endDate=" + t.getEndDate() +
-                    ", executionTime=" + t.getExecutionTime() +
-                    ", status=" + t.getStatus() +
                     ", valueXP=" + t.getValueXP());
         }
+
+        List<TaskInstance> instance = db.taskInstanceRepository().getAllTasksInstances();
+        for (TaskInstance t : instance) {
+            Log.d("Instance", "Task Instanca: id=" + t.getId() +
+                    ", task=" + t.getTaskId() +
+                    ", start=" + t.getStartExecutionTime() +
+                    ", end=" + t.getEndExecutionTime() +
+                    ", status=" + t.getStatus());
+        }
+
 
 
         Toast.makeText(this, "Zadatak sačuvan (Room)!", Toast.LENGTH_SHORT).show();

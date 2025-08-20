@@ -11,9 +11,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.HabitQuest">
-<!--        <activity-->
-<!--            android:name=".presentation.ui.AllUsersActivity"-->
-<!--            android:exported="false" />-->
         <activity
             android:name=".presentation.ui.AllUsersActivity"
             android:exported="true">
@@ -23,6 +20,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".presentation.ui.TaskDetailsActivity" />
+        <activity android:name=".presentation.ui.NewTaskActivity" />
+        <activity android:name=".presentation.ui.TaskEditActivity" />
 
         <activity
             android:name=".presentation.ui.ProfileActivity"

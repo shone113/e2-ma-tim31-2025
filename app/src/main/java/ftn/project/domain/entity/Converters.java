@@ -57,12 +57,12 @@ public class Converters {
     }
 
     @TypeConverter
-    public static String fromStatus(Task.TaskStatusEnum status) {
+    public static String fromStatus(TaskInstance.TaskStatusEnum status) {
         return status == null ? null : status.name();
     }
 
     @TypeConverter
-    public static Task.TaskStatusEnum toStatus(String value) {
-        return value == null ? null : Task.TaskStatusEnum.valueOf(value);
+    public static TaskInstance.TaskStatusEnum toStatus(String value) {
+        return value == null ? null : TaskInstance.TaskStatusEnum.valueOf(value);
     }
 }
