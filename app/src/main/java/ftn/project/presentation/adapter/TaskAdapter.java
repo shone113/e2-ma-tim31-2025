@@ -1,4 +1,4 @@
-/*package ftn.project.presentation.adapter;
+package ftn.project.presentation.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -18,18 +18,20 @@ import java.util.concurrent.Executors;
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Task;
+import ftn.project.domain.entity.TaskInstance;
+import ftn.project.domain.entity.TaskInstanceWithTask;
 
 public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder> {
 
     public interface OnTaskClickListener {
-        void onTaskClick(Task task);
+        void onTaskClick(TaskInstanceWithTask taskWithInstance);
     }
 
-    private List<Task> taskList;
+    private List<TaskInstanceWithTask> taskAndInstanceList;
     private OnTaskClickListener listener;
 
-    public TaskAdapter(List<Task> taskList, OnTaskClickListener listener) {
-        this.taskList = taskList;
+    public TaskAdapter(List<TaskInstanceWithTask> taskAndInstanceList, OnTaskClickListener listener) {
+        this.taskAndInstanceList = taskAndInstanceList;
         this.listener = listener;
     }
 
@@ -43,17 +45,17 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull TaskViewHolder holder, int position) {
-        Task task = taskList.get(position);
-        holder.bind(task, listener);  // Adapter samo prosleđuje task
+        TaskInstanceWithTask taskInstanceWithTask = taskAndInstanceList.get(position);
+        holder.bind(taskInstanceWithTask, listener);  // Adapter samo prosleđuje task
     }
 
     @Override
     public int getItemCount() {
-        return taskList.size();
+        return taskAndInstanceList.size();
     }
 
     public static class TaskViewHolder extends RecyclerView.ViewHolder {
-        TextView tvTitle, tvDescription, tvStatus, tvExexutionTime;
+        TextView tvTitle, tvDescription, tvStatus, tvStartExecutionTime, tvEndExecutionTime;
         Button btnDone, btnCancel, btnPause, btnPlay;
 
         public TaskViewHolder(@NonNull View itemView) {
@@ -61,59 +63,42 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
             tvTitle = itemView.findViewById(R.id.tvTaskTitle);
             tvDescription = itemView.findViewById(R.id.tvTaskDescription);
             tvStatus = itemView.findViewById(R.id.tvTaskStatus);
-            tvExexutionTime = itemView.findViewById(R.id.tvTaskExecutionTime);
+            tvStartExecutionTime = itemView.findViewById(R.id.tvTaskStartExecutionTime);
+            tvEndExecutionTime = itemView.findViewById(R.id.tvTaskEndExecutionTime);
 
             btnDone = itemView.findViewById(R.id.btnDone);
             btnCancel = itemView.findViewById(R.id.btnCancel);
             btnPause = itemView.findViewById(R.id.btnPause);
             btnPlay = itemView.findViewById(R.id.btnPlay);
         }
-        public void bind(Task task, TaskAdapter.OnTaskClickListener listener) {
-            tvTitle.setText(task.getName());
-            tvDescription.setText(task.getDescription());
-            tvStatus.setText("Status: " + task.getStatus().name());
+        public void bind(TaskInstanceWithTask taskInstanceWithTask, TaskAdapter.OnTaskClickListener listener) {
+            tvTitle.setText(taskInstanceWithTask.task.getName());
+            tvDescription.setText(taskInstanceWithTask.task.getDescription());
+            tvStatus.setText("Status: " + taskInstanceWithTask.taskInstance.getStatus().name());
 
-            LocalDateTime executionTime = task.getExecutionTime();
+            LocalDateTime startExecutionTime = taskInstanceWithTask.taskInstance.getStartExecutionTime();
+            LocalDateTime endExecutionTime = taskInstanceWithTask.taskInstance.getEndExecutionTime();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-            tvExexutionTime.setText("Datum i vreme izvršavanja: " + executionTime.format(formatter));
+            tvStartExecutionTime.setText("Datum i vreme pocetka zadatka: " + startExecutionTime.format(formatter));
+            tvEndExecutionTime.setText("Datum i vreme kraja zadatka: " + endExecutionTime.format(formatter));
 
-            itemView.setOnClickListener(v -> listener.onTaskClick(task));
+            itemView.setOnClickListener(v -> listener.onTaskClick(taskInstanceWithTask));
             // Klik listeneri za dugmad
-            btnDone.setOnClickListener(v -> updateStatus(task, Task.TaskStatusEnum.DONE));
-            btnCancel.setOnClickListener(v -> updateStatus(task, Task.TaskStatusEnum.CANCELED));
-            btnPause.setOnClickListener(v -> updateStatus(task, Task.TaskStatusEnum.PAUSED));
-            btnPlay.setOnClickListener(v -> updateStatus(task, Task.TaskStatusEnum.ACTIVE));
-
-            // Boja dugmadi po statusu
-            updateButtonColors(task.getStatus());
+            btnDone.setOnClickListener(v -> updateStatus(taskInstanceWithTask.taskInstance, TaskInstance.TaskStatusEnum.DONE));
+            btnCancel.setOnClickListener(v -> updateStatus(taskInstanceWithTask.taskInstance, TaskInstance.TaskStatusEnum.CANCELED));
+            btnPause.setOnClickListener(v -> updateStatus(taskInstanceWithTask.taskInstance, TaskInstance.TaskStatusEnum.PAUSED));
+            btnPlay.setOnClickListener(v -> updateStatus(taskInstanceWithTask.taskInstance, TaskInstance.TaskStatusEnum.ACTIVE));
         }
 
-        private void updateStatus(Task task, Task.TaskStatusEnum newStatus) {
-            task.setStatus(newStatus);
+        private void updateStatus(TaskInstance taskInstance, TaskInstance.TaskStatusEnum newStatus) {
+            taskInstance.setStatus(newStatus);
             tvStatus.setText("Status: " + newStatus.name());
 
             Executors.newSingleThreadExecutor().execute(() -> {
                 AppDatabase db = AppDatabase.getInstance(itemView.getContext());
-                db.taskRepository().updateTaskStatus(task.getId(), task.getStatus());
+                db.taskInstanceRepository().updateStatus(taskInstance.getId(), taskInstance.getStatus());
             });
-
-            updateButtonColors(newStatus);
-        }
-
-        private void updateButtonColors(Task.TaskStatusEnum status) {
-            btnDone.setBackgroundColor(0xFFCCCCCC);
-            btnCancel.setBackgroundColor(0xFFCCCCCC);
-            btnPause.setBackgroundColor(0xFFCCCCCC);
-            btnPlay.setBackgroundColor(0xFFCCCCCC);
-
-            switch (status) {
-                case DONE: btnDone.setBackgroundColor(0xFF4CAF50); break;
-                case CANCELED: btnCancel.setBackgroundColor(0xFFF44336); break;
-                case PAUSED: btnPause.setBackgroundColor(0xFFFFC107); break;
-                case ACTIVE: btnPlay.setBackgroundColor(0xFF2196F3); break;
-            }
         }
 
     }
 }
-*/

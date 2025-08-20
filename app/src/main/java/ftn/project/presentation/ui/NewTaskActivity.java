@@ -135,10 +135,10 @@ public class NewTaskActivity extends AppCompatActivity {
                 try {
                     interval = Integer.parseInt(intervalStr);
                 } catch (NumberFormatException e) {
-                    interval = 1; // podrazumevana vrednost ako unos nije validan
+                    interval = 1;
                 }
             } else {
-                interval = 1; // podrazumevana vrednost ako ništa nije uneto
+                interval = 1;
             }
         }
 

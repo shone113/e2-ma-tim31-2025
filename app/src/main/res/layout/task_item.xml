@@ -36,7 +36,15 @@
             android:textColor="@android:color/holo_blue_dark"/>
 
         <TextView
-            android:id="@+id/tvTaskExecutionTime"
+            android:id="@+id/tvTaskStartExecutionTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DD-MM-YYYY hh:mm"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/tvTaskEndExecutionTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="DD-MM-YYYY hh:mm"

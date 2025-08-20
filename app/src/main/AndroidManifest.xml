@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HabitQuest">
         <activity
-            android:name=".presentation.ui.NewTaskActivity"
+            android:name=".presentation.ui.TaskListActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,6 +21,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".presentation.ui.TaskDetailsActivity" />
+        <activity android:name=".presentation.ui.NewTaskActivity" />
     </application>
 
 </manifest>

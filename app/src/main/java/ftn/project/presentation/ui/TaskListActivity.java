@@ -1,4 +1,4 @@
-/*package ftn.project.presentation.ui;
+package ftn.project.presentation.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -22,14 +22,15 @@ import java.time.LocalDateTime;
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Task;
+import ftn.project.domain.entity.TaskInstanceWithTask;
 import ftn.project.presentation.adapter.TaskAdapter;
 
 public class TaskListActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private TaskAdapter adapter;
-    private List<Task> allTasks = new ArrayList<>();
-    private List<Task> filteredTasks = new ArrayList<>();
+    private List<TaskInstanceWithTask> allTasks = new ArrayList<>();
+    private List<TaskInstanceWithTask> filteredTasks = new ArrayList<>();
     private ActivityResultLauncher<Intent> taskDetailsLauncher;
 
     @Override
@@ -39,10 +40,10 @@ public class TaskListActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.recyclerViewTasks);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new TaskAdapter(filteredTasks, task -> {
+        adapter = new TaskAdapter(filteredTasks, taskWithInstance -> {
             // Kada se klikne na task
             Intent intent = new Intent(TaskListActivity.this, TaskDetailsActivity.class);
-            intent.putExtra("task_id", task.getId()); // prosleđuješ ID taska
+            intent.putExtra("task_instance_id", taskWithInstance.taskInstance.getId()); // prosleđuješ ID taska
             startActivity(intent);
         });
         recyclerView.setAdapter(adapter);
@@ -73,7 +74,7 @@ public class TaskListActivity extends AppCompatActivity {
         Executor executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
-            allTasks = db.taskRepository().getAllTasks();
+            allTasks = db.taskInstanceRepository().getAllTaskInstancesWithTask();
 
             runOnUiThread(() -> {
                 filteredTasks.clear();
@@ -90,19 +91,19 @@ public class TaskListActivity extends AppCompatActivity {
         LocalDateTime now = LocalDateTime.now();
 
         // filtriranje
-        for (Task t : allTasks) {
-            if (t.getFrequency() == frequency) {
+        for (TaskInstanceWithTask t : allTasks) {
+            if (t.task.getFrequency() == frequency) {
                 filteredTasks.add(t);
             }
         }
 
         // sortiranje po executionTime rastuće
-        filteredTasks.sort((t1, t2) -> t1.getExecutionTime().compareTo(t2.getExecutionTime()));
+        filteredTasks.sort((t1, t2) -> t1.taskInstance.getStartExecutionTime().compareTo(t2.taskInstance.getStartExecutionTime()));
 
         // fokusiranje na prvi zadatak koji je danas ili u budućnosti
         int indexToFocus = 0;
         for (int i = 0; i < filteredTasks.size(); i++) {
-            if (!filteredTasks.get(i).getExecutionTime().isBefore(now)) {
+            if (!filteredTasks.get(i).taskInstance.getStartExecutionTime().isBefore(now)) {
                 indexToFocus = i;
                 break;
             }
@@ -116,4 +117,3 @@ public class TaskListActivity extends AppCompatActivity {
 
 
 }
-*/

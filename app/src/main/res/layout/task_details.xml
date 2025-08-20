@@ -28,7 +28,12 @@
             android:paddingTop="8dp"/>
 
         <TextView
-            android:id="@+id/tvTaskExecutionTime"
+            android:id="@+id/tvTaskStartExecutionTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"/>
+        <TextView
+            android:id="@+id/tvTaskEndExecutionTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="8dp"/>
