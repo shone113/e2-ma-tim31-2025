@@ -1,15 +1,19 @@
 package ftn.project.presentation.ui;
 
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.airbnb.lottie.LottieAnimationView;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -23,8 +27,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 
@@ -40,7 +45,7 @@ public class AuthActivity extends AppCompatActivity {
     // [START declare_auth]
     private FirebaseAuth mAuth;
 
-    private ToggleButton toggleAuth;
+    private SwitchMaterial switchAuth;
     private EditText etEmail, etPass, etConfirm, etUsername;
     private Spinner spAvatar;
     private Button btnSubmit;
@@ -51,6 +56,7 @@ public class AuthActivity extends AppCompatActivity {
     private Handler verifyHandler = new Handler();
     private Runnable verifyTask;
     private static final long POLL_MS = 4000;
+    private TextView tvLogin, tvRegister;
 
 
     @Override
@@ -67,7 +73,7 @@ public class AuthActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
 
         animView = findViewById(R.id.animView);
-        toggleAuth = findViewById(R.id.toggleAuth);
+        switchAuth = findViewById(R.id.switchAuth);
         etEmail = findViewById(R.id.etEmail);
         etPass = findViewById(R.id.etPass);
         etConfirm = findViewById(R.id.etConfirm);
@@ -75,26 +81,32 @@ public class AuthActivity extends AppCompatActivity {
         spAvatar = findViewById(R.id.spAvatar);
         btnSubmit = findViewById(R.id.btnSubmit);
 
-//        if (savedInstanceState == null) {
-//            getSupportFragmentManager()
-//                    .beginTransaction()
-//                    .replace(R.id.host, new LoginFragment())
-//                    .commit();
-//        }
-        toggleAuth.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            isRegisterMode = isChecked;
-            if (isRegisterMode) {
+        tvLogin = findViewById(R.id.tvLogin);
+        tvRegister = findViewById(R.id.tvRegister);
+        setLoginActive();
+
+        switchAuth.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                // Register mode
                 etConfirm.setVisibility(View.VISIBLE);
                 etUsername.setVisibility(View.VISIBLE);
                 spAvatar.setVisibility(View.VISIBLE);
-                btnSubmit.setText("Registruj se");
+                btnSubmit.setText("Registracija");
+                setRegisterActive();
+                isRegisterMode = true;
             } else {
+                animView.cancelAnimation();
+                showVerifyUI(false);
+                // Login mode
                 etConfirm.setVisibility(View.GONE);
                 etUsername.setVisibility(View.GONE);
                 spAvatar.setVisibility(View.GONE);
-                btnSubmit.setText("Prijavi se");
+                btnSubmit.setText("Prijava");
+                setLoginActive();
+                isRegisterMode = false;
             }
         });
+
 
         btnSubmit.setOnClickListener(v -> {
             if (isRegisterMode) {
@@ -105,6 +117,21 @@ public class AuthActivity extends AppCompatActivity {
         });
     }
 
+    private void setLoginActive() {
+        tvLogin.setTypeface(null, Typeface.BOLD);
+        tvLogin.setTextColor(ContextCompat.getColor(this, R.color.blue_soft));
+
+        tvRegister.setTypeface(null, Typeface.NORMAL);
+        tvRegister.setTextColor(ContextCompat.getColor(this, android.R.color.black));
+    }
+
+    private void setRegisterActive() {
+        tvRegister.setTypeface(null, Typeface.BOLD);
+        tvRegister.setTextColor(ContextCompat.getColor(this, R.color.blue_soft));
+
+        tvLogin.setTypeface(null, Typeface.NORMAL);
+        tvLogin.setTextColor(ContextCompat.getColor(this, android.R.color.black));
+    }
     @Override
     public void onStart() {
         super.onStart();
@@ -226,8 +253,9 @@ public class AuthActivity extends AppCompatActivity {
         etConfirm.setEnabled(!show);
         etUsername.setEnabled(!show);
         spAvatar.setEnabled(!show);
-        toggleAuth.setEnabled(!show);
         btnSubmit.setEnabled(!show);
+
+
     }
 
     private void startVerificationPolling() {
