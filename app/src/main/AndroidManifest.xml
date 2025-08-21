@@ -12,9 +12,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HabitQuest">
         <activity
-            android:name=".presentation.ui.AllUsersActivity"
+            android:name=".presentation.ui.ShopActivity"
             android:exported="false" />
-        <!-- <activity -->
+        <activity
+            android:name=".presentation.ui.AllUsersActivity"
+            android:exported="false" /> <!-- <activity -->
         <!-- android:name=".presentation.ui.AllUsersActivity" -->
         <!-- android:exported="false" /> -->
         <activity
@@ -29,11 +31,9 @@
         <activity android:name=".presentation.ui.TaskDetailsActivity" />
         <activity android:name=".presentation.ui.NewTaskActivity" />
         <activity android:name=".presentation.ui.TaskEditActivity" />
-        
         <activity
             android:name=".presentation.ui.ProfileActivity"
             android:exported="false" />
-
     </application>
 
 </manifest>
