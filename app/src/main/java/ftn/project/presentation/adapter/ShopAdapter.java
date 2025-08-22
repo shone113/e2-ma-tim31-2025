@@ -2,6 +2,7 @@ package ftn.project.presentation.adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +15,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.material.button.MaterialButton;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 
 import ftn.project.R;
@@ -53,9 +58,11 @@ public class ShopAdapter extends ArrayAdapter<Equipment> {
 
     static class ViewHolder {
         ImageView ivIcon;
-        TextView tvName;
-        TextView tvPrice;
+        TextView tvReward;
+        TextView tvUsageCount;
         LinearLayout root;
+        TextView tvCost;
+        MaterialButton btnBuy;
     }
 
     @NonNull
@@ -68,8 +75,10 @@ public class ShopAdapter extends ArrayAdapter<Equipment> {
             vh = new ViewHolder();
             vh.root   = convertView.findViewById(R.id.shop_item_card); // promeni id u XML
             vh.ivIcon = convertView.findViewById(R.id.ivItemIcon);
-            vh.tvName = convertView.findViewById(R.id.tvItemTitle);
-            vh.tvPrice= convertView.findViewById(R.id.tvItemPrice);
+            vh.tvReward = convertView.findViewById(R.id.tvReward);
+            vh.tvUsageCount = convertView.findViewById(R.id.tvUsageCount);
+            vh.tvCost = convertView.findViewById(R.id.tvCost);
+            vh.btnBuy = convertView.findViewById(R.id.btnBuy);
             convertView.setTag(vh);
         } else {
             vh = (ViewHolder) convertView.getTag();
@@ -77,24 +86,61 @@ public class ShopAdapter extends ArrayAdapter<Equipment> {
 
         Equipment equipment = getItem(position);
         if(equipment != null){
-            vh.tvName.setText(equipment.getName());
-            vh.tvPrice.setText((equipment.getBattleCount() != null
-                    ? equipment.getBattleCount() * 500 : 500) + " coins");
+            String effectType;
+            switch (equipment.getEffectType()){
+                case STRENGTH:
+                    effectType = "PP";
+                    break;
+                case ATTACK_CHANCE:
+                    effectType = "         Attack success";
+                    break;
+                case EXTRA_ATTACK:
+                    effectType = "         Attack chance";
+                    break;
+                default:
+                    effectType = "";
+            }
+            vh.tvReward.setText("+ " + equipment.getBonusPercentage() + "% " + effectType);
 
-            int resId = getContext().getResources().getIdentifier(
-                    equipment.getImageName() == null ? "" : equipment.getImageName(),
-                    "drawable",
-                    getContext().getPackageName()
-            );
+            String useLabel;
+            switch (equipment.getActiveType()) {
+                case ONE_USE:
+                    useLabel = "1 use";
+                    break;
+                case TWO_USES:
+                    useLabel = "2 uses";
+                    break;
+                case PERMANENT:
+                    useLabel = "permanent";
+                    break;
+                default:
+                    useLabel = "";
+            }
+            vh.tvUsageCount.setText(useLabel);
+            Double cost = equipment.getCostPercentageOfReward();
+            vh.tvCost.setText("Cost: " + cost + "% of reward");
+            vh.btnBuy.setText("Buy");
+
+            String img = equipment.getImageName(); // npr. "potion"
+            int resId = 0;
+            if (img != null) {
+                // ako u bazi nekad stoji "potion.png" – skini ekstenziju
+                int dot = img.lastIndexOf('.');
+                if (dot != -1) img = img.substring(0, dot);
+                resId = getContext().getResources()
+                        .getIdentifier(img, "drawable", getContext().getPackageName());
+            }
             if (resId != 0) {
                 vh.ivIcon.setImageResource(resId);
             } else {
-                //vh.ivIcon.setImageResource(R.drawable.ic_placeholder);
+                vh.ivIcon.setImageResource(R.drawable.potion);
             }
 
             vh.root.setOnClickListener(v ->
                     Log.i("Shop", "Klik na: " + equipment.getName())
             );
+            //vh.btnBuy.setOnClickListener(v -> listener.onBuy(eq));
+
         }
         return convertView;
     }

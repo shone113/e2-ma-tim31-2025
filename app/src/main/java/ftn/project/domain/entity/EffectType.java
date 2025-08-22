@@ -5,5 +5,5 @@ public enum EffectType {
     DEFENSE,
     ATTACK_CHANCE,
     EXTRA_ATTACK,
-    GOLD
+    COINS
 }

@@ -1,5 +1,6 @@
 package ftn.project.domain.entity;
 
+import androidx.annotation.Nullable;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
@@ -10,10 +11,10 @@ public class Equipment {
     private String name;
     private EquipmentType type;
     private EffectType effectType;
-    private ActivationType activationType;
-    private double bonusPercentage;
-    private double costPercentageOfReward;
-    private Integer battleCount;
+    private ActiveType activeType;
+    private Double bonusPercentage;
+    @Nullable
+    private Double costPercentageOfReward;
     private String imageName;
 
     public Equipment(){}
@@ -50,12 +51,12 @@ public class Equipment {
         this.effectType = effectType;
     }
 
-    public ActivationType getActivationType() {
-        return activationType;
+    public ActiveType getActiveType() {
+        return activeType;
     }
 
-    public void setActivationType(ActivationType activationType) {
-        this.activationType = activationType;
+    public void setActiveType(ActiveType activeType) {
+        this.activeType = activeType;
     }
 
     public double getBonusPercentage() {
@@ -66,20 +67,12 @@ public class Equipment {
         this.bonusPercentage = bonusPercentage;
     }
 
-    public double getCostPercentageOfReward(){
+    public Double getCostPercentageOfReward(){
         return costPercentageOfReward;
     }
 
     public void setCostPercentageOfReward(double costPercentageOfReward){
         this.costPercentageOfReward = costPercentageOfReward;
-    }
-
-    public Integer getBattleCount(){
-        return battleCount;
-    }
-
-    public void setBattleCount(Integer battleCount){
-        this.battleCount = battleCount;
     }
 
     public String getImageName(){

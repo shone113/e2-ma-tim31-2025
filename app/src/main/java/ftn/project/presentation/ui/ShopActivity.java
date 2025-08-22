@@ -42,7 +42,7 @@ public class ShopActivity extends AppCompatActivity {
 
         GridView gvItems = findViewById(R.id.gvShop);
 
-        equipment = new ArrayList<>(db.equipmentRepository().getAll());
+        equipment = new ArrayList<>(db.equipmentRepository().getPurchasable());
         Log.d("SHOP", "Equipment count = " + equipment.size());
         adapter = new ShopAdapter(this, equipment, eq -> {
             Toast.makeText(this,
