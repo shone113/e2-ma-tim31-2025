@@ -20,13 +20,14 @@ import ftn.project.domain.entity.Equipment;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.entity.UserEquipment;
 import ftn.project.domain.repositoryInterface.EquipmentRepositoryInterface;
 import ftn.project.domain.repositoryInterface.TaskInstanceRepositoryInterface;
 import ftn.project.domain.repositoryInterface.TaskRepositoryInterface;
 import ftn.project.domain.repositoryInterface.UserRepositoryInterface;
 
 
-@Database(entities = {User.class, Task.class, TaskInstance.class, Equipment.class}, version = 1, exportSchema = false)
+@Database(entities = {User.class, Task.class, TaskInstance.class, Equipment.class, UserEquipment.class}, version = 1, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -53,7 +54,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (INSTANCE == null) {
             appContext = context.getApplicationContext();
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                     AppDatabase.class, "habit_quest_baza8.db")
+                     AppDatabase.class, "habit_quest_baza9.db")
                     //.addMigrations(MIGRATION_1_2)
                     .addCallback(prepopulateCallback)
                     .allowMainThreadQueries()
