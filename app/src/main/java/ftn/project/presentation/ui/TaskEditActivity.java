@@ -139,6 +139,12 @@ public class TaskEditActivity extends AppCompatActivity {
                     LocalDateTime now = LocalDateTime.now();
                     if(!original.taskInstance.getStartExecutionTime().isBefore(now))
                         db.taskInstanceRepository().update(original.taskInstance);
+                    else{
+                        runOnUiThread(() -> {
+                        Toast.makeText(this, "Task je prosao, ne moze da se azurira!", Toast.LENGTH_SHORT).show();
+                    });
+                        return;
+                    }
                     runOnUiThread(() -> {
                         Toast.makeText(this, "Task uspešno ažuriran!", Toast.LENGTH_SHORT).show();
                         finish();

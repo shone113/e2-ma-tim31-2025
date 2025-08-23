@@ -29,8 +29,12 @@ public interface TaskInstanceRepositoryInterface {
     @Query("DELETE FROM task_instances WHERE taskId = :taskId")
     void deleteByTaskId(int taskId);
 
-    @Query("SELECT EXISTS(SELECT 1 FROM task_instances WHERE taskId = :taskId AND status = 'DONE')")
-    boolean hasCompletedInstances(int taskId);
+    @Query("SELECT EXISTS( " +
+            "SELECT 1 FROM task_instances " +
+            "WHERE taskId = :taskId " +
+            "AND (status != 'ACTIVE' OR startExecutionTime < :now)" +
+            ")")
+    boolean hasLockedInstances(int taskId, LocalDateTime now);
 
     @Query("DELETE FROM task_instances WHERE taskId = :taskId AND startExecutionTime > :fromDate")
     void deleteFutureInstances(int taskId, LocalDateTime fromDate);
@@ -38,6 +42,12 @@ public interface TaskInstanceRepositoryInterface {
     @Transaction
     @Query("SELECT * FROM task_instances")
     List<TaskInstanceWithTask> getAllTaskInstancesWithTask();
+
+    @Transaction
+    @Query("SELECT * FROM task_instances WHERE endExecutionTime > :now")
+    List<TaskInstance> getActiveInstances(LocalDateTime now);
+
+
 
     @Transaction
     @Query("SELECT * FROM task_instances WHERE id = :id")

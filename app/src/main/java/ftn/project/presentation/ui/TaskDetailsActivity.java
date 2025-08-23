@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
@@ -21,7 +22,7 @@ import ftn.project.domain.entity.TaskInstanceWithTask;
 public class TaskDetailsActivity extends AppCompatActivity {
 
     private TextView tvName, tvDescription, tvStatus, tvStartExecutionTime, tvEndExecutionTime,
-            tvDifficulty, tvImportance, tvFrequency, tvXP;
+            tvDifficulty, tvImportance, tvFrequency, tvXP, tvTaskCategory;
     private Button btnDone, btnCanceled, btnPaused, btnUpdateTask, btnDeleteTask;
 
     private int taskInstanceId;
@@ -40,6 +41,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
         tvImportance = findViewById(R.id.tvTaskImportance);
         tvFrequency = findViewById(R.id.tvTaskFrequency);
         tvXP = findViewById(R.id.tvTaskXP);
+        tvTaskCategory = findViewById(R.id.tvTaskCategory);
 
         btnDone = findViewById(R.id.btnDone);
         btnCanceled = findViewById(R.id.btnCanceled);
@@ -75,7 +77,8 @@ public class TaskDetailsActivity extends AppCompatActivity {
         Executors.newSingleThreadExecutor().execute(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
             TaskInstanceWithTask taskAndInstance = db.taskInstanceRepository().getTaskInstanceWithTaskById(taskInstanceId);
-
+            int categoryId = taskAndInstance.task.getCategoryId();
+            Category category = db.categoryRepository().getCategory(categoryId);
             runOnUiThread(() -> {
                 if (taskAndInstance != null) {
                     tvName.setText(taskAndInstance.task.getName());
@@ -89,7 +92,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
                     tvImportance.setText("Važnost: " + taskAndInstance.task.getImportance().name());
                     tvFrequency.setText("Tip zadatka: " + taskAndInstance.task.getFrequency().name());
                     tvXP.setText("Vrednost XP: " + taskAndInstance.task.getValueXP());
-
+                    tvTaskCategory.setText("Kategorija: "+ category.getName());
                     configureUpdateButton(taskAndInstance);
                     configureDeleteButton(taskAndInstance);
                     configureStatusButtons(taskAndInstance);
@@ -116,6 +119,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
 
     private void configureStatusButtons(TaskInstanceWithTask taskAndInstance) {
         LocalDateTime now = LocalDateTime.now();
+
         if (taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.ACTIVE &&
                 taskAndInstance.taskInstance.getEndExecutionTime().plusDays(3).isBefore(now))
         {
@@ -128,45 +132,47 @@ public class TaskDetailsActivity extends AppCompatActivity {
             Toast.makeText(this, "Zadatak je istekao i označen kao neurađen", Toast.LENGTH_SHORT).show();
             return;
         }
-        if(taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.CANCELED ||
-                taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.UNFINISHED)
-        {
-            btnDone.setEnabled(false);
-            btnPaused.setEnabled(false);
-            btnCanceled.setEnabled(false);
-            btnDeleteTask.setEnabled(false);
-            btnUpdateTask.setEnabled(false);
-        }
-        if(taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.PAUSED &&
-                taskAndInstance.task.getFrequency() == Task.FrequencyEnum.REPEATING)
-        {
-            btnDone.setEnabled(false);
-            btnCanceled.setEnabled(false);
-            btnDeleteTask.setEnabled(false);
-            btnUpdateTask.setEnabled(true);
+        if(!taskAndInstance.taskInstance.getStartExecutionTime().plusDays(3).isBefore(now)) {
+            if (taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.CANCELED ||
+                    taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.UNFINISHED ||
+                    taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.DONE) {
+                btnDone.setEnabled(false);
+                btnPaused.setEnabled(false);
+                btnCanceled.setEnabled(false);
+                btnDeleteTask.setEnabled(false);
+                btnUpdateTask.setEnabled(false);
+            }
+            if (taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.PAUSED &&
+                    taskAndInstance.task.getFrequency() == Task.FrequencyEnum.REPEATING) {
+                btnDone.setEnabled(false);
+                btnCanceled.setEnabled(false);
+                btnDeleteTask.setEnabled(false);
+                btnUpdateTask.setEnabled(true);
 
-            btnPaused.setText("Aktiviraj");
-            btnPaused.setEnabled(true);
-            //btnActive.setEnabled(true);
-            btnPaused.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.ACTIVE));
+                btnPaused.setText("Aktiviraj");
+                btnPaused.setEnabled(true);
+                //btnActive.setEnabled(true);
+                btnPaused.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.ACTIVE));
+            } else {
+                btnPaused.setText("Pauziran");
+                btnPaused.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.PAUSED));
+            }
+            if (taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.ACTIVE) {
+                if (taskAndInstance.task.getFrequency() == Task.FrequencyEnum.REPEATING)
+                    btnPaused.setEnabled(true);
+                else
+                    btnPaused.setEnabled(false);
+                btnDone.setEnabled(true);
+                btnCanceled.setEnabled(true);
+                btnDeleteTask.setEnabled(true);
+                btnUpdateTask.setEnabled(true);
+            }
         }
         else
         {
-            btnPaused.setText("Pauziran");
-            btnPaused.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.PAUSED));
+            btnDeleteTask.setEnabled(false);
+            btnUpdateTask.setEnabled(false);
         }
-        if(taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.ACTIVE)
-        {
-            if(taskAndInstance.task.getFrequency() == Task.FrequencyEnum.REPEATING)
-                btnPaused.setEnabled(true);
-            else
-                btnPaused.setEnabled(false);
-            btnDone.setEnabled(true);
-            btnCanceled.setEnabled(true);
-            btnDeleteTask.setEnabled(true);
-            btnUpdateTask.setEnabled(true);
-        }
-
 
         btnDone.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.DONE));
         btnCanceled.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.CANCELED));
@@ -211,16 +217,17 @@ public class TaskDetailsActivity extends AppCompatActivity {
             LocalDateTime now = LocalDateTime.now();
 
             // ovo cisto radi preventive, necemo ni dopustiti da bude enable dugme za brisanje
-            if (instance.getStatus() == TaskInstance.TaskStatusEnum.DONE
-                    || instance.getEndExecutionTime().isBefore(now)) {
+            if (instance.getStatus() != TaskInstance.TaskStatusEnum.ACTIVE
+                    || instance.getStartExecutionTime().isBefore(now)) {
                 runOnUiThread(() ->
                         Toast.makeText(this, "Nije moguće obrisati završen zadatak!", Toast.LENGTH_SHORT).show()
                 );
                 return;
             }
 
+            boolean isAnyInstanceCompleted = db.taskInstanceRepository().hasLockedInstances(task.getId(),now);
             // ovo vazi za jednokratne, tu brisemo i instancu i task
-            if (task.getFrequency() == Task.FrequencyEnum.ONE_TIME) {
+            if (task.getFrequency() == Task.FrequencyEnum.ONE_TIME && !isAnyInstanceCompleted) {
                 db.taskInstanceRepository().deleteByTaskId(task.getId());
                 db.taskRepository().delete(task);
             }
@@ -229,7 +236,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
             //jer i dalje postoji instanca taska u tabeli, posto je receno da se prethondno izvrseni ponavljajuci
             //zadaci i dalje prikazuju i ne brisu, pa ce se samo obrisati instance tog taska koje jos nisu izvrsene
             else if (task.getFrequency() == Task.FrequencyEnum.REPEATING) {
-                boolean isAnyInstanceCompleted = db.taskInstanceRepository().hasCompletedInstances(task.getId());
+
                 if(isAnyInstanceCompleted)
                 {
                     db.taskInstanceRepository().deleteFutureInstances(task.getId(), now);

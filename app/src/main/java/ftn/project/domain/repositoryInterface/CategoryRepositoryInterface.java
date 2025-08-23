@@ -21,4 +21,5 @@ public interface CategoryRepositoryInterface {
     void update(Category category);
     @Query("SELECT c.* FROM categories c WHERE c.id = :categoryId")
     Category getCategory(int categoryId);
+
 }

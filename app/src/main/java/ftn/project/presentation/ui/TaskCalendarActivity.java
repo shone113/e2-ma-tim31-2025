@@ -1,10 +1,12 @@
 package ftn.project.presentation.ui;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -30,6 +32,7 @@ import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Task;
+import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
 import ftn.project.presentation.adapter.HoursAdapter;
 
@@ -37,7 +40,7 @@ public class TaskCalendarActivity extends AppCompatActivity {
 
     private RecyclerView rvHours;
     private FrameLayout flDaySchedule;
-    private FloatingActionButton fabAddTask;
+    private FloatingActionButton fabAddTask, fabListTask;
     private TextView tvCurrentDay;
     private ImageButton btnPrevDay, btnNextDay;
 
@@ -48,40 +51,44 @@ public class TaskCalendarActivity extends AppCompatActivity {
             DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault());
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        loadTasksForDate(selectedDate);
+    }
+    @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.task_calendar);
 
-        // Inicijalizacija
         flDaySchedule = findViewById(R.id.flDaySchedule);
         rvHours = findViewById(R.id.rvHours);
         fabAddTask = findViewById(R.id.fabAddTask);
+        fabListTask = findViewById(R.id.fabListTasks);
         tvCurrentDay = findViewById(R.id.tvCurrentWeek);
         btnPrevDay = findViewById(R.id.btnPrevDay);
         btnNextDay = findViewById(R.id.btnNextDay);
 
-        // Satnica levo
         rvHours.setLayoutManager(new LinearLayoutManager(this));
         rvHours.setAdapter(new HoursAdapter());
 
-        // Recimo da zauzme celu visinu dana
         rvHours.getLayoutParams().height = (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
-                24 * 60 * MINUTE_HEIGHT_DP, // 24h u minutima * visina minuta
+                24 * 60 * MINUTE_HEIGHT_DP,
                 getResources().getDisplayMetrics());
 
-        // Postavi trenutni datum u headeru
         updateHeader();
-
-        // Učitaj taskove za danas
         loadTasksForDate(selectedDate);
 
-        // Klik na FAB (dodavanje zadatka)
         fabAddTask.setOnClickListener(v -> {
-            // logika za dodavanje novog zadatka
+            Intent intent = new Intent(TaskCalendarActivity.this, NewTaskActivity.class);
+            startActivity(intent);
         });
 
-        // Navigacija strelicama
+        fabListTask.setOnClickListener(v -> {
+            Intent intent = new Intent(this, TaskListActivity.class);
+            startActivity(intent);
+        });
+
         btnPrevDay.setOnClickListener(v -> {
             selectedDate = selectedDate.minusDays(1);
             updateHeader();
@@ -94,7 +101,6 @@ public class TaskCalendarActivity extends AppCompatActivity {
             loadTasksForDate(selectedDate);
         });
 
-        // Klik na datum otvara kalendar (DatePickerDialog)
         tvCurrentDay.setOnClickListener(v -> openDatePicker());
     }
 
@@ -145,13 +151,18 @@ public class TaskCalendarActivity extends AppCompatActivity {
         for (TaskInstanceWithTask item : tasks) {
             Task task = item.task;
 
-            // Inflate task_item.xml (CardView kao jedan task blok)
             CardView taskView = (CardView) LayoutInflater.from(this)
                     .inflate(R.layout.task_item, flDaySchedule, false);
 
             TextView tvTaskTitle = taskView.findViewById(R.id.tvTaskTitle);
             TextView tvStartExecution = taskView.findViewById(R.id.tvTaskStartExecutionTime);
             TextView tvEndExecution = taskView.findViewById(R.id.tvTaskEndExecutionTime);
+            TextView tvStatus = taskView.findViewById(R.id.tvTaskStatus);
+
+            Button btnDone = taskView.findViewById(R.id.btnDone);
+            Button btnCancel = taskView.findViewById(R.id.btnCancel);
+            Button btnPause = taskView.findViewById(R.id.btnPause);
+            Button btnPlay = taskView.findViewById(R.id.btnPlay);
 
             tvTaskTitle.setText(task.getName());
 
@@ -159,8 +170,11 @@ public class TaskCalendarActivity extends AppCompatActivity {
             String end = item.taskInstance.getEndExecutionTime().format(formatter);
             tvStartExecution.setText(start);
             tvEndExecution.setText(end);
+            tvStatus.setText("Status: " + item.taskInstance.getStatus().name());
 
-            // Trajanje taska
+            configureStatusButtons(item, tvStatus, btnDone, btnCancel, btnPause, btnPlay);
+
+            // Trajanje i pozicija
             long minutes = Duration.between(
                     item.taskInstance.getStartExecutionTime(),
                     item.taskInstance.getEndExecutionTime()
@@ -172,7 +186,6 @@ public class TaskCalendarActivity extends AppCompatActivity {
                     getResources().getDisplayMetrics()
             );
 
-            // Pozicija od ponoći
             LocalDateTime startTime = item.taskInstance.getStartExecutionTime();
             long minutesFromMidnight = startTime.getHour() * 60 + startTime.getMinute();
 
@@ -190,7 +203,6 @@ public class TaskCalendarActivity extends AppCompatActivity {
 
             taskView.setLayoutParams(lp);
 
-            // boja kategorije
             Category category = null;
             for (Category c : categories) {
                 if (c.getId() == task.getCategoryId()) {
@@ -204,7 +216,93 @@ public class TaskCalendarActivity extends AppCompatActivity {
                 taskView.setCardBackgroundColor(Color.GRAY);
             }
 
+            // klik otvara detalje
+            taskView.setOnClickListener(v -> {
+                Intent intent = new Intent(this, TaskDetailsActivity.class);
+                intent.putExtra("task_instance_id", item.taskInstance.getId());
+                startActivity(intent);
+            });
+
             flDaySchedule.addView(taskView);
+        }
+    }
+
+    private void configureStatusButtons(TaskInstanceWithTask taskInstanceWithTask,
+                                        TextView tvStatus,
+                                        Button btnDone,
+                                        Button btnCancel,
+                                        Button btnPause,
+                                        Button btnPlay) {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.ACTIVE &&
+                taskInstanceWithTask.taskInstance.getEndExecutionTime().plusDays(3).isBefore(now)) {
+            updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.UNFINISHED, tvStatus,
+                    btnDone, btnCancel, btnPause, btnPlay);
+            disableAll(btnDone, btnCancel, btnPause, btnPlay);
+            return;
+        }
+
+        if (taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.CANCELED ||
+                taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.UNFINISHED||
+                taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.DONE) {
+            disableAll(btnDone, btnCancel, btnPause, btnPlay);
+        }
+
+        if (taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.PAUSED &&
+                taskInstanceWithTask.task.getFrequency() == Task.FrequencyEnum.REPEATING) {
+            disableAll(btnDone, btnCancel, btnPause);
+            btnPlay.setEnabled(true);
+        }
+
+        if (taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.ACTIVE) {
+            btnDone.setEnabled(true);
+            btnCancel.setEnabled(true);
+            btnPlay.setEnabled(false);
+
+            if (taskInstanceWithTask.task.getFrequency() == Task.FrequencyEnum.REPEATING) {
+                btnPause.setEnabled(true);
+            } else {
+                btnPause.setEnabled(false);
+            }
+        }
+
+        btnDone.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.DONE, tvStatus,
+                btnDone, btnCancel, btnPause, btnPlay));
+        btnCancel.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.CANCELED, tvStatus,
+                btnDone, btnCancel, btnPause, btnPlay));
+        btnPause.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.PAUSED, tvStatus,
+                btnDone, btnCancel, btnPause, btnPlay));
+        btnPlay.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.ACTIVE, tvStatus,
+                btnDone, btnCancel, btnPause, btnPlay));
+    }
+
+    private void updateStatus(TaskInstanceWithTask taskInstanceWithTask,
+                              TaskInstance.TaskStatusEnum newStatus,
+                              TextView tvStatus,
+                              Button btnDone,
+                              Button btnCancel,
+                              Button btnPause,
+                              Button btnPlay) {
+
+        taskInstanceWithTask.taskInstance.setStatus(newStatus);
+        tvStatus.setText("Status: " + newStatus.name());
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            db.taskInstanceRepository().updateStatus(
+                    taskInstanceWithTask.taskInstance.getId(),
+                    taskInstanceWithTask.taskInstance.getStatus()
+            );
+        });
+
+        configureStatusButtons(taskInstanceWithTask, tvStatus, btnDone, btnCancel, btnPause, btnPlay);
+    }
+
+    private void disableAll(Button... buttons) {
+        for (Button b : buttons) {
+            b.setEnabled(false);
         }
     }
 }

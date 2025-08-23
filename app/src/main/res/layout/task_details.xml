@@ -22,6 +22,12 @@
             android:paddingTop="8dp"/>
 
         <TextView
+            android:id="@+id/tvTaskCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"/>
+
+        <TextView
             android:id="@+id/tvTaskStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

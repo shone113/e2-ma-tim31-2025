@@ -30,6 +30,7 @@ public class TaskListActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private TaskAdapter adapter;
     private List<TaskInstanceWithTask> allTasks = new ArrayList<>();
+    private List<TaskInstanceWithTask> allActiveTasks = new ArrayList<>();
     private List<TaskInstanceWithTask> filteredTasks = new ArrayList<>();
     //private ActivityResultLauncher<Intent> taskDetailsLauncher;
 
@@ -67,18 +68,27 @@ public class TaskListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        TextView textType = findViewById(R.id.taskTypeText);
+        textType.setText("Svi zadaci");
         loadTasksFromDatabase();
     }
 
     private void loadTasksFromDatabase() {
+        LocalDateTime now = LocalDateTime.now();
         Executor executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
             allTasks = db.taskInstanceRepository().getAllTaskInstancesWithTask();
+            allActiveTasks.clear();
+            for(TaskInstanceWithTask t : allTasks)
+            {
+                if(t.taskInstance.getEndExecutionTime().plusDays(3).isAfter(now))
+                    allActiveTasks.add(t);
+            }
 
             runOnUiThread(() -> {
                 filteredTasks.clear();
-                filteredTasks.addAll(allTasks);
+                filteredTasks.addAll(allActiveTasks);
                 adapter.notifyDataSetChanged();
             });
         });
@@ -91,9 +101,10 @@ public class TaskListActivity extends AppCompatActivity {
         LocalDateTime now = LocalDateTime.now();
 
         // filtriranje
-        for (TaskInstanceWithTask t : allTasks) {
+        for (TaskInstanceWithTask t : allActiveTasks) {
             if (t.task.getFrequency() == frequency) {
-                filteredTasks.add(t);
+                if(t.taskInstance.getEndExecutionTime().plusDays(3).isAfter(now))
+                    filteredTasks.add(t);
             }
         }
 

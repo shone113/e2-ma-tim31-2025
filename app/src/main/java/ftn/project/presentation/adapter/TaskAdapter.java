@@ -86,7 +86,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
             itemView.setOnClickListener(v -> listener.onTaskClick(taskInstanceWithTask));
             // Klik listeneri za dugmad
             configureStatusButtons(taskInstanceWithTask);
-            
+
         }
         private void configureStatusButtons(TaskInstanceWithTask taskInstanceWithTask){
             LocalDateTime now = LocalDateTime.now();
@@ -101,7 +101,8 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
                 return;
             }
             if(taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.CANCELED ||
-                    taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.UNFINISHED)
+                    taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.UNFINISHED ||
+                    taskInstanceWithTask.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.DONE)
             {
                 btnDone.setEnabled(false);
                 btnPause.setEnabled(false);

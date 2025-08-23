@@ -3,6 +3,7 @@ package ftn.project.presentation.ui;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CalendarView;
 import android.widget.EditText;
@@ -19,10 +20,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 
@@ -33,7 +36,8 @@ public class NewTaskActivity extends AppCompatActivity {
     private RadioGroup rgUestalost, rgTezina, rgBitnost;
     private CalendarView calendarViewStart, calendarViewEnd;
     private TimePicker startTimeExecution, endTimeExecution;
-    private Spinner spinnerFrequencyUnit;
+    private Spinner spinnerFrequencyUnit, spinnerCategory;
+    private List<Category> categories;
 
     private LocalDate startDate, endDate;
 
@@ -51,6 +55,7 @@ public class NewTaskActivity extends AppCompatActivity {
         calendarViewStart = findViewById(R.id.calendarViewStart);
         calendarViewEnd = findViewById(R.id.calendarViewEnd);
         spinnerFrequencyUnit = findViewById(R.id.spinnerFrequencyUnit);
+        spinnerCategory = findViewById(R.id.spinnerCategory);
         etInterval = findViewById(R.id.intervalText);
         startTimeExecution = findViewById(R.id.timePickerStart);
         endTimeExecution = findViewById(R.id.timePickerEnd);
@@ -62,6 +67,9 @@ public class NewTaskActivity extends AppCompatActivity {
         calendarViewEnd.setOnDateChangeListener((view, year, month, dayOfMonth) ->
                 endDate = LocalDate.of(year, month + 1, dayOfMonth)
         );
+
+        //dobavljanje kategorija
+        getAllCategories();
 
         // dugme Sačuvaj
         Button btnSacuvaj = findViewById(R.id.btnSacuvaj);
@@ -103,9 +111,35 @@ public class NewTaskActivity extends AppCompatActivity {
         });
     }
 
+    private void getAllCategories(){
+        AppDatabase db = AppDatabase.getInstance(this);
+        new Thread(() -> {
+            categories = db.categoryRepository().getAll();
+
+            List<String> names = new ArrayList<>();
+            for (Category c : categories) {
+                names.add(c.getName());
+            }
+
+            runOnUiThread(() -> {
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                        NewTaskActivity.this,
+                        android.R.layout.simple_spinner_item,
+                        names
+                );
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinnerCategory.setAdapter(adapter);
+            });
+        }).start();
+    }
     private void saveTask() {
+        AppDatabase db = AppDatabase.getInstance(this);
         String name = etNaziv.getText().toString();
         String description = etOpis.getText().toString();
+        //Kategorija
+
+        int selectedPosition = spinnerCategory.getSelectedItemPosition();
+        int categoryId = categories.get(selectedPosition).getId();
 
         // Težina
         Task.DifficultyEnum difficulty = Task.DifficultyEnum.VERY_EASY;
@@ -153,7 +187,7 @@ public class NewTaskActivity extends AppCompatActivity {
         Task task = new Task(
                 0,
                 1, // userId test
-                1, // categoryId test
+                categoryId, // categoryId test
                 difficulty,
                 importance,
                 frequency,
@@ -165,7 +199,6 @@ public class NewTaskActivity extends AppCompatActivity {
                 description
         );
 
-        AppDatabase db = AppDatabase.getInstance(this);
         long taskId = db.taskRepository().insert(task);
 
         // Kreiraj TaskInstance
