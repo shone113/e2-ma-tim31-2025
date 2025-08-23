@@ -131,16 +131,12 @@ public class NewTaskActivity extends AppCompatActivity {
             frequencyUnit = selectedUnit.equals("Dani") ? Task.FrequencyUnitEnum.DAY : Task.FrequencyUnitEnum.WEEK;
 
             String intervalStr = etInterval.getText().toString();
-            if (!intervalStr.isEmpty()) {
-                try {
-                    interval = Integer.parseInt(intervalStr);
-                } catch (NumberFormatException e) {
-                    interval = 1;
-                }
-            } else {
-                interval = 1;
-            }
+            interval = (!intervalStr.isEmpty()) ? Integer.parseInt(intervalStr) : 1;
         }
+
+        // Ako startDate/endDate nisu postavljeni, podesi ih na danas
+        if (startDate == null) startDate = LocalDate.now();
+        if (endDate == null) endDate = LocalDate.now();
 
         int startHour = startTimeExecution.getHour();
         int startMinute = startTimeExecution.getMinute();
@@ -150,13 +146,14 @@ public class NewTaskActivity extends AppCompatActivity {
         int endMinute = endTimeExecution.getMinute();
         LocalTime endTime = LocalTime.of(endHour, endMinute);
 
-        LocalDateTime startDateTime = startDate != null ? startDate.atTime(startTime) : null;
-        LocalDateTime endDateTime = endDate != null ? endDate.atTime(endTime) : null;
-        // Napravi task
+        LocalDateTime startDateTime = startDate.atTime(startTime);
+        LocalDateTime endDateTime = endDate.atTime(endTime);
+
+        // Napravi Task
         Task task = new Task(
                 0,
                 1, // userId test
-                1, // categoryId = 1
+                1, // categoryId test
                 difficulty,
                 importance,
                 frequency,
@@ -168,31 +165,30 @@ public class NewTaskActivity extends AppCompatActivity {
                 description
         );
 
-        // Snimi u bazu
         AppDatabase db = AppDatabase.getInstance(this);
-        long taskId = db.taskRepository().insert(task); // insert vraća id
+        long taskId = db.taskRepository().insert(task);
 
-        // Kreiraj TaskInstance-e
-        if (frequency == Task.FrequencyEnum.REPEATING && startDateTime != null && endDateTime != null) {
+        // Kreiraj TaskInstance
+        if (frequency == Task.FrequencyEnum.REPEATING) {
             LocalDateTime current = startDateTime;
             while (!current.isAfter(endDateTime)) {
                 TaskInstance instance = new TaskInstance(
                         0,
-                        (int)taskId,
+                        (int) taskId,
                         current,
                         current.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
                         TaskInstance.TaskStatusEnum.ACTIVE
                 );
                 db.taskInstanceRepository().insert(instance);
 
-                // povećaj datum po intervalu
                 if (frequencyUnit == Task.FrequencyUnitEnum.DAY) current = current.plusDays(interval);
                 else current = current.plusWeeks(interval);
             }
-        } else if (startDateTime != null) {
+        } else {
+            // jednokratni zadatak - uvek kreiraj instancu
             TaskInstance instance = new TaskInstance(
                     0,
-                    (int)taskId,
+                    (int) taskId,
                     startDateTime,
                     startDateTime.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
                     TaskInstance.TaskStatusEnum.ACTIVE
@@ -200,34 +196,7 @@ public class NewTaskActivity extends AppCompatActivity {
             db.taskInstanceRepository().insert(instance);
         }
 
-        List<Task> sviTaskovi = db.taskRepository().getAllTasks();
-        for (Task t : sviTaskovi) {
-            Log.d("ROOM_CHECK", "Task: id=" + t.getId() +
-                    ", name=" + t.getName() +
-                    ", description=" + t.getDescription() +
-                    ", userId=" + t.getUserId() +
-                    ", categoryId=" + t.getCategoryId() +
-                    ", difficulty=" + t.getDifficulty() +
-                    ", importance=" + t.getImportance() +
-                    ", frequency=" + t.getFrequency() +
-                    ", interval=" + t.getInterval() +
-                    ", frequencyUnit=" + t.getFrequencyUnit() +
-                    ", startDate=" + t.getStartDate() +
-                    ", endDate=" + t.getEndDate() +
-                    ", valueXP=" + t.getValueXP());
-        }
-
-        List<TaskInstance> instance = db.taskInstanceRepository().getAllTasksInstances();
-        for (TaskInstance t : instance) {
-            Log.d("Instance", "Task Instanca: id=" + t.getId() +
-                    ", task=" + t.getTaskId() +
-                    ", start=" + t.getStartExecutionTime() +
-                    ", end=" + t.getEndExecutionTime() +
-                    ", status=" + t.getStatus());
-        }
-
-
-
-        Toast.makeText(this, "Zadatak sačuvan (Room)!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Zadatak sačuvan!", Toast.LENGTH_SHORT).show();
     }
+
 }

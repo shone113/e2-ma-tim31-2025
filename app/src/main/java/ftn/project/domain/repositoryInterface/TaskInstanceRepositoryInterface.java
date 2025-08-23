@@ -42,4 +42,9 @@ public interface TaskInstanceRepositoryInterface {
     @Transaction
     @Query("SELECT * FROM task_instances WHERE id = :id")
     TaskInstanceWithTask getTaskInstanceWithTaskById(int id);
+
+    @Transaction
+    @Query("SELECT * FROM task_instances " +
+            "WHERE startExecutionTime >= :dayStart AND startExecutionTime < :dayEnd")
+    List<TaskInstanceWithTask> getInstancesForDay(LocalDateTime dayStart, LocalDateTime dayEnd);
 }
