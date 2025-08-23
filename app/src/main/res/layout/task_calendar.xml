@@ -7,27 +7,38 @@
     android:background="@android:color/white">
 
     <!-- Header: trenutna nedelja -->
-    <TextView
-        android:id="@+id/tvCurrentWeek"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="21 - 27 April"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:padding="12dp"
         android:background="@android:color/darker_gray"
-        android:textColor="@android:color/white" />
+        android:padding="8dp">
 
-    <!-- Horizontalni week picker -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvWeekDays"
-        android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:padding="8dp"
-        android:clipToPadding="false"
-        android:scrollbars="horizontal"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        <ImageButton
+            android:id="@+id/btnPrevDay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_media_previous"/>
+
+        <TextView
+            android:id="@+id/tvCurrentWeek"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="23 Aug 2025"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:paddingHorizontal="16dp"/>
+
+        <ImageButton
+            android:id="@+id/btnNextDay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_media_next"/>
+    </LinearLayout>
 
     <!-- Glavni dnevni prikaz: H-scroll + V-scroll za obe kolone zajedno -->
     <HorizontalScrollView
@@ -35,7 +46,8 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:fillViewport="true"
-        android:scrollbars="none">
+        android:scrollbars="none"
+        android:layout_marginTop="10dp">
 
         <LinearLayout
             android:orientation="horizontal"

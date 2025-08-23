@@ -1,10 +1,12 @@
 package ftn.project.presentation.ui;
 
+import android.app.DatePickerDialog;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -19,7 +21,9 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 
 import ftn.project.R;
@@ -31,51 +35,97 @@ import ftn.project.presentation.adapter.HoursAdapter;
 
 public class TaskCalendarActivity extends AppCompatActivity {
 
-    private RecyclerView rvWeekDays, rvHours;
+    private RecyclerView rvHours;
     private FrameLayout flDaySchedule;
     private FloatingActionButton fabAddTask;
+    private TextView tvCurrentDay;
+    private ImageButton btnPrevDay, btnNextDay;
 
     private static final int MINUTE_HEIGHT_DP = 2; // 1 minut = 2dp
+
+    private LocalDate selectedDate = LocalDate.now();
+    private final DateTimeFormatter headerFormatter =
+            DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault());
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.task_calendar);
 
+        // Inicijalizacija
         flDaySchedule = findViewById(R.id.flDaySchedule);
-        rvWeekDays = findViewById(R.id.rvWeekDays);
         rvHours = findViewById(R.id.rvHours);
         fabAddTask = findViewById(R.id.fabAddTask);
+        tvCurrentDay = findViewById(R.id.tvCurrentWeek);
+        btnPrevDay = findViewById(R.id.btnPrevDay);
+        btnNextDay = findViewById(R.id.btnNextDay);
 
         // Satnica levo
         rvHours.setLayoutManager(new LinearLayoutManager(this));
         rvHours.setAdapter(new HoursAdapter());
 
-// bitno: reci mu da zauzme celu visinu dana
+        // Recimo da zauzme celu visinu dana
         rvHours.getLayoutParams().height = (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 24 * 60 * MINUTE_HEIGHT_DP, // 24h u minutima * visina minuta
                 getResources().getDisplayMetrics());
+
+        // Postavi trenutni datum u headeru
+        updateHeader();
+
         // Učitaj taskove za danas
-        loadTasksForToday();
+        loadTasksForDate(selectedDate);
 
-        // Horizontalni week picker
-        rvWeekDays.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        );
-
+        // Klik na FAB (dodavanje zadatka)
         fabAddTask.setOnClickListener(v -> {
             // logika za dodavanje novog zadatka
         });
+
+        // Navigacija strelicama
+        btnPrevDay.setOnClickListener(v -> {
+            selectedDate = selectedDate.minusDays(1);
+            updateHeader();
+            loadTasksForDate(selectedDate);
+        });
+
+        btnNextDay.setOnClickListener(v -> {
+            selectedDate = selectedDate.plusDays(1);
+            updateHeader();
+            loadTasksForDate(selectedDate);
+        });
+
+        // Klik na datum otvara kalendar (DatePickerDialog)
+        tvCurrentDay.setOnClickListener(v -> openDatePicker());
     }
 
-    private void loadTasksForToday() {
-        LocalDate today = LocalDate.now();
-        LocalDateTime dayStart = today.atStartOfDay();
-        LocalDateTime dayEnd = today.plusDays(1).atStartOfDay();
+    private void updateHeader() {
+        tvCurrentDay.setText(headerFormatter.format(selectedDate));
+    }
+
+    private void openDatePicker() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(selectedDate.getYear(), selectedDate.getMonthValue() - 1, selectedDate.getDayOfMonth());
+
+        DatePickerDialog dialog = new DatePickerDialog(
+                this,
+                (view, year, month, dayOfMonth) -> {
+                    selectedDate = LocalDate.of(year, month + 1, dayOfMonth);
+                    updateHeader();
+                    loadTasksForDate(selectedDate);
+                },
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH),
+                cal.get(Calendar.DAY_OF_MONTH)
+        );
+        dialog.show();
+    }
+
+    private void loadTasksForDate(LocalDate date) {
+        LocalDateTime dayStart = date.atStartOfDay();
+        LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
 
         Executors.newSingleThreadExecutor().execute(() -> {
-            List<TaskInstanceWithTask> todayTasks = AppDatabase.getInstance(this)
+            List<TaskInstanceWithTask> dayTasks = AppDatabase.getInstance(this)
                     .taskInstanceRepository()
                     .getInstancesForDay(dayStart, dayEnd);
 
@@ -83,7 +133,7 @@ public class TaskCalendarActivity extends AppCompatActivity {
                     .categoryRepository()
                     .getAll();
 
-            runOnUiThread(() -> renderTasks(todayTasks, categories));
+            runOnUiThread(() -> renderTasks(dayTasks, categories));
         });
     }
 
