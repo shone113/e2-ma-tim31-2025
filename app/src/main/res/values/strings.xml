@@ -10,4 +10,15 @@
         <item>Dani</item>
         <item>Nedelje</item>
     </string-array>
+    <string-array name="title_names">
+        <item>Dani</item>
+        <item>Nedelje</item>
+    </string-array>
+
+    <string name="owl_egg">Sova jaje</string>
+    <string name="owl_baby">Sova bebac</string>
+    <string name="owl_school">Sova školarac</string>
+    <string name="owl_aviator">Sovijatičar</string>
+    <string name="owl_pedia">Sovopedija</string>
+
 </resources>

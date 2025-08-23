@@ -1,5 +1,6 @@
 package ftn.project.domain.repositoryInterface;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
@@ -15,6 +16,9 @@ public interface UserRepositoryInterface {
 
     @Query("SELECT * FROM User")
     List<User> getAll();
+
+    @Query("SELECT * FROM User WHERE userId = :id LIMIT 1")
+    LiveData<User> observeById(int id);
 
     @Query("SELECT * FROM User WHERE userId = :id LIMIT 1")
     User getById(int id);

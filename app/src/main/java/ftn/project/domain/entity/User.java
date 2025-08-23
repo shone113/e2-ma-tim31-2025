@@ -1,6 +1,7 @@
 package ftn.project.domain.entity;
 
 import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
@@ -12,12 +13,18 @@ public class User {
     private String username;
     private String password;
     private String email;
-    private Integer powerPoints;
-    private Integer experiencePoints;
-    private Long coins;
+    @ColumnInfo(defaultValue = "0")
+    private Integer powerPoints = 0;
+    @ColumnInfo(defaultValue = "0")
+    private Integer experiencePoints = 0;
+    @ColumnInfo(defaultValue = "1000")
+    private Long coins = 1000L;
     @NonNull
+    @ColumnInfo(defaultValue = "0")
     private boolean emailVerified = false;
     private String avatarImage;
+    @ColumnInfo(defaultValue = "1")
+    private int level = 1;
 
     public void setUserId(int userId) {
         this.userId = userId;
@@ -47,6 +54,7 @@ public class User {
 
     public void setEmail(String email) { this.email = email; }
     public void setAvatarImage(String avatarImage) { this.avatarImage = avatarImage; }
+    public void setLevel(int level) { this.level = level; }
     public String getUsername(){
         return username;
     }
@@ -74,4 +82,5 @@ public class User {
     public boolean getEmailVerified(){ return emailVerified; }
     public String getEmail() { return email; }
     public String getAvatarImage() { return avatarImage; }
+    public int getLevel() { return level; }
 }
