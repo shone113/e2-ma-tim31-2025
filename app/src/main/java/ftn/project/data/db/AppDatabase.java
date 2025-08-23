@@ -54,7 +54,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (INSTANCE == null) {
             appContext = context.getApplicationContext();
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                     AppDatabase.class, "habit_quest_baza9.db")
+                     AppDatabase.class, "habit_quest_baza11.db")
                     //.addMigrations(MIGRATION_1_2)
                     .addCallback(prepopulateCallback)
                     .allowMainThreadQueries()
@@ -68,9 +68,6 @@ public abstract class AppDatabase extends RoomDatabase {
                 @Override
                 public void onCreate(@NonNull SupportSQLiteDatabase db) {
                     super.onCreate(db);
-
-                    db.execSQL("INSERT INTO User (username, password, experiencePoints, powerPoints, coins) VALUES ('shone','333',20,30,120)");
-                    db.execSQL("INSERT INTO User (username, password, experiencePoints, powerPoints, coins) VALUES ('mitar','777',16,32,110)");
                     loadSqlFromAssets(appContext, db, "sql/equipment.sql");
                 }
             };

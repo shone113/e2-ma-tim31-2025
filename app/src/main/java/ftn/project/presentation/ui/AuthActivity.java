@@ -7,6 +7,7 @@ import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -18,26 +19,27 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 import ftn.project.R;
+import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.User;
+import ftn.project.presentation.adapter.AvatarAdapter;
 
-import android.app.Activity;
-import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Spinner;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+
+import java.util.ArrayList;
+import java.util.concurrent.Executors;
 
 public class AuthActivity extends AppCompatActivity {
 
@@ -47,7 +49,10 @@ public class AuthActivity extends AppCompatActivity {
 
     private SwitchMaterial switchAuth;
     private EditText etEmail, etPass, etConfirm, etUsername;
-    private Spinner spAvatar;
+    private ViewPager2 avatarPager;
+    private CardView avatarCard;
+    private int selectedAvatarResId = R.drawable.avatar_1;
+
     private Button btnSubmit;
 
     private boolean isRegisterMode = false;
@@ -78,19 +83,36 @@ public class AuthActivity extends AppCompatActivity {
         etPass = findViewById(R.id.etPass);
         etConfirm = findViewById(R.id.etConfirm);
         etUsername = findViewById(R.id.etUsername);
-        spAvatar = findViewById(R.id.spAvatar);
+        avatarPager = findViewById(R.id.avatarPager);
+        avatarCard = findViewById(R.id.avatarCard);
         btnSubmit = findViewById(R.id.btnSubmit);
-
         tvLogin = findViewById(R.id.tvLogin);
         tvRegister = findViewById(R.id.tvRegister);
         setLoginActive();
+
+        ArrayList<Integer> avatars = new ArrayList<>();
+        avatars.add(R.drawable.avatar_1);
+        avatars.add(R.drawable.avatar_2);
+        avatars.add(R.drawable.avatar_3);
+        avatars.add(R.drawable.avatar_4);
+        avatars.add(R.drawable.avatar_5);
+
+        avatarPager.setAdapter(new AvatarAdapter(avatars));
+
+        avatarPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                selectedAvatarResId = ((AvatarAdapter) avatarPager.getAdapter()).getItem(position);
+            }
+        });
 
         switchAuth.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 // Register mode
                 etConfirm.setVisibility(View.VISIBLE);
                 etUsername.setVisibility(View.VISIBLE);
-                spAvatar.setVisibility(View.VISIBLE);
+                avatarPager.setVisibility(View.VISIBLE);
+                avatarCard.setVisibility(View.VISIBLE);
                 btnSubmit.setText("Registracija");
                 setRegisterActive();
                 isRegisterMode = true;
@@ -100,7 +122,8 @@ public class AuthActivity extends AppCompatActivity {
                 // Login mode
                 etConfirm.setVisibility(View.GONE);
                 etUsername.setVisibility(View.GONE);
-                spAvatar.setVisibility(View.GONE);
+                avatarPager.setVisibility(View.GONE);
+                avatarCard.setVisibility(View.GONE);
                 btnSubmit.setText("Prijava");
                 setLoginActive();
                 isRegisterMode = false;
@@ -164,6 +187,8 @@ public class AuthActivity extends AppCompatActivity {
                             Log.d(TAG, "createUserWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
                             if (user != null) {
+                                createLocalUser(user, etUsername.getText().toString().trim(), selectedAvatarResId);
+
                                 user.sendEmailVerification()
                                         .addOnCompleteListener(AuthActivity.this, new OnCompleteListener<Void>() {
                                             @Override
@@ -230,7 +255,24 @@ public class AuthActivity extends AppCompatActivity {
                     }
                 });
     }
+    private void createLocalUser(FirebaseUser fbUser, String username, int avatarResId) {
+        if (fbUser == null) return;
 
+        // pretvorimo npr. R.drawable.avatar_3 -> "avatar_3" (lakše za čuvanje/učitavanje)
+        String avatarName = getResources().getResourceEntryName(avatarResId);
+
+        User u = new User();
+        u.setUsername(username);
+        u.setEmail(fbUser.getEmail());
+        u.setAvatarImage(avatarName);
+        u.setEmailVerified(fbUser.isEmailVerified()); // verovatno false odmah posle registracije
+
+        // ubaci u Room na background thread-u
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+            db.userRepository().insert(u);
+        });
+    }
 
     private void sendEmailVerification() {
         // Send verification email
@@ -252,7 +294,8 @@ public class AuthActivity extends AppCompatActivity {
         etPass.setEnabled(!show);
         etConfirm.setEnabled(!show);
         etUsername.setEnabled(!show);
-        spAvatar.setEnabled(!show);
+        avatarPager.setEnabled(!show);
+        avatarCard.setEnabled(!show);
         btnSubmit.setEnabled(!show);
 
 
@@ -272,7 +315,11 @@ public class AuthActivity extends AppCompatActivity {
                 }
                 user.reload().addOnCompleteListener(t -> {
                     if (user.isEmailVerified()) {
-                        // verified → idi dalje
+                        Executors.newSingleThreadExecutor().execute(() -> {
+                            AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+                            db.userRepository().markVerified(user.getUid(), true);
+                        });
+
                         animView.cancelAnimation();
                         showVerifyUI(false);
                         startActivity(new Intent(AuthActivity.this, AllUsersActivity.class));

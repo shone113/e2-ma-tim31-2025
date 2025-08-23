@@ -54,11 +54,24 @@
                 android:visibility="gone" />
 
             <!-- Avatar (samo u registraciji) -->
-            <Spinner
-                android:id="@+id/spAvatar"
+            <androidx.cardview.widget.CardView
+                android:id="@+id/avatarCard"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="gone" />
+                android:layout_height="220dp"
+                android:layout_margin="16dp"
+                android:visibility="gone"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:cardUseCompatPadding="true">
+
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/avatarPager"
+                    android:layout_width="match_parent"
+                    android:layout_height="300dp"
+                    android:padding="12dp"
+                    android:clipToPadding="false"
+                    android:visibility="gone"/>
+            </androidx.cardview.widget.CardView>
 
             <!-- Dugme -->
             <Button

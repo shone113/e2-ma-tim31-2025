@@ -18,4 +18,7 @@ public interface UserRepositoryInterface {
 
     @Query("SELECT * FROM User WHERE userId = :id LIMIT 1")
     User getById(int id);
+
+    @Query("UPDATE User SET emailVerified = :verified WHERE userId = :uid")
+    void markVerified(String uid, boolean verified);
 }
