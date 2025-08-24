@@ -238,7 +238,7 @@ public class AuthActivity extends AppCompatActivity {
                             user.reload().addOnCompleteListener(r -> {
                                 if (user.isEmailVerified()) {
                                     Toast.makeText(AuthActivity.this, "Uspešna prijava", Toast.LENGTH_SHORT).show();
-                                    Intent intent = new Intent(AuthActivity.this, AllUsersActivity.class);
+                                    Intent intent = new Intent(AuthActivity.this, ShopActivity.class);
                                     startActivity(intent);
                                     finish();
                                 } else {
@@ -265,7 +265,8 @@ public class AuthActivity extends AppCompatActivity {
         u.setUsername(username);
         u.setEmail(fbUser.getEmail());
         u.setAvatarImage(avatarName);
-        u.setEmailVerified(fbUser.isEmailVerified()); // verovatno false odmah posle registracije
+        u.setEmailVerified(fbUser.isEmailVerified());
+        u.setFirebaseUid(fbUser.getUid());
 
         // ubaci u Room na background thread-u
         Executors.newSingleThreadExecutor().execute(() -> {

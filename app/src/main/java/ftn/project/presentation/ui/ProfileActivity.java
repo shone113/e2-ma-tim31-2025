@@ -36,11 +36,6 @@ public class ProfileActivity extends AppCompatActivity {
         if (userId == -1) { finish(); return; }
 
         AppDatabase db = AppDatabase.getInstance(getApplicationContext());
-        db.userRepository().observeById(userId).observe(this, u -> {
-            if (u == null) {
-                return;
-            }
-        });
         User user = db.userRepository().getById(userId);
 
         TextView tvUsername = findViewById(R.id.tvUsername);

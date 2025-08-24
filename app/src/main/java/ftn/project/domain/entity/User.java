@@ -9,7 +9,7 @@ import androidx.room.PrimaryKey;
 public class User {
     @PrimaryKey(autoGenerate = true)
     private int userId;
-
+    @NonNull public String firebaseUid;
     private String username;
     private String password;
     private String email;
@@ -23,13 +23,13 @@ public class User {
     @ColumnInfo(defaultValue = "0")
     private boolean emailVerified = false;
     private String avatarImage;
-    @ColumnInfo(defaultValue = "1")
-    private int level = 1;
+    @ColumnInfo(defaultValue = "3")
+    private int level = 3;
 
     public void setUserId(int userId) {
         this.userId = userId;
     }
-
+    public void setFirebaseUid(String firebaseUid){ this.firebaseUid = firebaseUid; }
     public void setUsername(String username) {
         this.username = username;
     }
@@ -83,4 +83,5 @@ public class User {
     public String getEmail() { return email; }
     public String getAvatarImage() { return avatarImage; }
     public int getLevel() { return level; }
+    public String getFirebaseUid(){ return firebaseUid; }
 }

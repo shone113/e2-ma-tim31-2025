@@ -16,28 +16,36 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.Firebase;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
 import ftn.project.R;
+import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Equipment;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.ComputeLevelStats;
 import ftn.project.presentation.ui.ProfileActivity;
+import ftn.project.presentation.util.ImageResId;
 
 public class ShopAdapter extends ArrayAdapter<Equipment> {
     public interface OnBuyItemClick {
-        void onAdd(Equipment equipment);
+        void onBuyItemClick(User user, double price, Equipment equipment);
     }
 
     private ArrayList<Equipment> aEquipment;
     private final OnBuyItemClick listener;
-
-
-    public ShopAdapter(Context context, ArrayList<Equipment> users, OnBuyItemClick listener) {
+    private final Context context;
+    private String loggedFirebaseUid;
+    public ShopAdapter(Context context, ArrayList<Equipment> users, String firebaseUid, OnBuyItemClick listener) {
         super(context, R.layout.shop_item_card, users);
+        this.context = context;
         aEquipment = users;
+        this.loggedFirebaseUid = firebaseUid;
         this.listener = listener;
     }
     @Override
@@ -61,7 +69,6 @@ public class ShopAdapter extends ArrayAdapter<Equipment> {
         TextView tvReward;
         TextView tvUsageCount;
         LinearLayout root;
-        TextView tvCost;
         MaterialButton btnBuy;
     }
 
@@ -77,7 +84,6 @@ public class ShopAdapter extends ArrayAdapter<Equipment> {
             vh.ivIcon = convertView.findViewById(R.id.ivItemIcon);
             vh.tvReward = convertView.findViewById(R.id.tvReward);
             vh.tvUsageCount = convertView.findViewById(R.id.tvUsageCount);
-            vh.tvCost = convertView.findViewById(R.id.tvCost);
             vh.btnBuy = convertView.findViewById(R.id.btnBuy);
             convertView.setTag(vh);
         } else {
@@ -100,7 +106,7 @@ public class ShopAdapter extends ArrayAdapter<Equipment> {
                 default:
                     effectType = "";
             }
-            vh.tvReward.setText("+ " + equipment.getBonusPercentage() + "% " + effectType);
+            vh.tvReward.setText("+ " + Math.round(equipment.getBonusPercentage()) + "% " + effectType);
 
             String useLabel;
             switch (equipment.getActiveType()) {
@@ -117,24 +123,26 @@ public class ShopAdapter extends ArrayAdapter<Equipment> {
                     useLabel = "";
             }
             vh.tvUsageCount.setText(useLabel);
-            Double cost = equipment.getCostPercentageOfReward();
-            vh.tvCost.setText("Cost: " + cost + "% of reward");
-            vh.btnBuy.setText("Buy");
+            AppDatabase db = AppDatabase.getInstance(context);
+            User user = db.userRepository().getByFirebaseUid(loggedFirebaseUid);
 
-            String img = equipment.getImageName(); // npr. "potion"
-            int resId = 0;
-            if (img != null) {
-                // ako u bazi nekad stoji "potion.png" – skini ekstenziju
-                int dot = img.lastIndexOf('.');
-                if (dot != -1) img = img.substring(0, dot);
-                resId = getContext().getResources()
-                        .getIdentifier(img, "drawable", getContext().getPackageName());
+            int coinsPreviousReward = ComputeLevelStats.coinsPreviousReward(user.getLevel());
+            double price = (coinsPreviousReward / 100) * equipment.getCostPercentageOfReward();
+            vh.btnBuy.setText("" + Math.round(price));
+            vh.btnBuy.setIconResource(R.drawable.coin);
+            vh.btnBuy.setIconGravity(MaterialButton.ICON_GRAVITY_TEXT_START);
+            vh.btnBuy.setIconTint(null);
+
+            if(user.getCoins() < price){
+                vh.btnBuy.setEnabled(false);
             }
-            if (resId != 0) {
-                vh.ivIcon.setImageResource(resId);
-            } else {
-                vh.ivIcon.setImageResource(R.drawable.potion);
-            }
+
+            vh.btnBuy.setOnClickListener(v -> {
+                if (listener != null) listener.onBuyItemClick(user, price, equipment);
+            });
+
+            int resId = ImageResId.returnResId(vh.ivIcon.getContext(), equipment.getImageName());
+            vh.ivIcon.setImageResource(resId != 0 ? resId : R.drawable.potion);
 
             vh.root.setOnClickListener(v ->
                     Log.i("Shop", "Klik na: " + equipment.getName())

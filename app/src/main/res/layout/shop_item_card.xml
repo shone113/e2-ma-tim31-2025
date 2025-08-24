@@ -31,6 +31,8 @@
                 android:id="@+id/tvReward"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minLines="2"
+                android:maxLines="2"
                 android:gravity="center"
                 android:layout_marginTop="8dp"
                 android:text="+20% POWER"
@@ -48,15 +50,6 @@
                 android:textColor="@android:color/holo_green_dark"
                 android:textSize="14sp" />
 
-            <TextView
-                android:id="@+id/tvCost"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Cost"
-                android:textColor="@android:color/white"
-                android:textSize="12sp" />
-
             <!-- Buy dugme -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnBuy"
@@ -65,7 +58,12 @@
                 android:layout_height="40dp"
                 android:layout_marginTop="10dp"
                 android:text="Buy"
-                android:textAllCaps="false"/>
+                android:textAllCaps="false"
+                app:icon="@drawable/coin"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconSize="30dp"
+                app:iconTint="@null"/>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

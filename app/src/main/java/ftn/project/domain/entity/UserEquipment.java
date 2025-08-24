@@ -34,6 +34,7 @@ import java.util.List;
     private int equipmentId;
     private int userId;
     private int battleCount;
+    private boolean active;
 
     public UserEquipment(){}
     public int getEquipmentId() {
@@ -60,4 +61,6 @@ import java.util.List;
         this.battleCount = battleCount;
     }
 
+    public void setActive(boolean active) { this.active = active; }
+    public boolean getActive() { return active; }
 }

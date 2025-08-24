@@ -24,6 +24,7 @@ import ftn.project.domain.entity.UserEquipment;
 import ftn.project.domain.repositoryInterface.EquipmentRepositoryInterface;
 import ftn.project.domain.repositoryInterface.TaskInstanceRepositoryInterface;
 import ftn.project.domain.repositoryInterface.TaskRepositoryInterface;
+import ftn.project.domain.repositoryInterface.UserEquipmentRepositoryInterface;
 import ftn.project.domain.repositoryInterface.UserRepositoryInterface;
 
 
@@ -35,6 +36,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract TaskRepositoryInterface taskRepository();
     public abstract TaskInstanceRepositoryInterface taskInstanceRepository();
     public abstract EquipmentRepositoryInterface equipmentRepository();
+    public abstract UserEquipmentRepositoryInterface userEquipmentRepository();
     private static AppDatabase INSTANCE;
     private static Context appContext;
 
@@ -54,7 +56,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (INSTANCE == null) {
             appContext = context.getApplicationContext();
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                     AppDatabase.class, "habit_quest_baza14.db")
+                     AppDatabase.class, "habit_quest_baza18.db")
                     //.addMigrations(MIGRATION_1_2)
                     .addCallback(prepopulateCallback)
                     .allowMainThreadQueries()

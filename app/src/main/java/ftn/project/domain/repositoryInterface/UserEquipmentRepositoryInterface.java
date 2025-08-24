@@ -22,6 +22,8 @@ public interface UserEquipmentRepositoryInterface {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void addAll(List<UserEquipment> links);
 
+    @Query("SELECT * FROM UserEquipment")
+    List<UserEquipment> getAll();
     // Unlink
     @Query("DELETE FROM UserEquipment WHERE userId = :uid AND equipmentId = :eid")
     void remove(int uid, int eid);
