@@ -27,8 +27,9 @@ public class MainActivity extends AppCompatActivity {
 
         AppDatabase db = AppDatabase.getInstance(this);
         User testKlijent = new User();
-        testKlijent.username = "Marko";
-        testKlijent.password = "555";
+        testKlijent.setUsername("Marko");
+        testKlijent.setPassword("555");
+        testKlijent.setExperiencePoints(10);
         db.userRepository().insert(testKlijent);
     }
 }
