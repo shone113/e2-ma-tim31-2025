@@ -35,4 +35,9 @@ public interface UserRepositoryInterface {
     @Query("UPDATE User SET coins = :coins AND level = :level " +
             "WHERE userId = :userId")
     int testUserUpdate(int userId, long coins, int level);
+
+    @Query("UPDATE User SET experiencePoints = :xP " +
+            "WHERE userId = :userId")
+    void updateExperiencePoints(int userId, int xP);
+
 }

@@ -8,6 +8,9 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
@@ -18,6 +21,7 @@ import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
+import ftn.project.domain.entity.User;
 
 public class TaskDetailsActivity extends AppCompatActivity {
 
@@ -174,8 +178,45 @@ public class TaskDetailsActivity extends AppCompatActivity {
             btnUpdateTask.setEnabled(false);
         }
 
-        btnDone.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.DONE));
+        btnDone.setOnClickListener(v -> {
+            updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.DONE);
+            updateLoggedUserPoints(taskAndInstance.task.getUserId(), taskAndInstance.task.getValueXP());
+        });
         btnCanceled.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.CANCELED));
+    }
+
+    private void updateLoggedUserPoints(int userId, int xPValue) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (firebaseUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Nema aktivnog korisnika!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            String firebaseUid = firebaseUser.getUid();
+            User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+
+            if (currentUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Korisnik nije pronađen!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            int oldXP = currentUser.getExperiencePoints();
+            int newXP = oldXP + xPValue;
+
+            if (userId == currentUser.getUserId()) {
+                db.userRepository().updateExperiencePoints(userId, newXP);
+
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Dodato " + xPValue + " XP (ukupno: " + newXP + ")", Toast.LENGTH_SHORT).show()
+                );
+            } else {
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Nije pravilan korisnik!", Toast.LENGTH_SHORT).show()
+                );
+            }
+        });
     }
 
     private void updateTaskStatus(TaskInstanceWithTask taskAndInstance, TaskInstance.TaskStatusEnum newStatus) {

@@ -11,6 +11,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -21,6 +24,7 @@ import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
+import ftn.project.domain.entity.User;
 
 public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder> {
 
@@ -133,16 +137,36 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
             btnPlay.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.ACTIVE));
         }
 
+
         private void updateStatus(TaskInstanceWithTask taskInstanceWithTask, TaskInstance.TaskStatusEnum newStatus) {
             taskInstanceWithTask.taskInstance.setStatus(newStatus);
             tvStatus.setText("Status: " + newStatus.name());
 
             Executors.newSingleThreadExecutor().execute(() -> {
                 AppDatabase db = AppDatabase.getInstance(itemView.getContext());
-                db.taskInstanceRepository().updateStatus(taskInstanceWithTask.taskInstance.getId(), taskInstanceWithTask.taskInstance.getStatus());
+                db.taskInstanceRepository().updateStatus(
+                        taskInstanceWithTask.taskInstance.getId(),
+                        taskInstanceWithTask.taskInstance.getStatus()
+                );
+
+                // XP update samo ako je DONE
+                if (newStatus == TaskInstance.TaskStatusEnum.DONE) {
+                    FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+                    if (firebaseUser != null) {
+                        String firebaseUid = firebaseUser.getUid();
+                        User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+                        if (currentUser != null && currentUser.getUserId() == taskInstanceWithTask.task.getUserId()) {
+                            int oldXP = currentUser.getExperiencePoints();
+                            int newXP = oldXP + taskInstanceWithTask.task.getValueXP();
+                            db.userRepository().updateExperiencePoints(currentUser.getUserId(), newXP);
+                        }
+                    }
+                }
             });
+
             configureStatusButtons(taskInstanceWithTask);
         }
+
 
     }
 }

@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,6 +19,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -34,6 +37,7 @@ import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
+import ftn.project.domain.entity.User;
 import ftn.project.presentation.adapter.HoursAdapter;
 
 public class TaskCalendarActivity extends AppCompatActivity {
@@ -268,8 +272,11 @@ public class TaskCalendarActivity extends AppCompatActivity {
             }
         }
 
-        btnDone.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.DONE, tvStatus,
-                btnDone, btnCancel, btnPause, btnPlay));
+        btnDone.setOnClickListener(v -> {
+            updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.DONE, tvStatus,
+                btnDone, btnCancel, btnPause, btnPlay);
+            updateLoggedUserPoints(taskInstanceWithTask.task.getUserId(), taskInstanceWithTask.task.getValueXP());
+        });
         btnCancel.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.CANCELED, tvStatus,
                 btnDone, btnCancel, btnPause, btnPlay));
         btnPause.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.PAUSED, tvStatus,
@@ -277,6 +284,41 @@ public class TaskCalendarActivity extends AppCompatActivity {
         btnPlay.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.ACTIVE, tvStatus,
                 btnDone, btnCancel, btnPause, btnPlay));
     }
+    private void updateLoggedUserPoints(int userId, int xPValue) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (firebaseUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Nema aktivnog korisnika!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            String firebaseUid = firebaseUser.getUid();
+            User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+
+            if (currentUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Korisnik nije pronađen!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            int oldXP = currentUser.getExperiencePoints();
+            int newXP = oldXP + xPValue;
+
+            if (userId == currentUser.getUserId()) {
+                db.userRepository().updateExperiencePoints(userId, newXP);
+
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Dodato " + xPValue + " XP (ukupno: " + newXP + ")", Toast.LENGTH_SHORT).show()
+                );
+            } else {
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Nije pravilan korisnik!", Toast.LENGTH_SHORT).show()
+                );
+            }
+        });
+    }
+
+
 
     private void updateStatus(TaskInstanceWithTask taskInstanceWithTask,
                               TaskInstance.TaskStatusEnum newStatus,

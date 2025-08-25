@@ -17,6 +17,9 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -28,6 +31,7 @@ import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
+import ftn.project.domain.entity.User;
 
 public class NewTaskActivity extends AppCompatActivity {
 
@@ -141,6 +145,19 @@ public class NewTaskActivity extends AppCompatActivity {
         int selectedPosition = spinnerCategory.getSelectedItemPosition();
         int categoryId = categories.get(selectedPosition).getId();
 
+        //User
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            Toast.makeText(this, "Nema ulogovanog korisnika!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String firebaseUid = firebaseUser.getUid();
+        User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+        if (currentUser == null) {
+            Toast.makeText(this, "Korisnik ne postoji u lokalnoj bazi!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // Težina
         Task.DifficultyEnum difficulty = Task.DifficultyEnum.VERY_EASY;
         int selectedDiffId = rgTezina.getCheckedRadioButtonId();
@@ -186,8 +203,8 @@ public class NewTaskActivity extends AppCompatActivity {
         // Napravi Task
         Task task = new Task(
                 0,
-                1, // userId test
-                categoryId, // categoryId test
+                currentUser.getUserId(),
+                categoryId,
                 difficulty,
                 importance,
                 frequency,
