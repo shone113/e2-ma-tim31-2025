@@ -34,6 +34,7 @@
         <activity android:name=".presentation.ui.TaskCalendarActivity" />
         <activity android:name=".presentation.ui.TaskListActivity"/>
         <activity android:name=".presentation.ui.CategoryListActivity"/>
+        <activity android:name=".presentation.ui.MainActivity"/>
         <activity
             android:name=".presentation.ui.ProfileActivity"
             android:exported="false" />
