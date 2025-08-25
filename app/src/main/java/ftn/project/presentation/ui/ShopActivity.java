@@ -149,14 +149,13 @@ public class ShopActivity extends AppCompatActivity {
                 return;
             }
 
-            // Transakciono: skini coine + upiši kupovinu
             db.runInTransaction(() -> {
                 db.userRepository().subtractCoins(u.getUserId(), (long)price);
-                // primer upisa kupovine (prilagodi svojoj šemi)
                 UserEquipment ue = new UserEquipment();
                 ue.setUserId(u.getUserId());
                 ue.setEquipmentId(equipment.getEquipmentId());
-                ue.setActive(false);
+                ue.setBattleCount(equipment.getBattleCount());
+                ue.setActive(equipment.getInitActiveType());
                 db.userEquipmentRepository().add(ue);
             });
 

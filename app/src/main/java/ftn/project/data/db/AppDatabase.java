@@ -21,16 +21,19 @@ import ftn.project.domain.entity.Equipment;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.entity.UserBadge;
 import ftn.project.domain.repositoryInterface.CategoryRepositoryInterface;
 import ftn.project.domain.entity.UserEquipment;
 import ftn.project.domain.repositoryInterface.EquipmentRepositoryInterface;
 import ftn.project.domain.repositoryInterface.TaskInstanceRepositoryInterface;
 import ftn.project.domain.repositoryInterface.TaskRepositoryInterface;
+import ftn.project.domain.repositoryInterface.UserBadgeRepositoryInterface;
 import ftn.project.domain.repositoryInterface.UserEquipmentRepositoryInterface;
 import ftn.project.domain.repositoryInterface.UserRepositoryInterface;
 
 
-@Database(entities = {User.class, Task.class, Category.class, TaskInstance.class, Equipment.class, UserEquipment.class}, version = 1, exportSchema = false)
+@Database(entities = {User.class, Task.class, Category.class, TaskInstance.class,
+        Equipment.class, UserEquipment.class, UserBadge.class}, version = 1, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -40,6 +43,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract CategoryRepositoryInterface categoryRepository();
     public abstract EquipmentRepositoryInterface equipmentRepository();
     public abstract UserEquipmentRepositoryInterface userEquipmentRepository();
+    public abstract UserBadgeRepositoryInterface userBadgeRepository();
     private static AppDatabase INSTANCE;
     private static Context appContext;
 
@@ -59,7 +63,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (INSTANCE == null) {
             appContext = context.getApplicationContext();
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                     AppDatabase.class, "habit_quest_baza19.db")
+                     AppDatabase.class, "habit_quest_baza22.db")
                     //.addMigrations(MIGRATION_1_2)
                     .addCallback(prepopulateCallback)
                     .allowMainThreadQueries()
