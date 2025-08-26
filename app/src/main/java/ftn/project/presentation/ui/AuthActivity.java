@@ -238,7 +238,7 @@ public class AuthActivity extends AppCompatActivity {
                             user.reload().addOnCompleteListener(r -> {
                                 if (user.isEmailVerified()) {
                                     Toast.makeText(AuthActivity.this, "Uspešna prijava", Toast.LENGTH_SHORT).show();
-                                    Intent intent = new Intent(AuthActivity.this, ShopActivity.class);
+                                    Intent intent = new Intent(AuthActivity.this, LevelAdvancementActivity.class);
                                     startActivity(intent);
                                     finish();
                                 } else {
