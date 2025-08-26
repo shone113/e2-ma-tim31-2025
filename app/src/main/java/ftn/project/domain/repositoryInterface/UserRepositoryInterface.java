@@ -31,6 +31,8 @@ public interface UserRepositoryInterface {
 
     @Query("UPDATE User SET coins = coins - :coins WHERE userId = :userId")
     void subtractCoins(int userId, long coins);
+    @Query("UPDATE User SET coins = coins + :coins WHERE userId = :userId")
+    void addCoins(int userId, long coins);
 
     @Query("UPDATE User SET coins = :coins AND level = :level " +
             "WHERE userId = :userId")

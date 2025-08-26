@@ -33,18 +33,23 @@ import java.util.concurrent.Executors;
 
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Battle;
+import ftn.project.domain.entity.Boss;
 import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.BossService;
+import ftn.project.domain.usecase.QuotaFinalizer;
+import ftn.project.domain.usecase.SuccessRateService;
 import ftn.project.presentation.adapter.HoursAdapter;
 
 public class TaskCalendarActivity extends AppCompatActivity {
 
     private RecyclerView rvHours;
     private FrameLayout flDaySchedule;
-    private FloatingActionButton fabAddTask, fabListTask;
+    private FloatingActionButton fabAddTask, fabListTask, fabBattle;
     private TextView tvCurrentDay;
     private ImageButton btnPrevDay, btnNextDay;
 
@@ -68,6 +73,7 @@ public class TaskCalendarActivity extends AppCompatActivity {
         rvHours = findViewById(R.id.rvHours);
         fabAddTask = findViewById(R.id.fabAddTask);
         fabListTask = findViewById(R.id.fabListTasks);
+        fabBattle = findViewById(R.id.fabBattle);
         tvCurrentDay = findViewById(R.id.tvCurrentWeek);
         btnPrevDay = findViewById(R.id.btnPrevDay);
         btnNextDay = findViewById(R.id.btnNextDay);
@@ -92,6 +98,53 @@ public class TaskCalendarActivity extends AppCompatActivity {
             Intent intent = new Intent(this, TaskListActivity.class);
             startActivity(intent);
         });
+
+        fabBattle.setOnClickListener(v -> {
+            BossService bossService = new BossService(this);
+
+            AppDatabase db = AppDatabase.getInstance(this);
+            FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+            String firebaseUid = firebaseUser.getUid();
+            User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+            int currentLevel = currentUser.getLevel();
+            Boss boss = bossService.getOrCreateBossForLevel(currentLevel);
+
+            // Kreiraj battle odmah
+            Battle battle = new Battle(
+                    0,
+                    currentUser.getUserId(), // userId
+                    boss.getId(),
+                    false,
+                    0,
+                    5,
+                    null,
+                    false
+            );
+            long battleId = db.battleRepository().insert(battle);
+
+            //hitChance prosledjujemo preko ovoga, alternativa
+            LocalDate startDate = currentUser.getNewLevelTime().toLocalDate();
+            LocalDate endDate   = LocalDate.of(2025, 8, 30);
+            LocalDate current = startDate;
+            while (!current.isAfter(endDate)) {
+                QuotaFinalizer.finalizeDayQuota(db, current);
+                current = current.plusDays(1);
+            }
+            LocalDateTime startDateTime = startDate.atStartOfDay();
+            LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+            double hitChance = SuccessRateService.calculateStageSuccessRate(db,startDateTime,endDateTime);
+            int hitChanceInt = (int) Math.round(hitChance);
+
+           //setuje mi protivnika na 200
+            db.bossRepository().updateBoss(boss.getId());
+            db.bossRepository().updateBossDef(boss.getId());
+
+            Intent intent = new Intent(this, BattleActivity.class);
+            intent.putExtra("battleId", (int)battleId);
+            intent.putExtra("hitChance", hitChanceInt);
+            startActivity(intent);
+        });
+
 
         btnPrevDay.setOnClickListener(v -> {
             selectedDate = selectedDate.minusDays(1);

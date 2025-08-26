@@ -61,8 +61,18 @@ public class Converters {
         return status == null ? null : status.name();
     }
 
+
     @TypeConverter
     public static TaskInstance.TaskStatusEnum toStatus(String value) {
         return value == null ? null : TaskInstance.TaskStatusEnum.valueOf(value);
+    }
+    @TypeConverter
+    public static String fromEquipmentType(EquipmentType type) {
+        return type == null ? null : type.name();
+    }
+
+    @TypeConverter
+    public static EquipmentType toEquipmentType(String type) {
+        return type == null ? null : EquipmentType.valueOf(type);
     }
 }
