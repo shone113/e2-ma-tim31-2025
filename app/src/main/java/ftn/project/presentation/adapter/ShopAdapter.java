@@ -41,10 +41,10 @@ public class ShopAdapter extends ArrayAdapter<Equipment> {
     private final OnBuyItemClick listener;
     private final Context context;
     private String loggedFirebaseUid;
-    public ShopAdapter(Context context, ArrayList<Equipment> users, String firebaseUid, OnBuyItemClick listener) {
-        super(context, R.layout.shop_item_card, users);
+    public ShopAdapter(Context context, ArrayList<Equipment> equipment, String firebaseUid, OnBuyItemClick listener) {
+        super(context, R.layout.shop_item_card, equipment);
         this.context = context;
-        aEquipment = users;
+        aEquipment = equipment;
         this.loggedFirebaseUid = firebaseUid;
         this.listener = listener;
     }

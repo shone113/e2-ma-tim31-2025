@@ -1,6 +1,10 @@
 package ftn.project.presentation.ui;
 
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.View;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -10,16 +14,31 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Badge;
+import ftn.project.domain.entity.Equipment;
 import ftn.project.domain.entity.Title;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.entity.UserBadge;
+import ftn.project.domain.entity.UserEquipment;
+import ftn.project.presentation.adapter.BadgeAdapter;
+import ftn.project.presentation.adapter.EquipmentAdapter;
+import ftn.project.presentation.util.ImageResId;
 
 public class ProfileActivity extends AppCompatActivity {
 
     public static final String EXTRA_USER_ID = "ftn.project.EXTRA_USER_ID";
+
+    private BadgeAdapter badgeAdapter;
+    private EquipmentAdapter equipmentAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,14 +58,80 @@ public class ProfileActivity extends AppCompatActivity {
         User user = db.userRepository().getById(userId);
 
         TextView tvUsername = findViewById(R.id.tvUsername);
+        ImageView imgAvatar = findViewById(R.id.imgAvatar);
         TextView tvTitle = findViewById(R.id.tvTitle);
         ImageView imgTitle = findViewById(R.id.imgTitle);
+        TextView tvBadgesTitle = findViewById(R.id.tvBadgesTitle);
+        TextView tvLevelBox = findViewById(R.id.tvLevelBox);
+        TextView tvPowerBox = findViewById(R.id.tvPowerBox);
+        TextView tvExperienceBox = findViewById(R.id.tvExperienceBox);
+        TextView tvCoinsBox = findViewById(R.id.tvCoinsBox);
+
+        Log.w("HEYYYY", "HEY");
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        Log.w("U111", user.getFirebaseUid());
+        Log.w("F111", firebaseUser.getUid());
+        if(!TextUtils.equals(user.getFirebaseUid(), firebaseUser.getUid())){
+            tvPowerBox.setVisibility(View.GONE);
+            tvCoinsBox.setVisibility(View.GONE);
+            TextView tvCoinsLabel = findViewById(R.id.tvCoinsLabel);
+            tvCoinsLabel.setVisibility(View.GONE);
+            TextView tvPowerLabel = findViewById(R.id.tvPowerLabel);
+            tvPowerLabel.setVisibility(View.GONE);
+        }
+
+        int resId = ImageResId.returnResId(this, user.getAvatarImage());
+        imgAvatar.setImageResource(resId != 0 ? resId : R.drawable.potion);
+
+        tvLevelBox.setText(String.valueOf(user.getLevel()));
+        tvPowerBox.setText(user.getPowerPoints().toString());
+        tvExperienceBox.setText(user.getExperiencePoints().toString());
+        tvCoinsBox.setText(user.getCoins().toString());
 
         Title t = Title.fromLevel(user.getLevel());
         int nameId = getResources().getIdentifier(t.nameKey, "string", getPackageName());
         int iconId = getResources().getIdentifier(t.iconKey, "drawable", getPackageName());
         tvTitle.setText(nameId);
         imgTitle.setImageResource(iconId);
+
+        if (db.userBadgeRepository().hasBadge(userId, "BADGE_1") == 0) {
+            var ub = new UserBadge();
+            ub.userId = userId;
+            ub.badgeCode = "BADGE_1";
+            db.userBadgeRepository().insert(ub);
+        }
+        if (db.userBadgeRepository().hasBadge(userId, "BADGE_2") == 0) {
+            var ub = new UserBadge();
+            ub.userId = userId;
+            ub.badgeCode = "BADGE_2";
+            db.userBadgeRepository().insert(ub);
+        }
+
+        List<String> ids = db.userBadgeRepository().getBadgeCodesForUser(userId);
+        ArrayList<Badge> badges = new ArrayList<>();
+        for (String id : ids) {
+            Badge b = Badge.byCode(id);
+            if (b != null) badges.add(b);
+        }
+
+        Log.w("BADGES", "" + db.userBadgeRepository().getAll().stream().count());
+
+        GridView gvBadges = findViewById(R.id.gvBadges);
+        badgeAdapter = new BadgeAdapter(this, badges);
+        gvBadges.setAdapter(badgeAdapter);
+
+        tvBadgesTitle.setText("Badges: " + badges.size());
+
+        List<UserEquipment> userEquipment = db.userEquipmentRepository().getAllForUser(userId);
+        ArrayList<Equipment> equipment = new ArrayList<>();
+        for (UserEquipment ue : userEquipment) {
+            Equipment e = db.equipmentRepository().getById(ue.getEquipmentId());
+            if (e != null) equipment.add(e);
+        }
+
+        GridView gvEquipment = findViewById(R.id.gvEquipment);
+        equipmentAdapter = new EquipmentAdapter(this, equipment);
+        gvEquipment.setAdapter(equipmentAdapter);
 
         if(userId != -1){
             User u = AppDatabase.getInstance(this).userRepository().getById(userId);

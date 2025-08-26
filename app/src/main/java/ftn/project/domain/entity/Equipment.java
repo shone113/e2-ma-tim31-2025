@@ -82,4 +82,20 @@ public class Equipment {
     public void setImageName(String imageName){
         this.imageName = imageName;
     }
+
+    public Integer getBattleCount(){
+        switch (this.activeType) {
+            case ONE_USE:    return 1;
+            case TWO_USES:   return 2;
+            case PERMANENT:  return null;
+        }
+        return null;
+    }
+    public boolean getInitActiveType(){
+        if(this.type == EquipmentType.POTION){
+            return true;
+        }else{
+            return false;
+        }
+    }
 }

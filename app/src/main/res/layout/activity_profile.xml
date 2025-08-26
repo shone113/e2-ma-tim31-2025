@@ -16,6 +16,7 @@
         android:text="Username"
         android:textSize="18sp"
         android:textStyle="bold"
+        android:layout_margin="12dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"/>
 
@@ -182,5 +183,59 @@
         app:layout_constraintStart_toStartOf="@id/tvCoinsBox"
         app:layout_constraintEnd_toEndOf="@id/tvCoinsBox"/>
 
+    <TextView
+        android:id="@+id/tvEquipmentTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Equipment"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/tvLevelLabel"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <GridView
+        android:id="@+id/gvEquipment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:numColumns="4"
+        android:horizontalSpacing="12dp"
+        android:verticalSpacing="12dp"
+        android:padding="8dp"
+        android:clipToPadding="false"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:spanCount="3"
+        android:layout_marginTop="8dp"
+        android:layout_below="@id/tvBadgesTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvEquipmentTitle"/>
+
+
+    <TextView
+        android:id="@+id/tvBadgesTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Badges: 3"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/gvEquipment"
+        app:layout_constraintStart_toStartOf="parent"/>
+
+    <GridView
+        android:id="@+id/gvBadges"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:numColumns="4"
+        android:horizontalSpacing="12dp"
+        android:verticalSpacing="12dp"
+        android:padding="8dp"
+        android:clipToPadding="false"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:spanCount="3"
+        android:layout_marginTop="8dp"
+        android:layout_below="@id/tvBadgesTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvBadgesTitle"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
