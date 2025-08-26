@@ -26,6 +26,9 @@ public interface TaskInstanceRepositoryInterface {
     @Query("UPDATE task_instances SET status = :status WHERE id = :id")
     void updateStatus(int id, TaskInstance.TaskStatusEnum status);
 
+    @Query("UPDATE task_instances SET earnedXp = :earnedXp WHERE id = :id")
+    void updateEarnedXp(int id, int earnedXp);
+
     @Query("DELETE FROM task_instances WHERE taskId = :taskId")
     void deleteByTaskId(int taskId);
 
@@ -52,6 +55,10 @@ public interface TaskInstanceRepositoryInterface {
     @Transaction
     @Query("SELECT * FROM task_instances WHERE id = :id")
     TaskInstanceWithTask getTaskInstanceWithTaskById(int id);
+    @Transaction
+    @Query("SELECT * FROM task_instances WHERE taskId = :id AND startExecutionTime >= :now")
+    List<TaskInstanceWithTask> getFutureTaskInstancesWithTaskById(int id, LocalDateTime now);
+
 
     @Transaction
     @Query("SELECT * FROM task_instances " +

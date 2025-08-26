@@ -1,6 +1,7 @@
 package ftn.project.domain.entity;
 
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
@@ -16,6 +17,9 @@ public class TaskInstance {
 
     private int taskId; // FK -> Task
 
+    private DifficultyEnum difficultyInstance;
+    private ImportanceEnum importanceInstance;
+
     @TypeConverters({Converters.class})
     private LocalDateTime startExecutionTime;
 
@@ -23,20 +27,43 @@ public class TaskInstance {
     private LocalDateTime endExecutionTime;
 
     private TaskStatusEnum status;
+    @Ignore
+    private int valueXp;
+    private int earnedXp;
+
+    public enum DifficultyEnum {
+        VERY_EASY(1), EASY(3), HARD(7), EXTREME(20);
+        private final int xp;
+        DifficultyEnum(int xp) { this.xp = xp; }
+        public int getXp() { return xp; }
+    }
+
+    public enum ImportanceEnum {
+        NORMAL(1), IMPORTANT(3), VERY_IMPORTANT(10), SPECIAL(100);
+        private final int xp;
+        ImportanceEnum(int xp) { this.xp = xp; }
+        public int getXp() { return xp; }
+    }
 
     public enum TaskStatusEnum {
         ACTIVE, DONE, UNFINISHED, PAUSED, CANCELED
     }
 
-    public TaskInstance(int id, int taskId,
+    public TaskInstance(int id, int taskId, ImportanceEnum importanceInstance,
+                         DifficultyEnum difficultyInstance,
                         LocalDateTime startExecutionTime,
                         LocalDateTime endExecutionTime,
-                        TaskStatusEnum status) {
+                        TaskStatusEnum status,
+                        int earnedXp) {
         this.id = id;
         this.taskId = taskId;
+        this.importanceInstance = importanceInstance;
+        this.difficultyInstance = difficultyInstance;
         this.startExecutionTime = startExecutionTime;
         this.endExecutionTime = endExecutionTime;
         this.status = status;
+        this.earnedXp = earnedXp;
+        this.valueXp = difficultyInstance.getXp() + importanceInstance.getXp();
     }
 
     public int getId() {
@@ -77,5 +104,32 @@ public class TaskInstance {
 
     public void setStatus(TaskStatusEnum status) {
         this.status = status;
+    }
+
+    public DifficultyEnum getDifficultyInstance() {
+        return difficultyInstance;
+    }
+
+    public void setDifficultyInstance(DifficultyEnum difficultyInstance) {
+        this.difficultyInstance = difficultyInstance;
+    }
+
+    public ImportanceEnum getImportanceInstance() {
+        return importanceInstance;
+    }
+
+    public void setImportanceInstance(ImportanceEnum importanceInstance) {
+        this.importanceInstance = importanceInstance;
+    }
+
+    public int getEarnedXp() {
+        return earnedXp;
+    }
+
+    public void setEarnedXp(int earnedXp) {
+        this.earnedXp = earnedXp;
+    }
+    public int getValueXp() {
+        return valueXp;
     }
 }

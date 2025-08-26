@@ -5,6 +5,8 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import java.time.LocalDateTime;
+
 @Entity
 public class User {
     @PrimaryKey(autoGenerate = true)
@@ -23,8 +25,10 @@ public class User {
     @ColumnInfo(defaultValue = "0")
     private boolean emailVerified = false;
     private String avatarImage;
-    @ColumnInfo(defaultValue = "3")
-    private int level = 3;
+    @ColumnInfo(defaultValue = "0")
+    private int level = 0;
+
+    private LocalDateTime newLevelTime;
 
     public void setUserId(int userId) {
         this.userId = userId;
@@ -55,6 +59,11 @@ public class User {
     public void setEmail(String email) { this.email = email; }
     public void setAvatarImage(String avatarImage) { this.avatarImage = avatarImage; }
     public void setLevel(int level) { this.level = level; }
+
+    public void setNewLevelTime(LocalDateTime newLevelTime) {
+        this.newLevelTime = newLevelTime;
+    }
+
     public String getUsername(){
         return username;
     }
@@ -83,5 +92,10 @@ public class User {
     public String getEmail() { return email; }
     public String getAvatarImage() { return avatarImage; }
     public int getLevel() { return level; }
+
+    public LocalDateTime getNewLevelTime() {
+        return newLevelTime;
+    }
+
     public String getFirebaseUid(){ return firebaseUid; }
 }

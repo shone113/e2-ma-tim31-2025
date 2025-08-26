@@ -159,18 +159,18 @@ public class NewTaskActivity extends AppCompatActivity {
         }
 
         // Težina
-        Task.DifficultyEnum difficulty = Task.DifficultyEnum.VERY_EASY;
+        TaskInstance.DifficultyEnum difficulty = TaskInstance.DifficultyEnum.VERY_EASY;
         int selectedDiffId = rgTezina.getCheckedRadioButtonId();
-        if (selectedDiffId == R.id.rbLak) difficulty = Task.DifficultyEnum.EASY;
-        else if (selectedDiffId == R.id.rbTezak) difficulty = Task.DifficultyEnum.HARD;
-        else if (selectedDiffId == R.id.rbEkstremnoTezak) difficulty = Task.DifficultyEnum.EXTREME;
+        if (selectedDiffId == R.id.rbLak) difficulty = TaskInstance.DifficultyEnum.EASY;
+        else if (selectedDiffId == R.id.rbTezak) difficulty = TaskInstance.DifficultyEnum.HARD;
+        else if (selectedDiffId == R.id.rbEkstremnoTezak) difficulty = TaskInstance.DifficultyEnum.EXTREME;
 
         // Bitnost
-        Task.ImportanceEnum importance = Task.ImportanceEnum.NORMAL;
+        TaskInstance.ImportanceEnum importance = TaskInstance.ImportanceEnum.NORMAL;
         int selectedImpId = rgBitnost.getCheckedRadioButtonId();
-        if (selectedImpId == R.id.rbVazan) importance = Task.ImportanceEnum.IMPORTANT;
-        else if (selectedImpId == R.id.rbEkstremnoVazan) importance = Task.ImportanceEnum.VERY_IMPORTANT;
-        else if (selectedImpId == R.id.rbSpecijalan) importance = Task.ImportanceEnum.SPECIAL;
+        if (selectedImpId == R.id.rbVazan) importance = TaskInstance.ImportanceEnum.IMPORTANT;
+        else if (selectedImpId == R.id.rbEkstremnoVazan) importance = TaskInstance.ImportanceEnum.VERY_IMPORTANT;
+        else if (selectedImpId == R.id.rbSpecijalan) importance = TaskInstance.ImportanceEnum.SPECIAL;
 
         // Učestalost
         Task.FrequencyEnum frequency = Task.FrequencyEnum.ONE_TIME;
@@ -205,8 +205,6 @@ public class NewTaskActivity extends AppCompatActivity {
                 0,
                 currentUser.getUserId(),
                 categoryId,
-                difficulty,
-                importance,
                 frequency,
                 interval != null ? interval : 0,
                 frequencyUnit,
@@ -225,9 +223,12 @@ public class NewTaskActivity extends AppCompatActivity {
                 TaskInstance instance = new TaskInstance(
                         0,
                         (int) taskId,
+                        importance,
+                        difficulty,
                         current,
                         current.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
-                        TaskInstance.TaskStatusEnum.ACTIVE
+                        TaskInstance.TaskStatusEnum.ACTIVE,
+                        0
                 );
                 db.taskInstanceRepository().insert(instance);
 
@@ -239,9 +240,12 @@ public class NewTaskActivity extends AppCompatActivity {
             TaskInstance instance = new TaskInstance(
                     0,
                     (int) taskId,
+                    importance,
+                    difficulty,
                     startDateTime,
                     startDateTime.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
-                    TaskInstance.TaskStatusEnum.ACTIVE
+                    TaskInstance.TaskStatusEnum.ACTIVE,
+                    0
             );
             db.taskInstanceRepository().insert(instance);
         }

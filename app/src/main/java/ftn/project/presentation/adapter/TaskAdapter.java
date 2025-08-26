@@ -131,7 +131,11 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
                 btnCancel.setEnabled(true);
                 btnPlay.setEnabled(false);
             }
-            btnDone.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.DONE));
+            btnDone.setOnClickListener(v ->
+            {
+                updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.DONE);
+                updateLoggedUserPoints(taskInstanceWithTask.task.getUserId(),taskInstanceWithTask.taskInstance.getValueXp());
+            });
             btnCancel.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.CANCELED));
             btnPause.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.PAUSED));
             btnPlay.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.ACTIVE));
@@ -148,26 +152,34 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
                         taskInstanceWithTask.taskInstance.getId(),
                         taskInstanceWithTask.taskInstance.getStatus()
                 );
-
-                // XP update samo ako je DONE
-                if (newStatus == TaskInstance.TaskStatusEnum.DONE) {
-                    FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-                    if (firebaseUser != null) {
-                        String firebaseUid = firebaseUser.getUid();
-                        User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
-                        if (currentUser != null && currentUser.getUserId() == taskInstanceWithTask.task.getUserId()) {
-                            int oldXP = currentUser.getExperiencePoints();
-                            int newXP = oldXP + taskInstanceWithTask.task.getValueXP();
-                            db.userRepository().updateExperiencePoints(currentUser.getUserId(), newXP);
-                        }
-                    }
-                }
+                db.taskInstanceRepository().updateEarnedXp(taskInstanceWithTask.taskInstance.getId(),taskInstanceWithTask.taskInstance.getValueXp());
             });
 
             configureStatusButtons(taskInstanceWithTask);
         }
+        private void updateLoggedUserPoints(int userId, int xPValue) {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                AppDatabase db = AppDatabase.getInstance(itemView.getContext());
+                FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+                if (firebaseUser == null) {
+                    return;
+                }
 
+                String firebaseUid = firebaseUser.getUid();
+                User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
 
+                if (currentUser == null) {
+                    return;
+                }
+
+                int oldXP = currentUser.getExperiencePoints();
+                int newXP = oldXP + xPValue;
+
+                if (userId == currentUser.getUserId()) {
+                    db.userRepository().updateExperiencePoints(userId, newXP);
+                }
+            });
+        }
     }
 }
 

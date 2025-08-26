@@ -7,6 +7,7 @@ runOnUiThread prebacuje taj kod na glavnu nit, pa je bezbedno menjati TextView, 
 
 Jednostavno: background thread radi posao (npr. čitanje iz baze), runOnUiThread ažurira ekran.*/
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
@@ -18,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 import ftn.project.R;
@@ -54,6 +56,7 @@ public class TaskEditActivity extends AppCompatActivity {
         btnSaveChanges = findViewById(R.id.btnUpdateTask);
 
 
+        // postavljanje trenutne vrednosti taska i task instance
         int taskInstanceId = getIntent().getIntExtra("task_instance_id", -1);
         if (taskInstanceId != -1) {
             Executors.newSingleThreadExecutor().execute(() -> {
@@ -73,14 +76,14 @@ public class TaskEditActivity extends AppCompatActivity {
                         timePickerEnd.setHour(endTime.getHour());
                         timePickerEnd.setMinute(endTime.getMinute());
 
-                        switch (taskAndInstance.task.getDifficulty()) {
+                        switch (taskAndInstance.taskInstance.getDifficultyInstance()) {
                             case VERY_EASY: rbVeomaLak.setChecked(true); break;
                             case EASY: rbLak.setChecked(true); break;
                             case HARD: rbTezak.setChecked(true); break;
                             case EXTREME: rbEkstremnoTezak.setChecked(true); break;
                         }
 
-                        switch (taskAndInstance.task.getImportance()) {
+                        switch (taskAndInstance.taskInstance.getImportanceInstance()) {
                             case NORMAL: rbNormalan.setChecked(true); break;
                             case IMPORTANT: rbVazan.setChecked(true); break;
                             case VERY_IMPORTANT: rbEkstremnoVazan.setChecked(true); break;
@@ -90,8 +93,9 @@ public class TaskEditActivity extends AppCompatActivity {
                 });
             });
         }
+
+        //uzimanje novih vrednosti i updatovanje ostalih
         btnSaveChanges.setOnClickListener(v -> {
-            // Uzimanje novih vrednosti sa ekrana
             String newName = etName.getText().toString();
             String newDescription = etDescription.getText().toString();
             int startHour = timePickerStart.getHour();
@@ -100,21 +104,21 @@ public class TaskEditActivity extends AppCompatActivity {
             int endMinute = timePickerEnd.getMinute();
 
             // Difficulty
-            Task.DifficultyEnum newDifficulty = Task.DifficultyEnum.VERY_EASY;
+            TaskInstance.DifficultyEnum newDifficulty = TaskInstance.DifficultyEnum.VERY_EASY;
             int selectedDiffId = rgDifficulty.getCheckedRadioButtonId();
-            if (selectedDiffId == R.id.rbLak) newDifficulty = Task.DifficultyEnum.EASY;
-            else if (selectedDiffId == R.id.rbTezak) newDifficulty = Task.DifficultyEnum.HARD;
-            else if (selectedDiffId == R.id.rbEkstremnoTezak) newDifficulty = Task.DifficultyEnum.EXTREME;
+            if (selectedDiffId == R.id.rbLak) newDifficulty = TaskInstance.DifficultyEnum.EASY;
+            else if (selectedDiffId == R.id.rbTezak) newDifficulty = TaskInstance.DifficultyEnum.HARD;
+            else if (selectedDiffId == R.id.rbEkstremnoTezak) newDifficulty = TaskInstance.DifficultyEnum.EXTREME;
 
             // Bitnost
-            Task.ImportanceEnum newImportance = Task.ImportanceEnum.NORMAL;
+            TaskInstance.ImportanceEnum newImportance = TaskInstance.ImportanceEnum.NORMAL;
             int selectedImpId = rgImportance.getCheckedRadioButtonId();
-            if (selectedImpId == R.id.rbVazan) newImportance = Task.ImportanceEnum.IMPORTANT;
-            else if (selectedImpId == R.id.rbEkstremnoVazan) newImportance = Task.ImportanceEnum.VERY_IMPORTANT;
-            else if (selectedImpId == R.id.rbSpecijalan) newImportance = Task.ImportanceEnum.SPECIAL;
+            if (selectedImpId == R.id.rbVazan) newImportance = TaskInstance.ImportanceEnum.IMPORTANT;
+            else if (selectedImpId == R.id.rbEkstremnoVazan) newImportance = TaskInstance.ImportanceEnum.VERY_IMPORTANT;
+            else if (selectedImpId == R.id.rbSpecijalan) newImportance = TaskInstance.ImportanceEnum.SPECIAL;
 
-            final Task.DifficultyEnum finalDifficulty = newDifficulty;
-            final Task.ImportanceEnum finalImportance = newImportance;
+            final TaskInstance.DifficultyEnum finalDifficulty = newDifficulty;
+            final TaskInstance.ImportanceEnum finalImportance = newImportance;
             // Ažuriranje task-a u bazi u pozadinskoj niti, to sam izvrsio da ne bi islo na glavnoj niti, da se ne bi preopterecivala
             // i da ne bi bila spora aplikacija, pogotovo ako imamo vise ovih podataka
             Executors.newSingleThreadExecutor().execute(() -> {
@@ -122,36 +126,97 @@ public class TaskEditActivity extends AppCompatActivity {
 
                 TaskInstanceWithTask original = db.taskInstanceRepository().getTaskInstanceWithTaskById(taskInstanceId);
                 if (original != null) {
+
+                    // Uvek update-ujemo osnovne podatke Task-a
                     original.task.setName(newName);
                     original.task.setDescription(newDescription);
-                    original.task.setDifficulty(finalDifficulty);
-                    original.task.setImportance(finalImportance);
-
-                    LocalDateTime startTime = original.taskInstance.getStartExecutionTime()
-                            .withHour(startHour).withMinute(startMinute);
-                    LocalDateTime endTime = original.taskInstance.getEndExecutionTime()
-                            .withHour(endHour).withMinute(endMinute);
-
-                    original.taskInstance.setStartExecutionTime(startTime);
-                    original.taskInstance.setEndExecutionTime(endTime);
-
                     db.taskRepository().update(original.task);
-                    LocalDateTime now = LocalDateTime.now();
-                    if(!original.taskInstance.getStartExecutionTime().isBefore(now))
-                        db.taskInstanceRepository().update(original.taskInstance);
-                    else{
-                        runOnUiThread(() -> {
-                        Toast.makeText(this, "Task je prosao, ne moze da se azurira!", Toast.LENGTH_SHORT).show();
-                    });
-                        return;
-                    }
-                    runOnUiThread(() -> {
-                        Toast.makeText(this, "Task uspešno ažuriran!", Toast.LENGTH_SHORT).show();
-                        finish();
-                    });
-                }
 
+                    LocalDateTime now = LocalDateTime.now();
+
+                    // Ako je task ONE_TIME
+                    if (original.task.getFrequency() == Task.FrequencyEnum.ONE_TIME) {
+                        if (!original.taskInstance.getStartExecutionTime().isBefore(now)) {
+                            // Menjamo samo tu jednu instancu
+                            original.taskInstance.setDifficultyInstance(finalDifficulty);
+                            original.taskInstance.setImportanceInstance(finalImportance);
+
+                            LocalDateTime startTime = original.taskInstance.getStartExecutionTime()
+                                    .withHour(startHour).withMinute(startMinute);
+                            LocalDateTime endTime = original.taskInstance.getEndExecutionTime()
+                                    .withHour(endHour).withMinute(endMinute);
+
+                            original.taskInstance.setStartExecutionTime(startTime);
+                            original.taskInstance.setEndExecutionTime(endTime);
+
+                            db.taskInstanceRepository().update(original.taskInstance);
+
+                            runOnUiThread(() -> {
+                                Toast.makeText(this, "Jednokratni task uspešno ažuriran!", Toast.LENGTH_SHORT).show();
+                                finish();
+                            });
+                        } else {
+                            runOnUiThread(() -> {
+                                Toast.makeText(this, "Task je prošao, ne može da se ažurira!", Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    }
+
+                    // Ako je task REPEATING
+                    else if (original.task.getFrequency() == Task.FrequencyEnum.REPEATING) {
+                        // Uzimamo sve buduće instance
+                        List<TaskInstanceWithTask> futureInstances =
+                                db.taskInstanceRepository().getFutureTaskInstancesWithTaskById(original.task.getId(), now);
+
+                        if(!futureInstances.isEmpty())
+                        {
+                            for (TaskInstanceWithTask ti : futureInstances) {
+                                Log.d("FUTURE_INSTANCE_BEFORE",
+                                        "TaskInstanceId=" + ti.taskInstance.getId() +
+                                                ", TaskId=" + ti.taskInstance.getTaskId() +
+                                                ", Name=" + ti.task.getName() +
+                                                ", Start=" + ti.taskInstance.getStartExecutionTime() +
+                                                ", End=" + ti.taskInstance.getEndExecutionTime() +
+                                                ", Difficulty=" + ti.taskInstance.getDifficultyInstance() +
+                                                ", Importance=" + ti.taskInstance.getImportanceInstance());
+                                ti.taskInstance.setDifficultyInstance(finalDifficulty);
+                                ti.taskInstance.setImportanceInstance(finalImportance);
+
+                                LocalDateTime startTime = ti.taskInstance.getStartExecutionTime()
+                                        .withHour(startHour).withMinute(startMinute);
+                                LocalDateTime endTime = ti.taskInstance.getEndExecutionTime()
+                                        .withHour(endHour).withMinute(endMinute);
+
+                                ti.taskInstance.setStartExecutionTime(startTime);
+                                ti.taskInstance.setEndExecutionTime(endTime);
+                                db.taskInstanceRepository().update(ti.taskInstance);
+                                Log.d("FUTURE_INSTANCE_AFTER",
+                                        "TaskInstanceId=" + ti.taskInstance.getId() +
+                                                ", TaskId=" + ti.taskInstance.getTaskId() +
+                                                ", Name=" + ti.task.getName() +
+                                                ", Start=" + ti.taskInstance.getStartExecutionTime() +
+                                                ", End=" + ti.taskInstance.getEndExecutionTime() +
+                                                ", Difficulty=" + ti.taskInstance.getDifficultyInstance() +
+                                                ", Importance=" + ti.taskInstance.getImportanceInstance());
+                            }
+
+                            runOnUiThread(() -> {
+                                Toast.makeText(this, "Repeating task i sve buduće instance uspešno ažurirani!", Toast.LENGTH_SHORT).show();
+                                finish();
+                            });
+                        }
+                        else
+                        {
+                            runOnUiThread(() -> {
+                                Toast.makeText(this, "Nema taskova za azuriranje!", Toast.LENGTH_SHORT).show();
+                                finish();
+                            });
+                        }
+
+                    }
+                }
             });
+
         });
     }
 

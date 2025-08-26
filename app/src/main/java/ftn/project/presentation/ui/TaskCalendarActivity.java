@@ -275,7 +275,7 @@ public class TaskCalendarActivity extends AppCompatActivity {
         btnDone.setOnClickListener(v -> {
             updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.DONE, tvStatus,
                 btnDone, btnCancel, btnPause, btnPlay);
-            updateLoggedUserPoints(taskInstanceWithTask.task.getUserId(), taskInstanceWithTask.task.getValueXP());
+            updateLoggedUserPoints(taskInstanceWithTask.task.getUserId(), taskInstanceWithTask.taskInstance.getValueXp());
         });
         btnCancel.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.CANCELED, tvStatus,
                 btnDone, btnCancel, btnPause, btnPlay));
