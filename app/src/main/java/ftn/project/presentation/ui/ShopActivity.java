@@ -1,5 +1,6 @@
 package ftn.project.presentation.ui;
 
+import android.app.StatusBarManager;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -35,6 +36,7 @@ import ftn.project.domain.entity.UserEquipment;
 import ftn.project.presentation.adapter.ShopAdapter;
 import ftn.project.presentation.adapter.UserAdapter;
 import ftn.project.presentation.util.ImageResId;
+import ftn.project.presentation.util.StatusBarBinder;
 
 public class ShopActivity extends AppCompatActivity {
 
@@ -46,11 +48,17 @@ public class ShopActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_shop);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+//        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+//            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+//            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+//            return insets;
+//        });
+
+        setContentView(R.layout.activity_shop);
+        TextView tvXP = findViewById(R.id.tvXP);
+        TextView tvPP = findViewById(R.id.tvPP);
+        TextView tvCoins = findViewById(R.id.tvCoins);
+        StatusBarBinder.bind(this, tvXP, tvPP, tvCoins);
 
         AppDatabase db = AppDatabase.getInstance(getApplicationContext());
         String path = db.getOpenHelper().getWritableDatabase().getPath();

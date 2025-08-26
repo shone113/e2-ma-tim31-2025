@@ -7,7 +7,9 @@ import androidx.room.Query;
 
 import java.util.List;
 
+import ftn.project.data.dto.UserStatsDTO;
 import ftn.project.domain.entity.User;
+
 
 @Dao
 public interface UserRepositoryInterface {
@@ -25,7 +27,8 @@ public interface UserRepositoryInterface {
 
     @Query("SELECT * FROM User WHERE firebaseUid = :firebase LIMIT 1")
     User getByFirebaseUid(String firebase);
-
+    @Query("SELECT coins, powerPoints, level, experiencePoints FROM User WHERE firebaseUid = :uid LIMIT 1")
+    LiveData<UserStatsDTO> observeStats(String uid);
     @Query("UPDATE User SET emailVerified = :verified WHERE userId = :uid")
     void markVerified(String uid, boolean verified);
 
