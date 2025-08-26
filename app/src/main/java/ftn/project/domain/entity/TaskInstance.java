@@ -30,6 +30,7 @@ public class TaskInstance {
     @Ignore
     private int valueXp;
     private int earnedXp;
+    private boolean isWithinQuota;
 
     public enum DifficultyEnum {
         VERY_EASY(1), EASY(3), HARD(7), EXTREME(20);
@@ -54,7 +55,7 @@ public class TaskInstance {
                         LocalDateTime startExecutionTime,
                         LocalDateTime endExecutionTime,
                         TaskStatusEnum status,
-                        int earnedXp) {
+                        int earnedXp, boolean isWithinQuota) {
         this.id = id;
         this.taskId = taskId;
         this.importanceInstance = importanceInstance;
@@ -63,6 +64,7 @@ public class TaskInstance {
         this.endExecutionTime = endExecutionTime;
         this.status = status;
         this.earnedXp = earnedXp;
+        this.isWithinQuota = isWithinQuota;
         this.valueXp = difficultyInstance.getXp() + importanceInstance.getXp();
     }
 
@@ -131,5 +133,13 @@ public class TaskInstance {
     }
     public int getValueXp() {
         return valueXp;
+    }
+
+    public boolean isWithinQuota() {
+        return isWithinQuota;
+    }
+
+    public void setWithinQuota(boolean withinQuota) {
+        isWithinQuota = withinQuota;
     }
 }

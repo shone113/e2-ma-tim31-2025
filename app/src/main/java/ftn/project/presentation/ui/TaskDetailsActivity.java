@@ -22,6 +22,7 @@ import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.CheckQuotaService;
 
 public class TaskDetailsActivity extends AppCompatActivity {
 
@@ -182,9 +183,44 @@ public class TaskDetailsActivity extends AppCompatActivity {
         }
 
         btnDone.setOnClickListener(v -> {
-            updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.DONE);
-            updateLoggedUserPoints(taskAndInstance.task.getUserId(), taskAndInstance.taskInstance.getValueXp());
+            Executors.newSingleThreadExecutor().execute(() -> {
+                AppDatabase db = AppDatabase.getInstance(this);
+
+                // ✅ Izračunaj XP na osnovu kvota
+                int earnedXp = CheckQuotaService.calculateEarnedXP(taskAndInstance.taskInstance, db);
+
+                // ✅ Postavi status na DONE i upiši XP u model
+                taskAndInstance.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
+                taskAndInstance.taskInstance.setEarnedXp(earnedXp);
+
+                // ✅ Update baze: status + XP + withinQuota flag
+                db.taskInstanceRepository().updateStatus(
+                        taskAndInstance.taskInstance.getId(),
+                        TaskInstance.TaskStatusEnum.DONE
+                );
+                db.taskInstanceRepository().updateEarnedXpAndQuota(
+                        taskAndInstance.taskInstance.getId(),
+                        earnedXp,
+                        taskAndInstance.taskInstance.isWithinQuota()
+                );
+
+                // ✅ Ako ima XP, dodaj korisniku
+                if (earnedXp > 0) {
+                    updateLoggedUserPoints(taskAndInstance.task.getUserId(), earnedXp);
+                }
+
+                // ✅ Refresh UI odmah
+                runOnUiThread(() -> {
+                    tvStatus.setText("Status: DONE");
+                    Toast.makeText(this, "Zadatak završen! Dobio si " + earnedXp + " XP", Toast.LENGTH_SHORT).show();
+
+                    configureUpdateButton(taskAndInstance);
+                    configureDeleteButton(taskAndInstance);
+                    configureStatusButtons(taskAndInstance);
+                });
+            });
         });
+
         btnCanceled.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.CANCELED));
     }
 

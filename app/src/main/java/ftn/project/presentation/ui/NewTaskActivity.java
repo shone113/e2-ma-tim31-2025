@@ -228,7 +228,8 @@ public class NewTaskActivity extends AppCompatActivity {
                         current,
                         current.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
                         TaskInstance.TaskStatusEnum.ACTIVE,
-                        0
+                        0,
+                        false
                 );
                 db.taskInstanceRepository().insert(instance);
 
@@ -245,7 +246,8 @@ public class NewTaskActivity extends AppCompatActivity {
                     startDateTime,
                     startDateTime.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
                     TaskInstance.TaskStatusEnum.ACTIVE,
-                    0
+                    0,
+                    false
             );
             db.taskInstanceRepository().insert(instance);
         }
