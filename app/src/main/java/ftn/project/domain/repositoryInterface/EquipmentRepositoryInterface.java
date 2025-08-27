@@ -15,6 +15,9 @@ public interface EquipmentRepositoryInterface {
     @Query("SELECT * FROM Equipment")
     List<Equipment> getAll();
 
+    @Query("SELECT * FROM Equipment WHERE equipmentId = :eid")
+    Equipment getById(int eid);
+
     @Query("SELECT * FROM Equipment WHERE costPercentageOfReward IS NOT NULL")
     List<Equipment> getPurchasable();
 

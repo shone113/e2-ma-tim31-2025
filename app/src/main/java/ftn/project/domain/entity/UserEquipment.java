@@ -5,13 +5,13 @@ import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.Index;
 import androidx.room.Junction;
+import androidx.room.PrimaryKey;
 import androidx.room.Relation;
 
 import java.util.List;
 
 @Entity(
         tableName = "UserEquipment",
-        primaryKeys = {"userId", "equipmentId"},
         foreignKeys = {
                 @ForeignKey(
                         entity = User.class,
@@ -31,16 +31,18 @@ import java.util.List;
                 @Index("equipmentId")
         }
 )public class UserEquipment {
+    @PrimaryKey(autoGenerate = true) private int userEquipmentId;
     private int equipmentId;
     private int userId;
-    private int battleCount;
+    private Integer battleCount;
     private boolean active;
 
     public UserEquipment(){}
+    public int getUserEquipmentId() { return userEquipmentId; }
+    public void setUserEquipmentId(int userEquipmentId) { this.userEquipmentId = userEquipmentId; }
     public int getEquipmentId() {
         return equipmentId;
     }
-
     public void setEquipmentId(int equipmentId) {
         this.equipmentId = equipmentId;
     }
@@ -52,12 +54,10 @@ import java.util.List;
     public void setUserId(int userId) {
         this.userId = userId;
     }
-
-    public int getBattleCount() {
+    public Integer getBattleCount() {
         return battleCount;
     }
-
-    public void setBattleCount(int battleCount) {
+    public void setBattleCount(Integer battleCount) {
         this.battleCount = battleCount;
     }
 

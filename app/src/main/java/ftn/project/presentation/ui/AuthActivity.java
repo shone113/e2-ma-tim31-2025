@@ -239,7 +239,7 @@ public class AuthActivity extends AppCompatActivity {
                             user.reload().addOnCompleteListener(r -> {
                                 if (user.isEmailVerified()) {
                                     Toast.makeText(AuthActivity.this, "Uspešna prijava", Toast.LENGTH_SHORT).show();
-                                    Intent intent = new Intent(AuthActivity.this, TaskCalendarActivity.class);
+                                    Intent intent = new Intent(AuthActivity.this, LevelAdvancementActivity.class);
                                     startActivity(intent);
                                     finish();
                                 } else {
@@ -325,7 +325,7 @@ public class AuthActivity extends AppCompatActivity {
 
                         animView.cancelAnimation();
                         showVerifyUI(false);
-                        startActivity(new Intent(AuthActivity.this, AllUsersActivity.class));
+                        startActivity(new Intent(AuthActivity.this, ShopActivity.class));
                         finish();
                     } else {
                         // nastavi da čekaš

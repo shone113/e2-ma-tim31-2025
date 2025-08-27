@@ -1,5 +1,6 @@
 package ftn.project.presentation.ui;
 
+import android.app.StatusBarManager;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -35,6 +36,7 @@ import ftn.project.domain.entity.UserEquipment;
 import ftn.project.presentation.adapter.ShopAdapter;
 import ftn.project.presentation.adapter.UserAdapter;
 import ftn.project.presentation.util.ImageResId;
+import ftn.project.presentation.util.StatusBarBinder;
 
 public class ShopActivity extends AppCompatActivity {
 
@@ -51,6 +53,12 @@ public class ShopActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        setContentView(R.layout.activity_shop);
+        TextView tvXP = findViewById(R.id.tvXP);
+        TextView tvPP = findViewById(R.id.tvPP);
+        TextView tvCoins = findViewById(R.id.tvCoins);
+        StatusBarBinder.bind(this, tvXP, tvPP, tvCoins);
 
         AppDatabase db = AppDatabase.getInstance(getApplicationContext());
         String path = db.getOpenHelper().getWritableDatabase().getPath();
@@ -149,14 +157,13 @@ public class ShopActivity extends AppCompatActivity {
                 return;
             }
 
-            // Transakciono: skini coine + upiši kupovinu
             db.runInTransaction(() -> {
                 db.userRepository().subtractCoins(u.getUserId(), (long)price);
-                // primer upisa kupovine (prilagodi svojoj šemi)
                 UserEquipment ue = new UserEquipment();
                 ue.setUserId(u.getUserId());
                 ue.setEquipmentId(equipment.getEquipmentId());
-                ue.setActive(false);
+                ue.setBattleCount(equipment.getBattleCount());
+                ue.setActive(equipment.getInitActiveType());
                 db.userEquipmentRepository().add(ue);
             });
 

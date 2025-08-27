@@ -20,21 +20,27 @@ import ftn.project.domain.entity.Boss;
 import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Converters;
 import ftn.project.domain.entity.Equipment;
+import ftn.project.domain.entity.Level;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.repositoryInterface.BattleRepositoryInterface;
 import ftn.project.domain.repositoryInterface.BossRepositoryInterface;
+import ftn.project.domain.entity.UserBadge;
 import ftn.project.domain.repositoryInterface.CategoryRepositoryInterface;
 import ftn.project.domain.entity.UserEquipment;
 import ftn.project.domain.repositoryInterface.EquipmentRepositoryInterface;
+import ftn.project.domain.repositoryInterface.LevelRepositoryInterface;
 import ftn.project.domain.repositoryInterface.TaskInstanceRepositoryInterface;
 import ftn.project.domain.repositoryInterface.TaskRepositoryInterface;
+import ftn.project.domain.repositoryInterface.UserBadgeRepositoryInterface;
 import ftn.project.domain.repositoryInterface.UserEquipmentRepositoryInterface;
 import ftn.project.domain.repositoryInterface.UserRepositoryInterface;
 
 
-@Database(entities = {User.class, Task.class, Category.class, TaskInstance.class, Equipment.class, UserEquipment.class, Battle.class, Boss.class}, version = 1, exportSchema = false)
+@Database(entities = {User.class, Task.class, Category.class, TaskInstance.class,
+        Equipment.class, UserEquipment.class, UserBadge.class, Level.class,
+        Battle.class, Boss.class}, version = 1, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -46,6 +52,8 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract UserEquipmentRepositoryInterface userEquipmentRepository();
     public abstract BossRepositoryInterface bossRepository();
     public abstract BattleRepositoryInterface battleRepository();
+    public abstract UserBadgeRepositoryInterface userBadgeRepository();
+    public abstract LevelRepositoryInterface levelRepository();
     private static AppDatabase INSTANCE;
     private static Context appContext;
 
@@ -65,7 +73,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (INSTANCE == null) {
             appContext = context.getApplicationContext();
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                     AppDatabase.class, "habit_quest_baza25.db")
+                     AppDatabase.class, "habit_quest_baza26.db")
                     //.addMigrations(MIGRATION_1_2)
                     .addCallback(prepopulateCallback)
                     .allowMainThreadQueries()
@@ -79,7 +87,9 @@ public abstract class AppDatabase extends RoomDatabase {
                 @Override
                 public void onCreate(@NonNull SupportSQLiteDatabase db) {
                     super.onCreate(db);
-                    loadSqlFromAssets(appContext, db, "sql/equipment.sql");
+                    loadSqlFromAssets(appContext, db,
+                            "sql/insert.sql"
+                    );
                 }
             };
 
