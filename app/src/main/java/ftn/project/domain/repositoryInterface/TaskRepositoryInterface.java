@@ -23,7 +23,4 @@ public interface TaskRepositoryInterface {
 
     @Delete
     void delete(Task task);
-/*
-    @Query("SELECT * FROM tasks WHERE id = :id LIMIT 1")
-    Task getTaskById(int id);*/
 }

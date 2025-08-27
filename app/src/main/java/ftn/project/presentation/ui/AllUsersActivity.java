@@ -1,6 +1,10 @@
 package ftn.project.presentation.ui;
 
 import android.os.Bundle;
+import android.util.Log;
+import android.view.inputmethod.EditorInfo;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -10,17 +14,28 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.util.ArrayList;
+import java.util.List;
 
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
+import ftn.project.data.dto.UserFriendDTO;
+import ftn.project.data.repository.FriendshipRepository;
+import ftn.project.domain.entity.Friendship;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.FriendshipService;
 import ftn.project.presentation.adapter.UserAdapter;
 
 public class AllUsersActivity extends AppCompatActivity {
 
-    private ArrayList<User> users;
     private UserAdapter adapter;
+    private ArrayList<UserFriendDTO> friendDTOs;
+    private FriendshipRepository friendshipRepository;
+    private FriendshipService friendshipService;
+    private AppDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,20 +47,59 @@ public class AllUsersActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        AppDatabase db = AppDatabase.getInstance(getApplicationContext());
-        String path = db.getOpenHelper().getWritableDatabase().getPath();
-        android.util.Log.d("DB", "Opened DB at: " + path);
-        users = new ArrayList<>();
+        db = AppDatabase.getInstance(getApplicationContext());
+        friendshipRepository = new FriendshipRepository(this);
+        friendshipService = new FriendshipService();
 
         ListView lvUsers = findViewById(R.id.lvUsers);
+        EditText etSearch = findViewById(R.id.etSearch);
+        Button btnSearch = findViewById(R.id.btnSearch);
 
-        users = new ArrayList<>(db.userRepository().getAll());
-        adapter = new UserAdapter(this, users, user -> {
-            Toast.makeText(this,
-                    "Dodao prijatelja:",
-                    Toast.LENGTH_SHORT).show();
+        btnSearch.setOnClickListener(v -> performSearch());
+
+        etSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                performSearch();
+                return true;
+            }
+            return false;
+        });
+
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        User loggedUser = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
+        ArrayList<Friendship> friendships = new ArrayList<>(db.friendshipRepository().getAllForUserId(loggedUser.getUserId()));
+        List<User> users = db.userRepository().getAll();
+        friendDTOs = friendshipService.getFriendsForUser(friendships, users, loggedUser.getUserId());
+
+        adapter = new UserAdapter(this, friendDTOs, user -> {
+            friendshipRepository.sendFriendRequest(loggedUser.getFirebaseUid(), new FriendshipRepository.Callback() {
+                @Override
+                public void onSuccess() {
+                    Toast.makeText(AllUsersActivity.this, "Zahtev poslat.", Toast.LENGTH_SHORT).show();
+                    // po želji: friendRepo.refreshMyFriendships(...)
+                }
+                @Override
+                public void onError(Exception e) {
+                    Toast.makeText(AllUsersActivity.this, "Greška: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
         });
 
         lvUsers.setAdapter(adapter);
+    }
+
+    private void performSearch() {
+        String q = ((EditText) findViewById(R.id.etSearch))
+                .getText().toString().trim();
+        if (q.length() < 2) {
+            Toast.makeText(this, "Unesi bar 2 slova", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        List<UserFriendDTO> users = db.userRepository().searchUsersByUsername(q);
+        users.addAll(friendDTOs);
+
+        adapter.clear();
+        adapter.addAll(users);
+        adapter.notifyDataSetChanged();
     }
 }

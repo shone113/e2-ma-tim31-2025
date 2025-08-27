@@ -65,4 +65,5 @@ public class Converters {
     public static TaskInstance.TaskStatusEnum toStatus(String value) {
         return value == null ? null : TaskInstance.TaskStatusEnum.valueOf(value);
     }
+
 }
