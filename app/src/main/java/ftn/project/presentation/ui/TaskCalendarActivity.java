@@ -40,6 +40,7 @@ import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.BattleStartService;
 import ftn.project.domain.usecase.BossService;
 import ftn.project.domain.usecase.QuotaFinalizer;
 import ftn.project.domain.usecase.SuccessRateService;
@@ -92,6 +93,15 @@ public class TaskCalendarActivity extends AppCompatActivity {
         fabAddTask.setOnClickListener(v -> {
             Intent intent = new Intent(TaskCalendarActivity.this, NewTaskActivity.class);
             startActivity(intent);
+
+            //PROBA
+            AppDatabase db = AppDatabase.getInstance(this);
+            FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+            String firebaseUid = firebaseUser.getUid();
+            User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+            db.userRepository().updateLevel(currentUser.getUserId(),0);
+            db.battleRepository().deleteAll();
+            db.bossRepository().deleteAll();
         });
 
         fabListTask.setOnClickListener(v -> {
@@ -100,48 +110,18 @@ public class TaskCalendarActivity extends AppCompatActivity {
         });
 
         fabBattle.setOnClickListener(v -> {
-            BossService bossService = new BossService(this);
-
-            AppDatabase db = AppDatabase.getInstance(this);
             FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
             String firebaseUid = firebaseUser.getUid();
+
+            AppDatabase db = AppDatabase.getInstance(this);
             User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
-            int currentLevel = currentUser.getLevel();
-            Boss boss = bossService.getOrCreateBossForLevel(currentLevel);
 
-            // Kreiraj battle odmah
-            Battle battle = new Battle(
-                    0,
-                    currentUser.getUserId(), // userId
-                    boss.getId(),
-                    false,
-                    0,
-                    5,
-                    null,
-                    false
-            );
-            long battleId = db.battleRepository().insert(battle);
-
-            //hitChance prosledjujemo preko ovoga, alternativa
-            LocalDate startDate = currentUser.getNewLevelTime().toLocalDate();
-            LocalDate endDate   = LocalDate.of(2025, 8, 30);
-            LocalDate current = startDate;
-            while (!current.isAfter(endDate)) {
-                QuotaFinalizer.finalizeDayQuota(db, current);
-                current = current.plusDays(1);
-            }
-            LocalDateTime startDateTime = startDate.atStartOfDay();
-            LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
-            double hitChance = SuccessRateService.calculateStageSuccessRate(db,startDateTime,endDateTime);
-            int hitChanceInt = (int) Math.round(hitChance);
-
-           //setuje mi protivnika na 200
-            db.bossRepository().updateBoss(boss.getId());
-            db.bossRepository().updateBossDef(boss.getId());
+            BattleStartService starter = new BattleStartService(this);
+            BattleStartService.BattleStartResult result = starter.startNewBattle(currentUser);
 
             Intent intent = new Intent(this, BattleActivity.class);
-            intent.putExtra("battleId", (int)battleId);
-            intent.putExtra("hitChance", hitChanceInt);
+            intent.putExtra("battleId", result.battleId);
+            intent.putExtra("hitChance", result.hitChance);
             startActivity(intent);
         });
 

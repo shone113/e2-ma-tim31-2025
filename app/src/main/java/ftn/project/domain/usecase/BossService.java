@@ -2,6 +2,8 @@ package ftn.project.domain.usecase;
 
 import android.content.Context;
 
+import java.util.List;
+
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Boss;
 import ftn.project.domain.repositoryInterface.BossRepositoryInterface;
@@ -14,20 +16,28 @@ public class BossService {
         this.bossRepository = db.bossRepository();
     }
 
-    public Boss getOrCreateBossForLevel(int level) {
-        Boss boss = bossRepository.getBossByLevel(level);
+    public Boss getOrCreateBossForLevel(int currentLevel) {
+        // 1. Da li ima neporaženih bossova sa manjim levelom?
+        List<Boss> unfinished = bossRepository.getAllUnfinishedBeforeLevel(currentLevel);
+        if (!unfinished.isEmpty()) {
+            // Vrati prvog nepobeđenog
+            return unfinished.get(0);
+        }
+
+        // 2. Ako nema nepobeđenih, ide boss za trenutni level
+        Boss boss = bossRepository.getBossByLevel(currentLevel);
         if (boss != null) return boss;
 
-        // Ako ne postoji, kreiraj
-        int hp = calculateHpForLevel(level);
-        int reward = calculateCoinReward(level);
+        // 3. Ako ne postoji, kreiraj
+        int hp = calculateHpForLevel(currentLevel);
+        int reward = calculateCoinReward(currentLevel);
 
         Boss newBoss = new Boss(
                 0,
-                "boss_" + level,
+                "boss_" + currentLevel,
                 hp,
                 hp,
-                level,
+                currentLevel,
                 reward,
                 false
         );
@@ -37,6 +47,27 @@ public class BossService {
 
         return newBoss;
     }
+    public void ensureBossForLevel(int currentLevel) {
+        Boss boss = bossRepository.getBossByLevel(currentLevel);
+        if (boss == null) {
+            int hp = calculateHpForLevel(currentLevel);
+            int reward = calculateCoinReward(currentLevel);
+
+            Boss newBoss = new Boss(
+                    0,
+                    "boss_" + currentLevel,
+                    hp,
+                    hp,
+                    currentLevel,
+                    reward,
+                    false
+            );
+
+            long id = bossRepository.insert(newBoss);
+            newBoss.setId((int) id);
+        }
+    }
+
 
     private int calculateHpForLevel(int level) {
         int hp = 200;

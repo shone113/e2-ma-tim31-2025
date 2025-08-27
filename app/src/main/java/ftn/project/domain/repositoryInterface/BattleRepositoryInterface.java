@@ -23,4 +23,7 @@ public interface BattleRepositoryInterface {
     @Query("SELECT * FROM battles")
     List<Battle> getAllBattles();
 
+    @Query("DELETE FROM battles")
+    void deleteAll();
+
 }

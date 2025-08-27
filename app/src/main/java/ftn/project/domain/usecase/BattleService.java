@@ -15,6 +15,7 @@ import ftn.project.domain.entity.Battle;
 import ftn.project.domain.entity.Boss;
 import ftn.project.domain.entity.Equipment;
 import ftn.project.domain.entity.EquipmentType;
+import ftn.project.domain.entity.User;
 import ftn.project.domain.entity.UserEquipment;
 
 //MORAM UPDATOVATI COINSE KOD OVOG USERA
@@ -140,6 +141,7 @@ public class BattleService {
 
         db.battleRepository().update(battle);
         db.bossRepository().update(boss);
+        User user = db.userRepository().getById(battle.getUserId());  //ovdeee
         db.userRepository().addCoins(battle.getUserId(), battle.getCoinsEarned());
     }
 

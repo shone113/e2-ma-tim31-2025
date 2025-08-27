@@ -5,6 +5,8 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
 
+import java.util.List;
+
 import ftn.project.domain.entity.Boss;
 
 @Dao
@@ -24,4 +26,10 @@ public interface BossRepositoryInterface {
     void updateBoss(int id);
     @Query("UPDATE bosses SET isDefeated = 0 WHERE id= :id")
     void updateBossDef(int id);
+
+    @Query("SELECT * FROM bosses WHERE isDefeated = 0 AND level < :currentLevel ORDER BY level ASC")
+    List<Boss> getAllUnfinishedBeforeLevel(int currentLevel);
+
+    @Query("DELETE FROM bosses")
+    void deleteAll();
 }
