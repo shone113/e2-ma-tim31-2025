@@ -120,7 +120,7 @@ public class BattleService {
     private void finishBattle(Battle battle, Boss boss, boolean victory) {
         battle.setFinished(true);
         battle.setVictory(victory);
-        int chance = 20;
+        int chance = 100;
         int coins = 0;
         String equipmentName = null;
 

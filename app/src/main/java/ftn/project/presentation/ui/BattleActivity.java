@@ -1,6 +1,11 @@
 package ftn.project.presentation.ui;
 
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -36,6 +41,12 @@ public class BattleActivity extends AppCompatActivity {
 
     private BattleService battleService;
     private AppDatabase db;
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private SensorEventListener shakeListener;
+
+    private static final float SHAKE_THRESHOLD = 15f; // koliko jako treba da se protrese
+    private long lastShakeTime = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +85,7 @@ public class BattleActivity extends AppCompatActivity {
         userPp = currentUser.getPowerPoints();
         if (userPp == 0)
             userPp = 50;
+        hitChance = 99;
 
         setupUi();
 
@@ -88,6 +100,7 @@ public class BattleActivity extends AppCompatActivity {
             finish();
         });
 
+
         attackButton.setOnClickListener(v -> {
             Log.d("BattleActivity", "Attack button clicked!");
             battleService.performAttack(
@@ -98,7 +111,37 @@ public class BattleActivity extends AppCompatActivity {
                     this::onBattleUpdate
             );
         });
+        // 🔹 Setup senzora za shake
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        shakeListener = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                float x = event.values[0];
+                float y = event.values[1];
+                float z = event.values[2];
+
+                double acceleration = Math.sqrt(x * x + y * y + z * z) - SensorManager.GRAVITY_EARTH;
+
+                long now = System.currentTimeMillis();
+                if (acceleration > SHAKE_THRESHOLD && (now - lastShakeTime) > 1000) {
+                    lastShakeTime = now;
+                    battleService.performAttack(
+                            currentBattle,
+                            currentBoss,
+                            userPp,
+                            hitChance,
+                            () -> onBattleUpdate()
+                    );
+                }
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+        };
     }
+
 
     private void initViews() {
         bossHpBar = findViewById(R.id.bossHpBar);
@@ -153,4 +196,17 @@ public class BattleActivity extends AppCompatActivity {
             }
         });
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        sensorManager.registerListener(shakeListener, accelerometer, SensorManager.SENSOR_DELAY_UI);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        sensorManager.unregisterListener(shakeListener);
+    }
+
 }
