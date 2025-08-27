@@ -42,6 +42,7 @@ import ftn.project.domain.entity.TaskInstanceWithTask;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.BattleStartService;
 import ftn.project.domain.usecase.BossService;
+import ftn.project.domain.usecase.CheckQuotaService;
 import ftn.project.domain.usecase.QuotaFinalizer;
 import ftn.project.domain.usecase.SuccessRateService;
 import ftn.project.presentation.adapter.HoursAdapter;
@@ -95,13 +96,14 @@ public class TaskCalendarActivity extends AppCompatActivity {
             startActivity(intent);
 
             //PROBA
+            /*
             AppDatabase db = AppDatabase.getInstance(this);
             FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
             String firebaseUid = firebaseUser.getUid();
             User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
             db.userRepository().updateLevel(currentUser.getUserId(),0);
             db.battleRepository().deleteAll();
-            db.bossRepository().deleteAll();
+            db.bossRepository().deleteAll();*/
         });
 
         fabListTask.setOnClickListener(v -> {
@@ -306,10 +308,42 @@ public class TaskCalendarActivity extends AppCompatActivity {
         }
 
         btnDone.setOnClickListener(v -> {
-            updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.DONE, tvStatus,
-                btnDone, btnCancel, btnPause, btnPlay);
-            updateLoggedUserPoints(taskInstanceWithTask.task.getUserId(), taskInstanceWithTask.taskInstance.getValueXp());
+            Executors.newSingleThreadExecutor().execute(() -> {
+                AppDatabase db = AppDatabase.getInstance(this);
+
+                // ✅ Izračunaj XP na osnovu kvota
+                int earnedXp = CheckQuotaService.calculateEarnedXP(taskInstanceWithTask.taskInstance, db);
+
+                // ✅ Postavi status na DONE i upiši XP u model
+                taskInstanceWithTask.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
+                taskInstanceWithTask.taskInstance.setEarnedXp(earnedXp);
+
+                // ✅ Update baze: status + XP + withinQuota flag
+                db.taskInstanceRepository().updateStatus(
+                        taskInstanceWithTask.taskInstance.getId(),
+                        TaskInstance.TaskStatusEnum.DONE
+                );
+                db.taskInstanceRepository().updateEarnedXpAndQuota(
+                        taskInstanceWithTask.taskInstance.getId(),
+                        earnedXp,
+                        taskInstanceWithTask.taskInstance.isWithinQuota()
+                );
+
+                // ✅ Ako ima XP, dodaj korisniku
+                if (earnedXp > 0) {
+                    updateLoggedUserPoints(taskInstanceWithTask.task.getUserId(), earnedXp);
+                }
+
+                // ✅ Refresh UI odmah
+                runOnUiThread(() -> {
+                    tvStatus.setText("Status: DONE");
+                    Toast.makeText(this, "Zadatak završen! Dobio si " + earnedXp + " XP", Toast.LENGTH_SHORT).show();
+
+                    configureStatusButtons(taskInstanceWithTask, tvStatus, btnDone, btnCancel, btnPause, btnPlay);
+                });
+            });
         });
+
         btnCancel.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.CANCELED, tvStatus,
                 btnDone, btnCancel, btnPause, btnPlay));
         btnPause.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.PAUSED, tvStatus,

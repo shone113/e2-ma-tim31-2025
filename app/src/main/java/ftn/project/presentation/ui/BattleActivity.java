@@ -85,7 +85,6 @@ public class BattleActivity extends AppCompatActivity {
         userPp = currentUser.getPowerPoints();
         if (userPp == 0)
             userPp = 50;
-        hitChance = 99;
 
         setupUi();
 

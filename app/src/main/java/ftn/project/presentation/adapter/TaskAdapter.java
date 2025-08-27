@@ -30,6 +30,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
 
     public interface OnTaskClickListener {
         void onTaskClick(TaskInstanceWithTask taskWithInstance);
+        void onTaskDoneClicked(TaskInstanceWithTask taskWithInstance, int position);
     }
 
     private List<TaskInstanceWithTask> taskAndInstanceList;
@@ -59,7 +60,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         return taskAndInstanceList.size();
     }
 
-    public static class TaskViewHolder extends RecyclerView.ViewHolder {
+    public class TaskViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvDescription, tvStatus, tvStartExecutionTime, tvEndExecutionTime;
         Button btnDone, btnCancel, btnPause, btnPlay;
 
@@ -131,10 +132,8 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
                 btnCancel.setEnabled(true);
                 btnPlay.setEnabled(false);
             }
-            btnDone.setOnClickListener(v ->
-            {
-                updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.DONE);
-                updateLoggedUserPoints(taskInstanceWithTask.task.getUserId(),taskInstanceWithTask.taskInstance.getValueXp());
+            btnDone.setOnClickListener(v -> {
+                listener.onTaskDoneClicked(taskInstanceWithTask, getAdapterPosition());
             });
             btnCancel.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.CANCELED));
             btnPause.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.PAUSED));
