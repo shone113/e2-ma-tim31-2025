@@ -32,6 +32,15 @@ public class BattleService {
         this.db = AppDatabase.getInstance(context);
     }
 
+    public interface BattleResultListener {
+        void onBattleFinished(Battle battle, int coins, String equipmentIcon);
+    }
+
+    private BattleResultListener resultListener;
+
+    public void setBattleResultListener(BattleResultListener listener) {
+        this.resultListener = listener;
+    }
     /**
      * Izvrši napad nad bossom (u background niti)
      */
@@ -93,7 +102,6 @@ public class BattleService {
         if (roll < chance) {
             Equipment reward = getRandomEquipment();
             if (reward != null) {
-                // Snimi u UserEquipment
                 UserEquipment ue = new UserEquipment();
                 ue.setUserId(battle.getUserId());
                 ue.setEquipmentId(reward.getEquipmentId());
@@ -101,49 +109,47 @@ public class BattleService {
                 ue.setActive(false);
                 db.userEquipmentRepository().add(ue);
 
-                return " i opremu: " + reward.getName();
+                // umesto " i opremu: sword" → vraćamo samo "sword"
+                return reward.getName(); // ili getName() ako nemaš posebno polje
             }
         }
-        return ""; // ništa osvojeno
+        return null;
     }
+
 
     private void finishBattle(Battle battle, Boss boss, boolean victory) {
         battle.setFinished(true);
         battle.setVictory(victory);
         int chance = 20;
+        int coins = 0;
+        String equipmentName = null;
 
         if (victory) {
-            int coins = boss.getCoinReward();
+            coins = boss.getCoinReward();
             battle.setCoinsEarned(coins);
-            StringBuilder rewardMsg = new StringBuilder("Pobedio si! Dobio si " + coins + " novčića");
-            rewardMsg.append(tryGiveEquipmentReward(battle, chance));
-            runOnUi(() -> Toast.makeText(context, rewardMsg.toString(), Toast.LENGTH_LONG).show());
+            equipmentName = tryGiveEquipmentReward(battle, chance);
         } else {
-            StringBuilder rewardMsg;
-
             if (boss.getHp() < boss.getMaxHp() / 2) {
-                int coins = boss.getCoinReward() / 2;
+                coins = boss.getCoinReward() / 2;
                 battle.setCoinsEarned(coins);
-
-                rewardMsg = new StringBuilder("Boss je preživeo! :( Dobio si " + coins + " novčića");
-
-                int newChance = chance / 2;
-                rewardMsg.append(tryGiveEquipmentReward(battle, newChance));
-
+                equipmentName = tryGiveEquipmentReward(battle, chance / 2);
             } else {
                 battle.setCoinsEarned(0);
-                rewardMsg = new StringBuilder("Boss je preživeo! :( Nema nagrade.");
             }
-
-            runOnUi(() -> Toast.makeText(context, rewardMsg.toString(), Toast.LENGTH_LONG).show());
         }
-
 
         db.battleRepository().update(battle);
         db.bossRepository().update(boss);
-        User user = db.userRepository().getById(battle.getUserId());  //ovdeee
-        db.userRepository().addCoins(battle.getUserId(), battle.getCoinsEarned());
+        db.userRepository().addCoins(battle.getUserId(), coins);
+
+        // ✅ umesto samo Toast → javimo activity-ju
+        if (resultListener != null) {
+            final String finalEquipment = equipmentName; // ✅ sad je final
+            final int finalCoins = coins;
+            runOnUi(() -> resultListener.onBattleFinished(battle, finalCoins, finalEquipment));
+        }
     }
+
 
 
 

@@ -1,6 +1,5 @@
 package ftn.project.presentation.ui;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,7 +20,6 @@ import ftn.project.domain.entity.Battle;
 import ftn.project.domain.entity.Boss;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.BattleService;
-import ftn.project.domain.usecase.BossService;
 
 public class BattleActivity extends AppCompatActivity {
 
@@ -74,10 +72,21 @@ public class BattleActivity extends AppCompatActivity {
         String firebaseUid = firebaseUser.getUid();
         User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
         userPp = currentUser.getPowerPoints();
-        if(userPp == 0)
+        if (userPp == 0)
             userPp = 50;
 
         setupUi();
+
+        // 🔹 Kad se završi battle, ide u RewardActivity
+        battleService.setBattleResultListener((battle, coins, equipmentIcon) -> {
+            Intent rewardIntent = new Intent(this, RewardActivity.class);
+            rewardIntent.putExtra("coins", coins);
+            rewardIntent.putExtra("equipment", equipmentIcon);
+            rewardIntent.putExtra("battleId", battle.getId());
+            rewardIntent.putExtra("hitChance", hitChance);
+            startActivity(rewardIntent);
+            finish();
+        });
 
         attackButton.setOnClickListener(v -> {
             Log.d("BattleActivity", "Attack button clicked!");
@@ -131,7 +140,7 @@ public class BattleActivity extends AppCompatActivity {
     }
 
     /**
-     * Poziva se iz BattleService-a posle svakog napada
+     * Poziva se posle svakog napada
      */
     private void onBattleUpdate() {
         runOnUiThread(() -> {
@@ -140,56 +149,8 @@ public class BattleActivity extends AppCompatActivity {
 
             if (currentBattle.isFinished() || currentBattle.getAttacksRemaining() == 0) {
                 attackButton.setEnabled(false);
-
-                // ✅ Kada je borba gotova, proveravamo šta dalje
-                checkForNextBattle(currentBattle);
+                // ❌ nema više checkForNextBattle → to ide posle RewardActivity
             }
         });
     }
-
-    private void checkForNextBattle(Battle finishedBattle) {
-        if (!finishedBattle.isFinished()) return;
-
-        User user = db.userRepository().getById(finishedBattle.getUserId());
-        int userLevel = user.getLevel();
-        BossService bossService = new BossService(this);
-
-        if (finishedBattle.isVictory()) {
-            // Tražimo da li postoji još neki boss za isti level
-            Boss nextBoss = bossService.getOrCreateBossForLevel(userLevel);
-
-            if (nextBoss.getId() != finishedBattle.getBossId()) {
-                // Ima sledećeg → otvaramo novu borbu
-                Battle newBattle = new Battle(
-                        0,
-                        user.getUserId(),
-                        nextBoss.getId(),
-                        false,
-                        0,
-                        5,
-                        null,
-                        false
-                );
-                long id = db.battleRepository().insert(newBattle);
-
-                Intent intent = new Intent(this, BattleActivity.class);
-                intent.putExtra("battleId", (int) id);
-                intent.putExtra("hitChance", hitChance);
-                startActivity(intent);
-                finish();
-                return;
-            }
-        } else {
-            bossService.ensureBossForLevel(userLevel);
-        }
-
-        db.userRepository().updateLevel(user.getUserId(), userLevel + 1);
-
-        Toast.makeText(this, "Level up! Novi level: " + (userLevel + 1), Toast.LENGTH_SHORT).show();
-
-        Intent backIntent = new Intent(this, TaskCalendarActivity.class);
-        startActivity(backIntent);
-        finish();
-    }
-
 }

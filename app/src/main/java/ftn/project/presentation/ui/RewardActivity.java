@@ -1,6 +1,7 @@
 package ftn.project.presentation.ui;
 
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -18,6 +19,12 @@ import com.airbnb.lottie.LottieAnimationView;
 import java.util.concurrent.TimeUnit;
 
 import ftn.project.R;
+import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Battle;
+import ftn.project.domain.entity.Boss;
+import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.BossService;
+
 import nl.dionsegijn.konfetti.xml.KonfettiView;
 import nl.dionsegijn.konfetti.core.Party;
 import nl.dionsegijn.konfetti.core.PartyFactory;
@@ -41,7 +48,13 @@ public class RewardActivity extends AppCompatActivity {
     private boolean chestOpened = false;
 
     private int earnedCoins;
-    private String equipmentIcon; // ime drawable ikone za opremu (npr. "sword")
+    private String equipmentIcon;
+
+    private int battleId;
+    private int hitChance;
+
+    private boolean nextBattleChecked = false;
+    private AppDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,9 +67,13 @@ public class RewardActivity extends AppCompatActivity {
         equipmentView = findViewById(R.id.equipmentView);
         konfettiView = findViewById(R.id.konfettiView);
 
+        db = AppDatabase.getInstance(this);
+
         // Preuzmi nagrade iz Intenta
         earnedCoins = getIntent().getIntExtra("coins", 0);
-        equipmentIcon = getIntent().getStringExtra("equipment"); // npr. "sword"
+        equipmentIcon = getIntent().getStringExtra("equipment");
+        battleId = getIntent().getIntExtra("battleId", -1);
+        hitChance = getIntent().getIntExtra("hitChance", -1);
 
         // Setup senzora
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -124,16 +141,67 @@ public class RewardActivity extends AppCompatActivity {
 
         // Konfete 🎉
         konfettiView.setVisibility(KonfettiView.VISIBLE);
-
         EmitterConfig emitterConfig = new Emitter(2, TimeUnit.SECONDS).perSecond(50);
-
         Party party = new PartyFactory(emitterConfig)
                 .angle(Angle.BOTTOM)
                 .spread(360)
                 .position(new Position.Relative(0.5, 1.0))
                 .build();
-
         konfettiView.start(party);
+        konfettiView.postDelayed(this::checkForNextBattle, 2500);
+    }
+
+    private void checkForNextBattle() {
+        if (nextBattleChecked) return;
+        nextBattleChecked = true;
+
+        if (battleId == -1) {
+            finish();
+            return;
+        }
+
+        Battle finishedBattle = db.battleRepository().getBattleById(battleId);
+        if (finishedBattle == null || !finishedBattle.isFinished()) {
+            finish();
+            return;
+        }
+
+        User user = db.userRepository().getById(finishedBattle.getUserId());
+        int userLevel = user.getLevel();
+        BossService bossService = new BossService(this);
+
+        if (finishedBattle.isVictory()) {
+            Boss nextBoss = bossService.getOrCreateBossForLevel(userLevel);
+            if (nextBoss.getId() != finishedBattle.getBossId()) {
+                Battle newBattle = new Battle(
+                        0,
+                        user.getUserId(),
+                        nextBoss.getId(),
+                        false,
+                        0,
+                        5,
+                        null,
+                        false
+                );
+                long id = db.battleRepository().insert(newBattle);
+
+                Intent intent = new Intent(this, BattleActivity.class);
+                intent.putExtra("battleId", (int) id);
+                intent.putExtra("hitChance", hitChance);
+                startActivity(intent);
+                finish();
+                return;
+            }
+        } else {
+            bossService.ensureBossForLevel(userLevel);
+        }
+
+        // Level up SAMO JEDNOM ✅
+        db.userRepository().updateLevel(user.getUserId(), userLevel + 1);
+
+        Intent backIntent = new Intent(this, TaskCalendarActivity.class);
+        startActivity(backIntent);
+        finish();
     }
 
     @Override

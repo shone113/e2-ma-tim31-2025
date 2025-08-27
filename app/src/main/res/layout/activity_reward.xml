@@ -12,7 +12,7 @@
         android:layout_height="300dp"
         app:lottie_autoPlay="false"
         app:lottie_loop="false"
-        app:lottie_fileName="chest.json" />
+        app:lottie_rawRes="@raw/chest"/>
 
     <!-- Overlay sa nagradama (pojavljuje se kad se chest otvori) -->
     <LinearLayout
