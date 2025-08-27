@@ -1,5 +1,7 @@
 package ftn.project.presentation.adapter;
 
+import static android.view.View.INVISIBLE;
+
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
@@ -7,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -27,7 +30,7 @@ import ftn.project.presentation.ui.ProfileActivity;
 
 public class UserAdapter extends ArrayAdapter<UserFriendDTO> {
     public interface OnAddFriendClick {
-        void onAdd(User user);
+        void onAdd(UserFriendDTO dto);
     }
 
     private ArrayList<UserFriendDTO> aFriends;
@@ -70,24 +73,38 @@ public class UserAdapter extends ArrayAdapter<UserFriendDTO> {
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent){
-        UserFriendDTO user = getItem(position);
+        UserFriendDTO userFriendDTO = getItem(position);
         if(convertView == null){
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.user_card,
                     parent, false);
         }
         LinearLayout userCard = convertView.findViewById(R.id.user_card_item);
         TextView tvName = convertView.findViewById(R.id.tvName);
+        Button btnAddFriend = convertView.findViewById(R.id.btnAddFriend);
+        if(userFriendDTO.friend){
+            btnAddFriend.setEnabled(false);
+            btnAddFriend.setText("Friends");
+        }else{
+            btnAddFriend.setEnabled(true);
+            btnAddFriend.setText("Add friend");
+        }
 
-        if(user != null){
-            tvName.setText(user.username);
+        if(userFriendDTO != null){
+            tvName.setText(userFriendDTO.username);
             userCard.setOnClickListener(v -> {
                 Context ctx = v.getContext();
                 Intent i = new Intent(ctx, ProfileActivity.class);
-                i.putExtra(ProfileActivity.EXTRA_USER_ID, user.userId);
+                i.putExtra(ProfileActivity.EXTRA_USER_ID, userFriendDTO.userId);
                 ctx.startActivity(i);
-                Log.i("All users", "Clicked: " + user.username);
+                Log.i("All users", "Clicked: " + userFriendDTO.username);
             });
         }
+
+        btnAddFriend.setOnClickListener(v -> {
+            btnAddFriend.setEnabled(false);
+            listener.onAdd(userFriendDTO);
+        });
+
     return convertView;
     }
 }

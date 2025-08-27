@@ -48,7 +48,6 @@ public class AllUsersActivity extends AppCompatActivity {
             return insets;
         });
         db = AppDatabase.getInstance(getApplicationContext());
-        friendshipRepository = new FriendshipRepository(this);
         friendshipService = new FriendshipService();
 
         ListView lvUsers = findViewById(R.id.lvUsers);
@@ -71,18 +70,11 @@ public class AllUsersActivity extends AppCompatActivity {
         List<User> users = db.userRepository().getAll();
         friendDTOs = friendshipService.getFriendsForUser(friendships, users, loggedUser.getUserId());
 
-        adapter = new UserAdapter(this, friendDTOs, user -> {
-            friendshipRepository.sendFriendRequest(loggedUser.getFirebaseUid(), new FriendshipRepository.Callback() {
-                @Override
-                public void onSuccess() {
-                    Toast.makeText(AllUsersActivity.this, "Zahtev poslat.", Toast.LENGTH_SHORT).show();
-                    // po želji: friendRepo.refreshMyFriendships(...)
-                }
-                @Override
-                public void onError(Exception e) {
-                    Toast.makeText(AllUsersActivity.this, "Greška: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                }
-            });
+        adapter = new UserAdapter(this, friendDTOs, userFriendDTO -> {
+            Friendship friendship = new Friendship();
+            friendship.setFirstUserId(loggedUser.getUserId());
+            friendship.setSecondUserId(userFriendDTO.userId);
+            db.friendshipRepository().insert(friendship);
         });
 
         lvUsers.setAdapter(adapter);
