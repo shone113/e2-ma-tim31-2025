@@ -32,12 +32,14 @@
             </intent-filter>
         </activity>
         <activity android:name=".presentation.ui.TaskDetailsActivity" />
+        <activity android:name=".presentation.ui.BattleActivity" />
         <activity android:name=".presentation.ui.NewTaskActivity" />
         <activity android:name=".presentation.ui.TaskEditActivity" />
         <activity android:name=".presentation.ui.TaskCalendarActivity" />
-        <activity android:name=".presentation.ui.TaskListActivity" />
-        <activity android:name=".presentation.ui.CategoryListActivity" />
-        <activity android:name=".presentation.ui.MainActivity" />
+        <activity android:name=".presentation.ui.TaskListActivity"/>
+        <activity android:name=".presentation.ui.CategoryListActivity"/>
+        <activity android:name=".presentation.ui.MainActivity"/>
+        <activity android:name=".presentation.ui.RewardActivity"/>
         <activity
             android:name=".presentation.ui.ProfileActivity"
             android:exported="false" />

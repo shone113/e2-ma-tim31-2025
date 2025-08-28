@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,6 +19,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -30,17 +33,25 @@ import java.util.concurrent.Executors;
 
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Battle;
+import ftn.project.domain.entity.Boss;
 import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
+import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.BattleStartService;
+import ftn.project.domain.usecase.BossService;
+import ftn.project.domain.usecase.CheckQuotaService;
+import ftn.project.domain.usecase.QuotaFinalizer;
+import ftn.project.domain.usecase.SuccessRateService;
 import ftn.project.presentation.adapter.HoursAdapter;
 
 public class TaskCalendarActivity extends AppCompatActivity {
 
     private RecyclerView rvHours;
     private FrameLayout flDaySchedule;
-    private FloatingActionButton fabAddTask, fabListTask;
+    private FloatingActionButton fabAddTask, fabListTask, fabBattle;
     private TextView tvCurrentDay;
     private ImageButton btnPrevDay, btnNextDay;
 
@@ -64,6 +75,7 @@ public class TaskCalendarActivity extends AppCompatActivity {
         rvHours = findViewById(R.id.rvHours);
         fabAddTask = findViewById(R.id.fabAddTask);
         fabListTask = findViewById(R.id.fabListTasks);
+        fabBattle = findViewById(R.id.fabBattle);
         tvCurrentDay = findViewById(R.id.tvCurrentWeek);
         btnPrevDay = findViewById(R.id.btnPrevDay);
         btnNextDay = findViewById(R.id.btnNextDay);
@@ -82,12 +94,39 @@ public class TaskCalendarActivity extends AppCompatActivity {
         fabAddTask.setOnClickListener(v -> {
             Intent intent = new Intent(TaskCalendarActivity.this, NewTaskActivity.class);
             startActivity(intent);
+
+            //PROBA
+            /*
+            AppDatabase db = AppDatabase.getInstance(this);
+            FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+            String firebaseUid = firebaseUser.getUid();
+            User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+            db.userRepository().updateLevel(currentUser.getUserId(),0);
+            db.battleRepository().deleteAll();
+            db.bossRepository().deleteAll();*/
         });
 
         fabListTask.setOnClickListener(v -> {
             Intent intent = new Intent(this, TaskListActivity.class);
             startActivity(intent);
         });
+
+        fabBattle.setOnClickListener(v -> {
+            FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+            String firebaseUid = firebaseUser.getUid();
+
+            AppDatabase db = AppDatabase.getInstance(this);
+            User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+
+            BattleStartService starter = new BattleStartService(this);
+            BattleStartService.BattleStartResult result = starter.startNewBattle(currentUser);
+
+            Intent intent = new Intent(this, BattleActivity.class);
+            intent.putExtra("battleId", result.battleId);
+            intent.putExtra("hitChance", result.hitChance);
+            startActivity(intent);
+        });
+
 
         btnPrevDay.setOnClickListener(v -> {
             selectedDate = selectedDate.minusDays(1);
@@ -268,8 +307,43 @@ public class TaskCalendarActivity extends AppCompatActivity {
             }
         }
 
-        btnDone.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.DONE, tvStatus,
-                btnDone, btnCancel, btnPause, btnPlay));
+        btnDone.setOnClickListener(v -> {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                AppDatabase db = AppDatabase.getInstance(this);
+
+                // ✅ Izračunaj XP na osnovu kvota
+                int earnedXp = CheckQuotaService.calculateEarnedXP(taskInstanceWithTask.taskInstance, db);
+
+                // ✅ Postavi status na DONE i upiši XP u model
+                taskInstanceWithTask.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
+                taskInstanceWithTask.taskInstance.setEarnedXp(earnedXp);
+
+                // ✅ Update baze: status + XP + withinQuota flag
+                db.taskInstanceRepository().updateStatus(
+                        taskInstanceWithTask.taskInstance.getId(),
+                        TaskInstance.TaskStatusEnum.DONE
+                );
+                db.taskInstanceRepository().updateEarnedXpAndQuota(
+                        taskInstanceWithTask.taskInstance.getId(),
+                        earnedXp,
+                        taskInstanceWithTask.taskInstance.isWithinQuota()
+                );
+
+                // ✅ Ako ima XP, dodaj korisniku
+                if (earnedXp > 0) {
+                    updateLoggedUserPoints(taskInstanceWithTask.task.getUserId(), earnedXp);
+                }
+
+                // ✅ Refresh UI odmah
+                runOnUiThread(() -> {
+                    tvStatus.setText("Status: DONE");
+                    Toast.makeText(this, "Zadatak završen! Dobio si " + earnedXp + " XP", Toast.LENGTH_SHORT).show();
+
+                    configureStatusButtons(taskInstanceWithTask, tvStatus, btnDone, btnCancel, btnPause, btnPlay);
+                });
+            });
+        });
+
         btnCancel.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.CANCELED, tvStatus,
                 btnDone, btnCancel, btnPause, btnPlay));
         btnPause.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.PAUSED, tvStatus,
@@ -277,6 +351,41 @@ public class TaskCalendarActivity extends AppCompatActivity {
         btnPlay.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.ACTIVE, tvStatus,
                 btnDone, btnCancel, btnPause, btnPlay));
     }
+    private void updateLoggedUserPoints(int userId, int xPValue) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (firebaseUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Nema aktivnog korisnika!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            String firebaseUid = firebaseUser.getUid();
+            User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+
+            if (currentUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Korisnik nije pronađen!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            int oldXP = currentUser.getExperiencePoints();
+            int newXP = oldXP + xPValue;
+
+            if (userId == currentUser.getUserId()) {
+                db.userRepository().updateExperiencePoints(userId, newXP);
+
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Dodato " + xPValue + " XP (ukupno: " + newXP + ")", Toast.LENGTH_SHORT).show()
+                );
+            } else {
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Nije pravilan korisnik!", Toast.LENGTH_SHORT).show()
+                );
+            }
+        });
+    }
+
+
 
     private void updateStatus(TaskInstanceWithTask taskInstanceWithTask,
                               TaskInstance.TaskStatusEnum newStatus,

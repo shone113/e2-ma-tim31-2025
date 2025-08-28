@@ -11,6 +11,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -21,11 +24,13 @@ import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
+import ftn.project.domain.entity.User;
 
 public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder> {
 
     public interface OnTaskClickListener {
         void onTaskClick(TaskInstanceWithTask taskWithInstance);
+        void onTaskDoneClicked(TaskInstanceWithTask taskWithInstance, int position);
     }
 
     private List<TaskInstanceWithTask> taskAndInstanceList;
@@ -55,7 +60,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         return taskAndInstanceList.size();
     }
 
-    public static class TaskViewHolder extends RecyclerView.ViewHolder {
+    public class TaskViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvDescription, tvStatus, tvStartExecutionTime, tvEndExecutionTime;
         Button btnDone, btnCancel, btnPause, btnPlay;
 
@@ -127,11 +132,14 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
                 btnCancel.setEnabled(true);
                 btnPlay.setEnabled(false);
             }
-            btnDone.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.DONE));
+            btnDone.setOnClickListener(v -> {
+                listener.onTaskDoneClicked(taskInstanceWithTask, getAdapterPosition());
+            });
             btnCancel.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.CANCELED));
             btnPause.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.PAUSED));
             btnPlay.setOnClickListener(v -> updateStatus(taskInstanceWithTask, TaskInstance.TaskStatusEnum.ACTIVE));
         }
+
 
         private void updateStatus(TaskInstanceWithTask taskInstanceWithTask, TaskInstance.TaskStatusEnum newStatus) {
             taskInstanceWithTask.taskInstance.setStatus(newStatus);
@@ -139,11 +147,38 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
 
             Executors.newSingleThreadExecutor().execute(() -> {
                 AppDatabase db = AppDatabase.getInstance(itemView.getContext());
-                db.taskInstanceRepository().updateStatus(taskInstanceWithTask.taskInstance.getId(), taskInstanceWithTask.taskInstance.getStatus());
+                db.taskInstanceRepository().updateStatus(
+                        taskInstanceWithTask.taskInstance.getId(),
+                        taskInstanceWithTask.taskInstance.getStatus()
+                );
+                db.taskInstanceRepository().updateEarnedXp(taskInstanceWithTask.taskInstance.getId(),taskInstanceWithTask.taskInstance.getValueXp());
             });
+
             configureStatusButtons(taskInstanceWithTask);
         }
+        private void updateLoggedUserPoints(int userId, int xPValue) {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                AppDatabase db = AppDatabase.getInstance(itemView.getContext());
+                FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+                if (firebaseUser == null) {
+                    return;
+                }
 
+                String firebaseUid = firebaseUser.getUid();
+                User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+
+                if (currentUser == null) {
+                    return;
+                }
+
+                int oldXP = currentUser.getExperiencePoints();
+                int newXP = oldXP + xPValue;
+
+                if (userId == currentUser.getUserId()) {
+                    db.userRepository().updateExperiencePoints(userId, newXP);
+                }
+            });
+        }
     }
 }
 

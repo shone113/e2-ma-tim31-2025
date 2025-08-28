@@ -39,6 +39,8 @@ public interface UserRepositoryInterface {
 
     @Query("UPDATE User SET coins = coins - :coins WHERE userId = :userId")
     void subtractCoins(int userId, long coins);
+    @Query("UPDATE User SET coins = coins + :coins WHERE userId = :userId")
+    void addCoins(int userId, long coins);
 
     @Query("UPDATE User SET coins = :coins AND level = :level " +
             "WHERE userId = :userId")
@@ -48,5 +50,10 @@ public interface UserRepositoryInterface {
 
     @Query("SELECT userId, username, 0 AS friend FROM User WHERE username LIKE '%' || :username || '%' LIMIT 50")
     List<UserFriendDTO> searchUsersByUsername(String username);
-
+    @Query("UPDATE User SET experiencePoints = :xP " +
+            "WHERE userId = :userId")
+    void updateExperiencePoints(int userId, int xP);
+    @Query("UPDATE User SET level = :level " +
+            "WHERE userId = :userId")
+    void updateLevel(int userId, int level);
 }

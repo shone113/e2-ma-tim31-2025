@@ -17,6 +17,9 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -28,6 +31,7 @@ import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
+import ftn.project.domain.entity.User;
 
 public class NewTaskActivity extends AppCompatActivity {
 
@@ -141,19 +145,32 @@ public class NewTaskActivity extends AppCompatActivity {
         int selectedPosition = spinnerCategory.getSelectedItemPosition();
         int categoryId = categories.get(selectedPosition).getId();
 
+        //User
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            Toast.makeText(this, "Nema ulogovanog korisnika!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String firebaseUid = firebaseUser.getUid();
+        User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+        if (currentUser == null) {
+            Toast.makeText(this, "Korisnik ne postoji u lokalnoj bazi!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         // Težina
-        Task.DifficultyEnum difficulty = Task.DifficultyEnum.VERY_EASY;
+        TaskInstance.DifficultyEnum difficulty = TaskInstance.DifficultyEnum.VERY_EASY;
         int selectedDiffId = rgTezina.getCheckedRadioButtonId();
-        if (selectedDiffId == R.id.rbLak) difficulty = Task.DifficultyEnum.EASY;
-        else if (selectedDiffId == R.id.rbTezak) difficulty = Task.DifficultyEnum.HARD;
-        else if (selectedDiffId == R.id.rbEkstremnoTezak) difficulty = Task.DifficultyEnum.EXTREME;
+        if (selectedDiffId == R.id.rbLak) difficulty = TaskInstance.DifficultyEnum.EASY;
+        else if (selectedDiffId == R.id.rbTezak) difficulty = TaskInstance.DifficultyEnum.HARD;
+        else if (selectedDiffId == R.id.rbEkstremnoTezak) difficulty = TaskInstance.DifficultyEnum.EXTREME;
 
         // Bitnost
-        Task.ImportanceEnum importance = Task.ImportanceEnum.NORMAL;
+        TaskInstance.ImportanceEnum importance = TaskInstance.ImportanceEnum.NORMAL;
         int selectedImpId = rgBitnost.getCheckedRadioButtonId();
-        if (selectedImpId == R.id.rbVazan) importance = Task.ImportanceEnum.IMPORTANT;
-        else if (selectedImpId == R.id.rbEkstremnoVazan) importance = Task.ImportanceEnum.VERY_IMPORTANT;
-        else if (selectedImpId == R.id.rbSpecijalan) importance = Task.ImportanceEnum.SPECIAL;
+        if (selectedImpId == R.id.rbVazan) importance = TaskInstance.ImportanceEnum.IMPORTANT;
+        else if (selectedImpId == R.id.rbEkstremnoVazan) importance = TaskInstance.ImportanceEnum.VERY_IMPORTANT;
+        else if (selectedImpId == R.id.rbSpecijalan) importance = TaskInstance.ImportanceEnum.SPECIAL;
 
         // Učestalost
         Task.FrequencyEnum frequency = Task.FrequencyEnum.ONE_TIME;
@@ -186,10 +203,8 @@ public class NewTaskActivity extends AppCompatActivity {
         // Napravi Task
         Task task = new Task(
                 0,
-                1, // userId test
-                categoryId, // categoryId test
-                difficulty,
-                importance,
+                currentUser.getUserId(),
+                categoryId,
                 frequency,
                 interval != null ? interval : 0,
                 frequencyUnit,
@@ -208,9 +223,13 @@ public class NewTaskActivity extends AppCompatActivity {
                 TaskInstance instance = new TaskInstance(
                         0,
                         (int) taskId,
+                        importance,
+                        difficulty,
                         current,
                         current.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
-                        TaskInstance.TaskStatusEnum.ACTIVE
+                        TaskInstance.TaskStatusEnum.ACTIVE,
+                        0,
+                        false
                 );
                 db.taskInstanceRepository().insert(instance);
 
@@ -222,9 +241,13 @@ public class NewTaskActivity extends AppCompatActivity {
             TaskInstance instance = new TaskInstance(
                     0,
                     (int) taskId,
+                    importance,
+                    difficulty,
                     startDateTime,
                     startDateTime.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
-                    TaskInstance.TaskStatusEnum.ACTIVE
+                    TaskInstance.TaskStatusEnum.ACTIVE,
+                    0,
+                    false
             );
             db.taskInstanceRepository().insert(instance);
         }

@@ -8,6 +8,9 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
@@ -18,6 +21,8 @@ import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
+import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.CheckQuotaService;
 
 public class TaskDetailsActivity extends AppCompatActivity {
 
@@ -88,10 +93,10 @@ public class TaskDetailsActivity extends AppCompatActivity {
                             taskAndInstance.taskInstance.getStartExecutionTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
                     tvEndExecutionTime.setText("Datum i vreme kraja zadatka: " +
                             taskAndInstance.taskInstance.getEndExecutionTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
-                    tvDifficulty.setText("Težina: " + taskAndInstance.task.getDifficulty().name());
-                    tvImportance.setText("Važnost: " + taskAndInstance.task.getImportance().name());
+                    tvDifficulty.setText("Težina: " + taskAndInstance.taskInstance.getDifficultyInstance().name());
+                    tvImportance.setText("Važnost: " + taskAndInstance.taskInstance.getImportanceInstance().name());
                     tvFrequency.setText("Tip zadatka: " + taskAndInstance.task.getFrequency().name());
-                    tvXP.setText("Vrednost XP: " + taskAndInstance.task.getValueXP());
+                    tvXP.setText("Vrednost XP: " + taskAndInstance.taskInstance.getValueXp());
                     tvTaskCategory.setText("Kategorija: "+ category.getName());
                     configureUpdateButton(taskAndInstance);
                     configureDeleteButton(taskAndInstance);
@@ -132,7 +137,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
             Toast.makeText(this, "Zadatak je istekao i označen kao neurađen", Toast.LENGTH_SHORT).show();
             return;
         }
-        if(!taskAndInstance.taskInstance.getStartExecutionTime().plusDays(3).isBefore(now)) {
+        if(!taskAndInstance.taskInstance.getEndExecutionTime().plusDays(3).isBefore(now)) {
             if (taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.CANCELED ||
                     taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.UNFINISHED ||
                     taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.DONE) {
@@ -170,12 +175,87 @@ public class TaskDetailsActivity extends AppCompatActivity {
         }
         else
         {
+            btnDone.setEnabled(false);
+            btnPaused.setEnabled(false);
+            btnCanceled.setEnabled(false);
             btnDeleteTask.setEnabled(false);
             btnUpdateTask.setEnabled(false);
         }
 
-        btnDone.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.DONE));
+        btnDone.setOnClickListener(v -> {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                AppDatabase db = AppDatabase.getInstance(this);
+
+                // ✅ Izračunaj XP na osnovu kvota
+                int earnedXp = CheckQuotaService.calculateEarnedXP(taskAndInstance.taskInstance, db);
+
+                // ✅ Postavi status na DONE i upiši XP u model
+                taskAndInstance.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
+                taskAndInstance.taskInstance.setEarnedXp(earnedXp);
+
+                // ✅ Update baze: status + XP + withinQuota flag
+                db.taskInstanceRepository().updateStatus(
+                        taskAndInstance.taskInstance.getId(),
+                        TaskInstance.TaskStatusEnum.DONE
+                );
+                db.taskInstanceRepository().updateEarnedXpAndQuota(
+                        taskAndInstance.taskInstance.getId(),
+                        earnedXp,
+                        taskAndInstance.taskInstance.isWithinQuota()
+                );
+
+                // ✅ Ako ima XP, dodaj korisniku
+                if (earnedXp > 0) {
+                    updateLoggedUserPoints(taskAndInstance.task.getUserId(), earnedXp);
+                }
+
+                // ✅ Refresh UI odmah
+                runOnUiThread(() -> {
+                    tvStatus.setText("Status: DONE");
+                    Toast.makeText(this, "Zadatak završen! Dobio si " + earnedXp + " XP", Toast.LENGTH_SHORT).show();
+
+                    configureUpdateButton(taskAndInstance);
+                    configureDeleteButton(taskAndInstance);
+                    configureStatusButtons(taskAndInstance);
+                });
+            });
+        });
+
         btnCanceled.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.CANCELED));
+    }
+
+    private void updateLoggedUserPoints(int userId, int xPValue) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (firebaseUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Nema aktivnog korisnika!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            String firebaseUid = firebaseUser.getUid();
+            User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+
+            if (currentUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Korisnik nije pronađen!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            int oldXP = currentUser.getExperiencePoints();
+            int newXP = oldXP + xPValue;
+
+            if (userId == currentUser.getUserId()) {
+                db.userRepository().updateExperiencePoints(userId, newXP);
+
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Dodato " + xPValue + " XP (ukupno: " + newXP + ")", Toast.LENGTH_SHORT).show()
+                );
+            } else {
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Nije pravilan korisnik!", Toast.LENGTH_SHORT).show()
+                );
+            }
+        });
     }
 
     private void updateTaskStatus(TaskInstanceWithTask taskAndInstance, TaskInstance.TaskStatusEnum newStatus) {

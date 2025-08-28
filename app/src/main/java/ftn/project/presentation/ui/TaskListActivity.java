@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,6 +12,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,7 +26,10 @@ import java.time.LocalDateTime;
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Task;
+import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
+import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.CheckQuotaService;
 import ftn.project.presentation.adapter.TaskAdapter;
 
 public class TaskListActivity extends AppCompatActivity {
@@ -41,11 +48,46 @@ public class TaskListActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.recyclerViewTasks);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new TaskAdapter(filteredTasks, taskWithInstance -> {
-            // Kada se klikne na task
-            Intent intent = new Intent(TaskListActivity.this, TaskDetailsActivity.class);
-            intent.putExtra("task_instance_id", taskWithInstance.taskInstance.getId()); // prosleđuješ ID taska
-            startActivity(intent);
+        adapter = new TaskAdapter(filteredTasks, new TaskAdapter.OnTaskClickListener() {
+            @Override
+            public void onTaskClick(TaskInstanceWithTask taskWithInstance) {
+                Intent intent = new Intent(TaskListActivity.this, TaskDetailsActivity.class);
+                intent.putExtra("task_instance_id", taskWithInstance.taskInstance.getId());
+                startActivity(intent);
+            }
+
+            @Override
+            public void onTaskDoneClicked(TaskInstanceWithTask taskWithInstance, int position) {
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    AppDatabase db = AppDatabase.getInstance(TaskListActivity.this);
+
+                    int earnedXp = CheckQuotaService.calculateEarnedXP(taskWithInstance.taskInstance, db);
+
+                    taskWithInstance.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
+                    taskWithInstance.taskInstance.setEarnedXp(earnedXp);
+
+                    db.taskInstanceRepository().updateStatus(
+                            taskWithInstance.taskInstance.getId(),
+                            TaskInstance.TaskStatusEnum.DONE
+                    );
+                    db.taskInstanceRepository().updateEarnedXpAndQuota(
+                            taskWithInstance.taskInstance.getId(),
+                            earnedXp,
+                            taskWithInstance.taskInstance.isWithinQuota()
+                    );
+
+                    if (earnedXp > 0) {
+                        updateLoggedUserPoints(taskWithInstance.task.getUserId(), earnedXp);
+                    }
+
+                    runOnUiThread(() -> {
+                        adapter.notifyItemChanged(position);
+                        Toast.makeText(TaskListActivity.this,
+                                "Zadatak završen! Dobio si " + earnedXp + " XP",
+                                Toast.LENGTH_SHORT).show();
+                    });
+                });
+            }
         });
         recyclerView.setAdapter(adapter);
 
@@ -94,6 +136,39 @@ public class TaskListActivity extends AppCompatActivity {
         });
     }
 
+    private void updateLoggedUserPoints(int userId, int xPValue) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (firebaseUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Nema aktivnog korisnika!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            String firebaseUid = firebaseUser.getUid();
+            User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+
+            if (currentUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Korisnik nije pronađen!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            int oldXP = currentUser.getExperiencePoints();
+            int newXP = oldXP + xPValue;
+
+            if (userId == currentUser.getUserId()) {
+                db.userRepository().updateExperiencePoints(userId, newXP);
+
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Dodato " + xPValue + " XP (ukupno: " + newXP + ")", Toast.LENGTH_SHORT).show()
+                );
+            } else {
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Nije pravilan korisnik!", Toast.LENGTH_SHORT).show()
+                );
+            }
+        });
+    }
 
     private void filterTasks(Task.FrequencyEnum frequency) {
         filteredTasks.clear();

@@ -17,23 +17,23 @@ public class Converters {
 
     // Enum konverteri
     @TypeConverter
-    public static String fromDifficulty(Task.DifficultyEnum difficulty) {
+    public static String fromDifficulty(TaskInstance.DifficultyEnum difficulty) {
         return difficulty == null ? null : difficulty.name();
     }
 
     @TypeConverter
-    public static Task.DifficultyEnum toDifficulty(String value) {
-        return value == null ? null : Task.DifficultyEnum.valueOf(value);
+    public static TaskInstance.DifficultyEnum toDifficulty(String value) {
+        return value == null ? null : TaskInstance.DifficultyEnum.valueOf(value);
     }
 
     @TypeConverter
-    public static String fromImportance(Task.ImportanceEnum importance) {
+    public static String fromImportance(TaskInstance.ImportanceEnum importance) {
         return importance == null ? null : importance.name();
     }
 
     @TypeConverter
-    public static Task.ImportanceEnum toImportance(String value) {
-        return value == null ? null : Task.ImportanceEnum.valueOf(value);
+    public static TaskInstance.ImportanceEnum toImportance(String value) {
+        return value == null ? null : TaskInstance.ImportanceEnum.valueOf(value);
     }
 
     @TypeConverter
@@ -61,9 +61,18 @@ public class Converters {
         return status == null ? null : status.name();
     }
 
+
     @TypeConverter
     public static TaskInstance.TaskStatusEnum toStatus(String value) {
         return value == null ? null : TaskInstance.TaskStatusEnum.valueOf(value);
     }
+    @TypeConverter
+    public static String fromEquipmentType(EquipmentType type) {
+        return type == null ? null : type.name();
+    }
 
+    @TypeConverter
+    public static EquipmentType toEquipmentType(String type) {
+        return type == null ? null : EquipmentType.valueOf(type);
+    }
 }

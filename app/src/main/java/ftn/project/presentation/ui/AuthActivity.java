@@ -38,6 +38,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 
@@ -267,6 +268,7 @@ public class AuthActivity extends AppCompatActivity {
         u.setAvatarImage(avatarName);
         u.setEmailVerified(fbUser.isEmailVerified());
         u.setFirebaseUid(fbUser.getUid());
+        u.setNewLevelTime(LocalDateTime.now());
 
         // ubaci u Room na background thread-u
         Executors.newSingleThreadExecutor().execute(() -> {

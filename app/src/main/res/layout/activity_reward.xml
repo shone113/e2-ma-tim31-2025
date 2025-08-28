@@ -1,0 +1,60 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/treasure"
+    >
+
+    <!-- Glavni kontejner -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="24dp">
+
+        <!-- Lottie chest -->
+
+        <!-- Nagrade ispod chest-a -->
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/chestAnimation"
+            android:layout_width="250dp"
+            android:layout_height="250dp"
+            app:lottie_autoPlay="false"
+            app:lottie_loop="false"
+            app:lottie_rawRes="@raw/chest" />
+
+        <LinearLayout
+            android:id="@+id/rewardContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="32dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/coinsText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+0 coins"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/holo_orange_light"
+                android:layout_marginBottom="16dp"/>
+
+            <ImageView
+                android:id="@+id/equipmentView"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:visibility="gone"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Konfete preko celog ekrana -->
+    <nl.dionsegijn.konfetti.xml.KonfettiView
+        android:id="@+id/konfettiView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
+</FrameLayout>
