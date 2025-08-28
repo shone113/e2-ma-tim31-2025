@@ -5,12 +5,10 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import ftn.project.data.dto.UserFriendDTO;
 import ftn.project.data.dto.UserStatsDTO;
-import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.User;
 
 

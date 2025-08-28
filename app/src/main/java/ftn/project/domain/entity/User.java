@@ -41,9 +41,9 @@ public class User {
     private String avatarImage;
     @ColumnInfo(defaultValue = "3")
     private int level = 3;
-    @ColumnInfo(name = "alliance_id")
+    @ColumnInfo(name = "alliance_id", defaultValue = "NULL")
     @Nullable
-    private int allianceId;
+    private Integer allianceId;
 
     private LocalDateTime newLevelTime;
 
@@ -76,7 +76,7 @@ public class User {
     public void setEmail(String email) { this.email = email; }
     public void setAvatarImage(String avatarImage) { this.avatarImage = avatarImage; }
     public void setLevel(int level) { this.level = level; }
-    public void setAllianceId(int allianceId) { this.allianceId = allianceId; }
+    public void setAllianceId(Integer allianceId) { this.allianceId = allianceId; }
 
     public void setNewLevelTime(LocalDateTime newLevelTime) {
         this.newLevelTime = newLevelTime;
@@ -115,5 +115,5 @@ public class User {
     }
 
     public String getFirebaseUid(){ return firebaseUid; }
-    public int getAllianceId(){ return allianceId; }
+    public Integer getAllianceId(){ return allianceId; }
 }
