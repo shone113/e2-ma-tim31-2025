@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import ftn.project.domain.entity.Alliance;
 import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Converters;
 import ftn.project.domain.entity.Equipment;
@@ -37,7 +38,7 @@ import ftn.project.domain.repositoryInterface.UserRepositoryInterface;
 
 
 @Database(entities = {User.class, Task.class, Category.class, TaskInstance.class,
-        Equipment.class, UserEquipment.class, UserBadge.class, Level.class, Friendship.class}, version = 1, exportSchema = false)
+        Equipment.class, UserEquipment.class, UserBadge.class, Level.class, Friendship.class, Alliance.class}, version = 1, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -69,7 +70,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (INSTANCE == null) {
             appContext = context.getApplicationContext();
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                     AppDatabase.class, "habit_quest_baza27.db")
+                     AppDatabase.class, "habit_quest_baza28.db")
                     //.addMigrations(MIGRATION_1_2)
                     .addCallback(prepopulateCallback)
                     .allowMainThreadQueries()

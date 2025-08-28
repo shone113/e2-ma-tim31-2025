@@ -1,11 +1,25 @@
 package ftn.project.domain.entity;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.ForeignKey;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity
+@Entity(
+        tableName = "User",
+        indices = { @Index("alliance_id") },
+        foreignKeys = {
+                @ForeignKey(
+                        entity = Alliance.class,
+                        parentColumns = "allianceId",
+                        childColumns = "alliance_id",
+                        onDelete = ForeignKey.SET_NULL
+                )
+        }
+)
 public class User {
     @PrimaryKey(autoGenerate = true)
     private int userId;
@@ -25,6 +39,9 @@ public class User {
     private String avatarImage;
     @ColumnInfo(defaultValue = "3")
     private int level = 3;
+    @ColumnInfo(name = "alliance_id")
+    @Nullable
+    private int allianceId;
 
     public void setUserId(int userId) {
         this.userId = userId;
@@ -55,6 +72,7 @@ public class User {
     public void setEmail(String email) { this.email = email; }
     public void setAvatarImage(String avatarImage) { this.avatarImage = avatarImage; }
     public void setLevel(int level) { this.level = level; }
+    public void setAllianceId(int allianceId) { this.allianceId = allianceId; }
     public String getUsername(){
         return username;
     }
@@ -62,7 +80,6 @@ public class User {
     public int getUserId() {
         return userId;
     }
-
     public String getPassword() {
         return password;
     }
@@ -84,4 +101,5 @@ public class User {
     public String getAvatarImage() { return avatarImage; }
     public int getLevel() { return level; }
     public String getFirebaseUid(){ return firebaseUid; }
+    public int getAllianceId(){ return allianceId; }
 }
