@@ -21,4 +21,6 @@
     <string name="owl_aviator">Sovijatičar</string>
     <string name="owl_pedia">Sovopedija</string>
 
+    <string name="cd_scan_qr_add_friend">Scan QR to add friend</string>
+    <string name="tt_scan_qr_add_friend">Add friend</string>
 </resources>

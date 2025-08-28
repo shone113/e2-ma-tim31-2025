@@ -1,6 +1,7 @@
 package ftn.project.domain.usecase;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import ftn.project.data.dto.UserFriendDTO;
@@ -18,9 +19,8 @@ public class FriendshipService {
                     .findFirst()
                     .orElse(null);
 
-            friendDTOs.add(new UserFriendDTO(friendUid, friend.getUsername()));
+            friendDTOs.add(new UserFriendDTO(friendUid, friend.getUsername(), true));
         }
-
         return friendDTOs;
     }
 }

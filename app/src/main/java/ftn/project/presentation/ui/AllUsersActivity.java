@@ -36,6 +36,7 @@ public class AllUsersActivity extends AppCompatActivity {
     private FriendshipRepository friendshipRepository;
     private FriendshipService friendshipService;
     private AppDatabase db;
+    private User loggedUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +66,7 @@ public class AllUsersActivity extends AppCompatActivity {
         });
 
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        User loggedUser = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
+        loggedUser = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
         ArrayList<Friendship> friendships = new ArrayList<>(db.friendshipRepository().getAllForUserId(loggedUser.getUserId()));
         List<User> users = db.userRepository().getAll();
         friendDTOs = friendshipService.getFriendsForUser(friendships, users, loggedUser.getUserId());
@@ -87,11 +88,13 @@ public class AllUsersActivity extends AppCompatActivity {
             Toast.makeText(this, "Unesi bar 2 slova", Toast.LENGTH_SHORT).show();
             return;
         }
-        List<UserFriendDTO> users = db.userRepository().searchUsersByUsername(q);
+        List<UserFriendDTO> users = db.userRepository().searchNonFriendUsersWithFlag(q, loggedUser.getUserId());
         users.addAll(friendDTOs);
 
-        adapter.clear();
-        adapter.addAll(users);
-        adapter.notifyDataSetChanged();
+        adapter.replaceAll(users);
+        users.clear();
+//        adapter.clear();
+//        adapter.addAll(users);
+//        adapter.notifyDataSetChanged();
     }
 }

@@ -46,6 +46,21 @@ public interface UserRepositoryInterface {
 
     interface OnUsersFound { void onResult(java.util.List<UserFriendDTO> results); }
 
+    @Query(
+            "SELECT u.userId, u.username, 0 AS friend " +
+                    "FROM User u " +
+                    "WHERE u.userId != :currentUserId " +
+                    "  AND u.username LIKE '%' || :q || '%' COLLATE NOCASE " +
+                    "  AND NOT EXISTS ( " +
+                    "        SELECT 1 FROM Friendship f " +
+                    "        WHERE (f.firstUserId = :currentUserId AND f.secondUserId = u.userId) " +
+                    "           OR (f.secondUserId = :currentUserId AND f.firstUserId = u.userId) " +
+                    "  ) " +
+                    "ORDER BY u.username " +
+                    "LIMIT 50"
+    )
+    List<UserFriendDTO> searchNonFriendUsersWithFlag(String q, int currentUserId);
+
     @Query("SELECT userId, username, 0 AS friend FROM User WHERE username LIKE '%' || :username || '%' LIMIT 50")
     List<UserFriendDTO> searchUsersByUsername(String username);
     @Query("UPDATE User SET experiencePoints = :xP " +

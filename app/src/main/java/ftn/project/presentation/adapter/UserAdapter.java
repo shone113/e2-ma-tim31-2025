@@ -37,13 +37,13 @@ public class UserAdapter extends ArrayAdapter<UserFriendDTO> {
     private final OnAddFriendClick listener;
 
     public UserAdapter(Context context, ArrayList<UserFriendDTO> friendDTOs, OnAddFriendClick listener) {
-        super(context, R.layout.user_card, friendDTOs);
-        aFriends = friendDTOs;
+        super(context, R.layout.user_card, new ArrayList<>());
+        this.aFriends = new ArrayList<>(friendDTOs);
         this.listener = listener;
     }
-    public void submitList(List<UserFriendDTO> newItems) {
+    public void replaceAll(List<UserFriendDTO> newItems) {
         aFriends.clear();
-        if (newItems != null) aFriends.addAll(newItems);
+        aFriends.addAll(newItems);
         notifyDataSetChanged();
     }
 
@@ -56,13 +56,6 @@ public class UserAdapter extends ArrayAdapter<UserFriendDTO> {
     @Override
     public UserFriendDTO getItem(int position){
         return aFriends.get(position);
-    }
-
-    @Nullable
-    public void addItems(List<UserFriendDTO> newItems) {
-        int start = aFriends.size();
-        aFriends.addAll(newItems);
-        notifyDataSetChanged();
     }
 
     @Override
@@ -81,7 +74,8 @@ public class UserAdapter extends ArrayAdapter<UserFriendDTO> {
         LinearLayout userCard = convertView.findViewById(R.id.user_card_item);
         TextView tvName = convertView.findViewById(R.id.tvName);
         Button btnAddFriend = convertView.findViewById(R.id.btnAddFriend);
-        if(userFriendDTO.friend){
+        Log.w("UU123", "" + userFriendDTO.friend);
+        if(userFriendDTO.friend == true){
             btnAddFriend.setEnabled(false);
             btnAddFriend.setText("Friends");
         }else{
@@ -102,6 +96,7 @@ public class UserAdapter extends ArrayAdapter<UserFriendDTO> {
 
         btnAddFriend.setOnClickListener(v -> {
             btnAddFriend.setEnabled(false);
+            btnAddFriend.setText("Friends");
             listener.onAdd(userFriendDTO);
         });
 
