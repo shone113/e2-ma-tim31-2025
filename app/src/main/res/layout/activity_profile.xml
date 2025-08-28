@@ -33,12 +33,13 @@
 
     <!-- QR dugme (gore desno od avatara) -->
     <ImageView
-        android:id="@+id/btnQR"
+        android:id="@+id/ivQR"
         android:layout_width="70dp"
         android:layout_height="70dp"
-        android:src="@android:drawable/ic_menu_camera"
+        android:src="@drawable/qr_code"
         android:background="@drawable/round_button"
-        android:padding="4dp"
+        android:padding="10dp"
+        android:scaleType="centerInside"
         app:layout_constraintTop_toTopOf="@id/imgAvatar"
         app:layout_constraintStart_toEndOf="@id/imgAvatar"
         android:layout_marginStart="30dp" />
@@ -50,9 +51,9 @@
         android:text="QR"
         android:textSize="14sp"
         android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@id/btnQR"
-        app:layout_constraintStart_toStartOf="@id/btnQR"
-        app:layout_constraintEnd_toEndOf="@id/btnQR"
+        app:layout_constraintTop_toBottomOf="@id/ivQR"
+        app:layout_constraintStart_toStartOf="@id/ivQR"
+        app:layout_constraintEnd_toEndOf="@id/ivQR"
         android:layout_marginTop="8dp"/>
 
     <ImageView

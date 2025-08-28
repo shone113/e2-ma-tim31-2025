@@ -118,10 +118,9 @@ public class ShopActivity extends AppCompatActivity {
                     new ColorDrawable(Color.TRANSPARENT));
         }
 
-        // 2) Klikovi: koristiš dialog.dismiss(), ne d.dismiss()
         btnBuy.setOnClickListener(v -> {
             performPurchase(user, price, equipment);
-            dialog.dismiss(); // <<< ovo zatvara prozor
+            dialog.dismiss();
         });
         btnClose.setOnClickListener(v -> dialog.dismiss());
 

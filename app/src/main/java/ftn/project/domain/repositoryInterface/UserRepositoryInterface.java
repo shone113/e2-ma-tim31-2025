@@ -15,7 +15,7 @@ import ftn.project.domain.entity.User;
 @Dao
 public interface UserRepositoryInterface {
     @Insert
-    void insert(User user);
+    long insert(User user);
 
     @Query("SELECT * FROM User")
     List<User> getAll();
