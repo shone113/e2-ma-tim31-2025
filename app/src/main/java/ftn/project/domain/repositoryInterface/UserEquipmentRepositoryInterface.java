@@ -36,4 +36,7 @@ public interface UserEquipmentRepositoryInterface {
 
     @Query("DELETE FROM UserEquipment WHERE userId = :uid")
     void removeAllForUser(int uid);
+
+    @Query("UPDATE UserEquipment SET active = 1 WHERE userEquipmentId = :userEquipmentId")
+    void activateEquipment(int userEquipmentId);
 }

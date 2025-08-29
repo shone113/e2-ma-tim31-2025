@@ -62,14 +62,12 @@ public class ShopActivity extends AppCompatActivity {
         StatusBarBinder.bind(this, tvXP, tvPP, tvCoins);
 
         AppDatabase db = AppDatabase.getInstance(getApplicationContext());
-        String path = db.getOpenHelper().getWritableDatabase().getPath();
-        android.util.Log.d("DB", "Opened DB at: " + path);
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         equipment = new ArrayList<>();
 
         GridView gvItems = findViewById(R.id.gvShop);
 
         equipment = new ArrayList<>(db.equipmentRepository().getPurchasable());
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         adapter = new ShopAdapter(
                 this,
                 equipment,
