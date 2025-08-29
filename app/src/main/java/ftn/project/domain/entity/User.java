@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
         }
 )
 public class User {
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey(autoGenerate = false)
     private int userId;
     @NonNull public String firebaseUid;
     private String username;

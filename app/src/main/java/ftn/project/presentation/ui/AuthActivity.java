@@ -170,6 +170,7 @@ public class AuthActivity extends AppCompatActivity {
         String email = etEmail.getText().toString().trim();
         String pass = etPass.getText().toString();
         String confirm = etConfirm.getText().toString();
+        String username = etUsername.getText().toString().trim();
 
         if (email.isEmpty() || pass.isEmpty() || confirm.isEmpty()) {
             Toast.makeText(this, "Popunite sva polja", Toast.LENGTH_SHORT).show();
@@ -188,7 +189,23 @@ public class AuthActivity extends AppCompatActivity {
                             Log.d(TAG, "createUserWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
                             if (user != null) {
-                                createLocalUser(user, etUsername.getText().toString().trim(), selectedAvatarResId);
+                                // prvo obezbedjujemo lokalnog user-a pa saljemo mejl
+                                allocateGlobalIdAndSaveLocalWithCallback(user, username, selectedAvatarResId, () -> {
+                                    user.sendEmailVerification()
+                                            .addOnCompleteListener(AuthActivity.this, t -> {
+                                                if (t.isSuccessful()) {
+                                                    Toast.makeText(AuthActivity.this,
+                                                            "Poslat je verifikacioni email. Proveri inbox/spam.",
+                                                            Toast.LENGTH_LONG).show();
+                                                    startVerificationPolling(); // ovde smo sigurni da lokalni User postoji
+                                                } else {
+                                                    Toast.makeText(AuthActivity.this,
+                                                            "Greška pri slanju verifikacije: " +
+                                                                    (t.getException() != null ? t.getException().getMessage() : ""),
+                                                            Toast.LENGTH_LONG).show();
+                                                }
+                                            });
+                                });
 
                                 user.sendEmailVerification()
                                         .addOnCompleteListener(AuthActivity.this, new OnCompleteListener<Void>() {
@@ -256,6 +273,113 @@ public class AuthActivity extends AppCompatActivity {
                     }
                 });
     }
+    private void ensureLocalUserExists(FirebaseUser fb, String usernameHint, int avatarResId, Runnable onDone) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+            User local = db.userRepository().getByFirebaseUid(fb.getUid());
+            if (local != null) {
+                runOnUiThread(onDone);
+                return;
+            }
+            // Nema lokalnog reda → dodeli/uzmi globalni intId u Firestore i sačuvaj lokalno
+            allocateGlobalIdAndSaveLocalWithCallback(fb, usernameHint, avatarResId, onDone);
+        });
+    }
+    // NOVA verzija sa callback-om
+    private void allocateGlobalIdAndSaveLocalWithCallback(
+            FirebaseUser fb,
+            String username,
+            int selectedAvatarResId,
+            Runnable onDone   // ← (1) DODAT PARAMETAR
+    ) {
+        if (fb == null) {
+            Toast.makeText(this, "Nisi prijavljen.", Toast.LENGTH_SHORT).show();
+            // opciono: obavesti pozivaoca da je gotovo (bezuspešno)
+            if (onDone != null) runOnUiThread(onDone);   // ← (2) POZIV CALLBACK-a
+            return;
+        }
+
+        com.google.firebase.firestore.FirebaseFirestore fs =
+                com.google.firebase.firestore.FirebaseFirestore.getInstance();
+        com.google.firebase.firestore.DocumentReference counterRef =
+                fs.collection("counters").document("users");
+        com.google.firebase.firestore.DocumentReference userRef =
+                fs.collection("users").document(fb.getUid());
+
+        // 1) Ako već postoji intId u Firestore-u → upiši lokalno i pozovi onDone
+        userRef.get().addOnSuccessListener(snap -> {
+            Long existing = (snap.exists() ? snap.getLong("intId") : null);
+            if (existing != null) {
+                int intId = existing.intValue();
+                saveLocally(intId, fb.getUid(), username, selectedAvatarResId);
+                if (onDone != null) runOnUiThread(onDone);   // ← (3) POZIV CALLBACK-a
+                return; // ← (4) PREKINI DALJE IZVRŠAVANJE
+            }
+
+            // 2) U suprotnom, dodeli novi intId u transakciji
+            fs.runTransaction(tr -> {
+                com.google.firebase.firestore.DocumentSnapshot c = tr.get(counterRef);
+                long next;
+                Long cur = (c.exists() ? c.getLong("nextId") : null);
+                if (cur == null) {
+                    next = 1000L; // start vrednost
+                    java.util.Map<String, Object> init = new java.util.HashMap<>();
+                    init.put("nextId", next + 1L);
+                    tr.set(counterRef, init);
+                } else {
+                    next = cur;
+                    tr.update(counterRef, "nextId", cur + 1L);
+                }
+
+                java.util.Map<String, Object> data = new java.util.HashMap<>();
+                data.put("intId", next);
+                data.put("username", username);
+                data.put("createdAt", com.google.firebase.Timestamp.now());
+                tr.set(userRef, data, com.google.firebase.firestore.SetOptions.merge());
+
+                return next;
+            }).addOnSuccessListener(nextId -> {
+                int intId = (int) (long) nextId;
+                saveLocally(intId, fb.getUid(), username, selectedAvatarResId);
+                if (onDone != null) runOnUiThread(onDone);   // ← (5) POZIV CALLBACK-a
+            }).addOnFailureListener(e -> {
+                Toast.makeText(this, "Neuspešna dodela ID-a: " + e.getMessage(),
+                        Toast.LENGTH_LONG).show();
+                // namerno ne zovem onDone ovde; pozivalac može da reši grešku po potrebi
+            });
+
+        }).addOnFailureListener(e -> {
+            Toast.makeText(this, "Greška čitanja korisnika: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
+            // i ovde ne zovem onDone, jer je to "hard" fail
+        });
+    }
+
+    private void saveLocally(int userId, String firebaseUid, String username, int selectedAvatarResId) {
+        java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+            User existing = db.userRepository().getByFirebaseUid(firebaseUid);
+
+            if (existing == null) {
+                User nu = new User();
+                nu.setUserId(userId);                 // ← ključni deo: koristimo globalni int
+                nu.setFirebaseUid(firebaseUid);
+                nu.setUsername(username);
+                // ako čuvaš ime slike, ne resId:
+                // nu.setAvatarImage(ImageResId.nameForRes(this, selectedAvatarResId));
+                db.userRepository().insert(nu);
+            } else {
+                // već postoji lokalno (npr. re-instalacija): po želji sync-uj username/avatar
+                // existing.setUsername(username);
+                // db.userRepository().update(existing);
+            }
+
+            runOnUiThread(() ->
+                    Toast.makeText(this, "Korisnik sačuvan lokalno (ID: " + userId + ")", Toast.LENGTH_SHORT).show()
+            );
+        });
+    }
+
     private void createLocalUser(FirebaseUser fbUser, String username, int avatarResId) {
         if (fbUser == null) return;
 
@@ -310,31 +434,76 @@ public class AuthActivity extends AppCompatActivity {
 
         verifyTask = new Runnable() {
             @Override public void run() {
-                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                final FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                 if (user == null) {
-                    // neočekivano: nema usera – prekini čekanje
-                    showVerifyUI(false);
+                    // neočekivano: nema prijavljenog korisnika → prekini polling
+                    stopVerificationPolling();
+                    Toast.makeText(AuthActivity.this, "Nalog više nije prijavljen.", Toast.LENGTH_SHORT).show();
                     return;
                 }
+
                 user.reload().addOnCompleteListener(t -> {
+                    if (!t.isSuccessful()) {
+                        // mali retry ako reload failuje
+                        verifyHandler.postDelayed(verifyTask, POLL_MS);
+                        return;
+                    }
+
                     if (user.isEmailVerified()) {
+                        // 1) Obeleži verifikovan u lokalnoj bazi
+                        // 2) PROVERI da li postoji lokalni User; ako ne — kreiraj ga pre navigacije
                         Executors.newSingleThreadExecutor().execute(() -> {
                             AppDatabase db = AppDatabase.getInstance(getApplicationContext());
-                            db.userRepository().markVerified(user.getUid(), true);
-                        });
+                            try {
+                                db.userRepository().markVerified(user.getUid(), true);
+                            } catch (Exception ignored) { }
 
-                        animView.cancelAnimation();
-                        showVerifyUI(false);
-                        startActivity(new Intent(AuthActivity.this, ShopActivity.class));
-                        finish();
+                            User local = db.userRepository().getByFirebaseUid(user.getUid());
+
+                            runOnUiThread(() -> {
+                                // šta radimo kad je sve spremno:
+                                Runnable goNext = () -> {
+                                    animView.cancelAnimation();
+                                    showVerifyUI(false);
+                                    startActivity(new Intent(AuthActivity.this, AllUsersActivity.class));
+                                    finish();
+                                };
+
+                                if (local == null) {
+                                    // nema lokalnog reda → napravi ga kroz Firestore counter transakciju,
+                                    // pa tek onda idi dalje
+                                    String hint = deriveUsername(user); // fallback username
+                                    allocateGlobalIdAndSaveLocalWithCallback(
+                                            user,
+                                            hint,
+                                            selectedAvatarResId,
+                                            goNext
+                                    );
+                                } else {
+                                    // već postoji lokalni user → može navigacija odmah
+                                    goNext.run();
+                                }
+                            });
+                        });
                     } else {
-                        // nastavi da čekaš
+                        // još uvek nije verifikovan → nastavi polling
                         verifyHandler.postDelayed(verifyTask, POLL_MS);
                     }
                 });
             }
         };
+
         verifyHandler.post(verifyTask);
+    }
+
+    private String deriveUsername(FirebaseUser fb) {
+        if (etUsername != null && etUsername.getVisibility() == View.VISIBLE) {
+            String ui = etUsername.getText().toString().trim();
+            if (!ui.isEmpty()) return ui;
+        }
+        String email = fb.getEmail();
+        if (email != null && email.contains("@")) return email.substring(0, email.indexOf('@'));
+        return "Player";
     }
 
     private void stopVerificationPolling() {
