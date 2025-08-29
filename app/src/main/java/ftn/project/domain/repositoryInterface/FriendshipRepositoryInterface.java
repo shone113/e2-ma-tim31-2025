@@ -26,6 +26,12 @@ public interface FriendshipRepositoryInterface {
     void deleteAllForUser(int userId);
 
 
+    @Query(" SELECT EXISTS( " +
+           "SELECT 1 FROM Friendship " +
+           "WHERE (firstUserId = :a AND secondUserId = :b) " +
+            "OR (firstUserId = :b AND secondUserId = :a))")
+    boolean existsBetween(int a, int b);
+
 //    @Query("SELECT u.* FROM User uJOIN Friendship f ON u.userId = CASE WHEN f.requesterId = :me "
 //    + "THEN f.addresseeId ELSE f.requesterId END "
 //    + "WHERE (f.requesterId = :me OR f.addresseeId = :me) AND f.status = 'ACCEPTED'")

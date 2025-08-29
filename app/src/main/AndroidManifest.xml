@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -11,6 +17,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.HabitQuest">
+        <activity
+            android:name=".presentation.ui.EquipmentActivationActivity"
+            android:exported="false" />
         <activity
             android:name=".presentation.ui.LevelAdvancementActivity"
             android:exported="false" />
@@ -36,10 +45,10 @@
         <activity android:name=".presentation.ui.NewTaskActivity" />
         <activity android:name=".presentation.ui.TaskEditActivity" />
         <activity android:name=".presentation.ui.TaskCalendarActivity" />
-        <activity android:name=".presentation.ui.TaskListActivity"/>
-        <activity android:name=".presentation.ui.CategoryListActivity"/>
-        <activity android:name=".presentation.ui.MainActivity"/>
-        <activity android:name=".presentation.ui.RewardActivity"/>
+        <activity android:name=".presentation.ui.TaskListActivity" />
+        <activity android:name=".presentation.ui.CategoryListActivity" />
+        <activity android:name=".presentation.ui.MainActivity" />
+        <activity android:name=".presentation.ui.RewardActivity" />
         <activity
             android:name=".presentation.ui.ProfileActivity"
             android:exported="false" />

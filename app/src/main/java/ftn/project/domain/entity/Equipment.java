@@ -92,7 +92,7 @@ public class Equipment {
         return null;
     }
     public boolean getInitActiveType(){
-        if(this.type == EquipmentType.POTION){
+        if(this.type == EquipmentType.POTION && this.activeType == ActiveType.PERMANENT){
             return true;
         }else{
             return false;

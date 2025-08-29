@@ -28,9 +28,15 @@ public interface UserEquipmentRepositoryInterface {
     @Query("SELECT * FROM UserEquipment WHERE userId = :uid")
     List<UserEquipment> getAllForUser(int uid);
 
+    @Query("SELECT * FROM UserEquipment WHERE userId=:userId AND equipmentId=:equipmentId LIMIT 1")
+    UserEquipment getByUserAndEquipment(int userId, int equipmentId);
+
     @Query("DELETE FROM UserEquipment WHERE userId = :uid AND equipmentId = :eid")
     void remove(int uid, int eid);
 
     @Query("DELETE FROM UserEquipment WHERE userId = :uid")
     void removeAllForUser(int uid);
+
+    @Query("UPDATE UserEquipment SET active = 1 WHERE userEquipmentId = :userEquipmentId")
+    void activateEquipment(int userEquipmentId);
 }

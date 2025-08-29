@@ -7,16 +7,40 @@
     android:layout_height="match_parent"
     tools:context=".presentation.ui.AllUsersActivity">
 
-    <TextView
-        android:id="@+id/tvAllUsers"
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/rightColumnBarrier"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="All Users"
-        android:textSize="30sp"
-        android:textStyle="bold"
-        android:layout_marginLeft="16dp"
+        app:barrierDirection="left"
+        app:constraint_referenced_ids="btnScanQr,btnSearch" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAlliance"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Alliance"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="12dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/rightColumnBarrier"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btnScanQr"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_qr_button"
+        android:contentDescription="@string/cd_scan_qr_add_friend"
+        android:tooltipText="@string/tt_scan_qr_add_friend"
+        android:src="@drawable/qr_scan_black"
+        app:layout_constraintStart_toEndOf="@id/rightColumnBarrier"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"/>
+
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilSearch"
@@ -28,7 +52,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginEnd="8dp"
         android:layout_marginTop="12dp"
-        app:layout_constraintTop_toBottomOf="@id/tvAllUsers"
+        app:layout_constraintTop_toBottomOf="@id/btnAlliance"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/btnSearch">
 

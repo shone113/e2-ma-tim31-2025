@@ -3,10 +3,13 @@ package ftn.project.presentation.ui;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import ftn.project.R;
+import ftn.project.data.database.FirestoreSync;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Badge;
 import ftn.project.domain.entity.Equipment;
@@ -50,11 +54,11 @@ public class ProfileActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        AppDatabase db = AppDatabase.getInstance(getApplicationContext());
 
         int userId = getIntent().getIntExtra(EXTRA_USER_ID, -1);
         if (userId == -1) { finish(); return; }
 
-        AppDatabase db = AppDatabase.getInstance(getApplicationContext());
         User user = db.userRepository().getById(userId);
 
         TextView tvUsername = findViewById(R.id.tvUsername);
@@ -66,11 +70,9 @@ public class ProfileActivity extends AppCompatActivity {
         TextView tvPowerBox = findViewById(R.id.tvPowerBox);
         TextView tvExperienceBox = findViewById(R.id.tvExperienceBox);
         TextView tvCoinsBox = findViewById(R.id.tvCoinsBox);
+        ImageView ivQR = findViewById(R.id.ivQR);
 
-        Log.w("HEYYYY", "HEY");
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-        Log.w("U111", user.getFirebaseUid());
-        Log.w("F111", firebaseUser.getUid());
         if(!TextUtils.equals(user.getFirebaseUid(), firebaseUser.getUid())){
             tvPowerBox.setVisibility(View.GONE);
             tvCoinsBox.setVisibility(View.GONE);
@@ -139,5 +141,48 @@ public class ProfileActivity extends AppCompatActivity {
                 tvUsername.setText(u.getUsername());
             }
         }
+
+        findViewById(R.id.ivQR).setOnClickListener(v -> showMyQrDialog(user));
+
     }
+
+    private void showMyQrDialog(User me) {
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_profile_qr, null, false);
+
+        TextView tvTitle = view.findViewById(R.id.tvTitle);
+        TextView tvSub   = view.findViewById(R.id.tvSub);
+        ImageView ivQr   = view.findViewById(R.id.ivQr);
+        com.google.android.material.button.MaterialButton btnClose = view.findViewById(R.id.btnClose);
+
+        tvTitle.setText(me.getUsername() + "\'s QR code");
+
+        try {
+            org.json.JSONObject payload = new org.json.JSONObject();
+            payload.put("app", "HabitQuest");
+            payload.put("type", "add_friend");
+            payload.put("v", 1);
+            payload.put("uid", me.getFirebaseUid());
+            payload.put("username", me.getUsername() != null ? me.getUsername() : "Player");
+
+            android.graphics.Bitmap bmp = ftn.project.presentation.util.QrGenerator.generate(payload.toString(), 1024);
+            ivQr.setImageBitmap(bmp);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Greška pri kreiranju QR koda", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        androidx.appcompat.app.AlertDialog dialog =
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                        .setView(view)
+                        .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
 }

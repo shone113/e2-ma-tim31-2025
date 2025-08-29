@@ -29,6 +29,7 @@ import com.google.firebase.auth.FirebaseUser;
 import java.util.ArrayList;
 
 import ftn.project.R;
+import ftn.project.data.database.FirestoreSync;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Equipment;
 import ftn.project.domain.entity.SpecialMission;
@@ -65,8 +66,7 @@ public class ShopActivity extends AppCompatActivity {
         StatusBarBinder.bind(this, tvXP, tvPP, tvCoins);
 
         AppDatabase db = AppDatabase.getInstance(getApplicationContext());
-        String path = db.getOpenHelper().getWritableDatabase().getPath();
-        android.util.Log.d("DB", "Opened DB at: " + path);
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         equipment = new ArrayList<>();
         specialMissionProgressService = new SpecialMissionProgressService(
                 db.specialMissionRepository(),
@@ -77,7 +77,6 @@ public class ShopActivity extends AppCompatActivity {
         GridView gvItems = findViewById(R.id.gvShop);
 
         equipment = new ArrayList<>(db.equipmentRepository().getPurchasable());
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         adapter = new ShopAdapter(
                 this,
                 equipment,
@@ -127,10 +126,9 @@ public class ShopActivity extends AppCompatActivity {
                     new ColorDrawable(Color.TRANSPARENT));
         }
 
-        // 2) Klikovi: koristiš dialog.dismiss(), ne d.dismiss()
         btnBuy.setOnClickListener(v -> {
             performPurchase(user, price, equipment);
-            dialog.dismiss(); // <<< ovo zatvara prozor
+            dialog.dismiss();
         });
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
@@ -167,13 +165,15 @@ public class ShopActivity extends AppCompatActivity {
                 return;
             }
 
+            UserEquipment ue = new UserEquipment();
+            ue.setUserId(u.getUserId());
+            ue.setEquipmentId(equipment.getEquipmentId());
+            ue.setBattleCount(equipment.getBattleCount());
+            ue.setActive(equipment.getInitActiveType());
+
+            // 1) Room transakcija
             db.runInTransaction(() -> {
-                db.userRepository().subtractCoins(u.getUserId(), (long)price);
-                UserEquipment ue = new UserEquipment();
-                ue.setUserId(u.getUserId());
-                ue.setEquipmentId(equipment.getEquipmentId());
-                ue.setBattleCount(equipment.getBattleCount());
-                ue.setActive(equipment.getInitActiveType());
+                db.userRepository().subtractCoins(u.getUserId(), (long) price);
                 db.userEquipmentRepository().add(ue);
 
 
@@ -196,9 +196,18 @@ public class ShopActivity extends AppCompatActivity {
                 }
             });
 
-            runOnUiThread(() -> {
-                android.widget.Toast.makeText(this, "Purchased!", android.widget.Toast.LENGTH_SHORT).show();
-            });
+            // 2) Firestore mirror – koristi ISTI ue i u.getUserId()
+            FirestoreSync.mirrorUserEquipmentToFirestore(
+                    getApplicationContext(),
+                    uid,
+                    u.getUserId(),
+                    ue
+            );
+
+            runOnUiThread(() ->
+                    Toast.makeText(this, "Purchased!", Toast.LENGTH_SHORT).show()
+            );
+
         });
     }
 }
