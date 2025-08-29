@@ -134,7 +134,8 @@ public class AllUsersActivity extends AppCompatActivity {
             Toast.makeText(this, "Unesi bar 2 slova", Toast.LENGTH_SHORT).show();
             return;
         }
-        List<UserFriendDTO> users = db.userRepository().searchNonFriendUsersWithFlag(q, loggedUser.getUserId());
+        //List<UserFriendDTO> users = db.userRepository().searchNonFriendUsersWithFlag(q, loggedUser.getUserId());
+        List<UserFriendDTO> users = db.userRepository().searchUsersByUsername(q);
         users.addAll(friendDTOs);
 
         adapter.replaceAll(users);
@@ -210,8 +211,8 @@ public class AllUsersActivity extends AppCompatActivity {
                         other.getUserId()
                 );
                 runOnUiThread(() -> {
-                    //toast("Dodat prijatelj: " + other.getUsername());
-                    // osveži listu, adapter.submitList(...) itd. po potrebi
+                    toast("Dodat prijatelj");
+                    reloadFriendsList();
                 });
             });
 
@@ -223,5 +224,35 @@ public class AllUsersActivity extends AppCompatActivity {
     private void toast(String msg) {
         runOnUiThread(() -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
     }
+
+    private void reloadFriendsList() {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            FirebaseUser fu = FirebaseAuth.getInstance().getCurrentUser();
+            if (fu == null) return;
+
+            User me = db.userRepository().getByFirebaseUid(fu.getUid());
+            if (me == null) return;
+
+            ArrayList<Friendship> friendships =
+                    new ArrayList<>(db.friendshipRepository().getAllForUserId(me.getUserId()));
+            List<User> users = db.userRepository().getAll();
+
+            ArrayList<UserFriendDTO> fresh =
+                    friendshipService.getFriendsForUser(friendships, users, me.getUserId());
+
+            runOnUiThread(() -> {
+                friendDTOs = fresh;
+                if (adapter != null) {
+                    // Ako imaš replaceAll — koristi njega:
+                    adapter.replaceAll(fresh);
+                    // Ako nemaš replaceAll, onda:
+                    // adapter.clear();
+                    // adapter.addAll(fresh);
+                    // adapter.notifyDataSetChanged();
+                }
+            });
+        });
+    }
+
 
 }

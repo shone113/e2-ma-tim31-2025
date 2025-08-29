@@ -55,7 +55,6 @@ public class ShopActivity extends AppCompatActivity {
             return insets;
         });
 
-        setContentView(R.layout.activity_shop);
         TextView tvXP = findViewById(R.id.tvXP);
         TextView tvPP = findViewById(R.id.tvPP);
         TextView tvCoins = findViewById(R.id.tvCoins);

@@ -77,7 +77,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (INSTANCE == null) {
             appContext = context.getApplicationContext();
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                     AppDatabase.class, "habit_quest_baza30.db")
+                     AppDatabase.class, "habit_quest_baza31.db")
                     //.addMigrations(MIGRATION_1_2)
                     .addCallback(prepopulateCallback)
                     .allowMainThreadQueries()

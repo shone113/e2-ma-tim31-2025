@@ -7,6 +7,7 @@ import androidx.room.Junction;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Relation;
+import androidx.room.Update;
 
 import java.util.List;
 
@@ -16,11 +17,14 @@ import ftn.project.domain.entity.UserEquipment;
 
 @Dao
 public interface UserEquipmentRepositoryInterface {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     void add(UserEquipment link);
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     void addAll(List<UserEquipment> links);
+
+    @Update
+    int update(UserEquipment userEquipment);
 
     @Query("SELECT * FROM UserEquipment")
     List<UserEquipment> getAll();

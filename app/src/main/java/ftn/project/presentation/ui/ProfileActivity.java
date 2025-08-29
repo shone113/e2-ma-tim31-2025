@@ -61,6 +61,16 @@ public class ProfileActivity extends AppCompatActivity {
 
         User user = db.userRepository().getById(userId);
 
+        FirestoreSync.syncUserEquipmentDown(
+                getApplicationContext(),
+                db,
+                user.getFirebaseUid(),
+                () -> {
+                    reloadEquipment(db, userId);
+                    Toast.makeText(this, "Equipment synced ✔", Toast.LENGTH_SHORT).show();
+                }
+        );
+
         TextView tvUsername = findViewById(R.id.tvUsername);
         ImageView imgAvatar = findViewById(R.id.imgAvatar);
         TextView tvTitle = findViewById(R.id.tvTitle);
@@ -145,6 +155,25 @@ public class ProfileActivity extends AppCompatActivity {
         findViewById(R.id.ivQR).setOnClickListener(v -> showMyQrDialog(user));
 
     }
+
+    private void reloadEquipment(AppDatabase db, int userId) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            // Ako nemaš JOIN upit, koristi postojeća dva DAO poziva:
+            List<UserEquipment> userEquipment = db.userEquipmentRepository().getAllForUser(userId);
+            ArrayList<Equipment> equipment = new ArrayList<>();
+            for (UserEquipment ue : userEquipment) {
+                Equipment e = db.equipmentRepository().getById(ue.getEquipmentId());
+                if (e != null) equipment.add(e);
+            }
+
+            runOnUiThread(() -> {
+                equipmentAdapter.clear();
+                equipmentAdapter.addAll(equipment);
+                equipmentAdapter.notifyDataSetChanged();
+            });
+        });
+    }
+
 
     private void showMyQrDialog(User me) {
         View view = LayoutInflater.from(this).inflate(R.layout.dialog_profile_qr, null, false);

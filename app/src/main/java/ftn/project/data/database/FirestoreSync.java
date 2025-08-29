@@ -57,6 +57,99 @@ public class FirestoreSync {
                 .addOnFailureListener(e -> Toast.makeText(ctx, "Sync badge fail: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
+    public static void syncUserEquipmentDown(
+            Context ctx,
+            AppDatabase db,
+            String firebaseUid,
+            @androidx.annotation.Nullable Runnable onDone
+    ) {
+        FirebaseFirestore fs = FirebaseFirestore.getInstance();
+
+        fs.collection("users")
+                .document(firebaseUid)
+                .collection("equipmentInstances")
+                .get()
+                .addOnSuccessListener(snaps ->
+                        Executors.newSingleThreadExecutor().execute(() -> {
+                            try {
+                                // 1) Učitaj lokalnog korisnika
+                                User me = db.userRepository().getByFirebaseUid(firebaseUid);
+                                if (me == null) {
+                                    postMain(onDone);
+                                    return;
+                                }
+                                int meId = me.getUserId();
+
+                                int inserted = 0, updated = 0, skipped = 0;
+
+                                // 2) Prođi kroz sve instance iz Firestore-a
+                                for (com.google.firebase.firestore.DocumentSnapshot d : snaps) {
+                                    Long eqL = d.getLong("equipmentId");
+                                    if (eqL == null) { skipped++; continue; }
+                                    int equipmentId = eqL.intValue();
+
+                                    Long bcL = d.getLong("battleCount");
+                                    Integer battleCount = (bcL == null) ? 0 : bcL.intValue();
+
+                                    Boolean activeB = d.getBoolean("active");
+                                    boolean active = (activeB != null) && activeB;
+
+                                    try {
+                                        // 3) Učitaj postojeći zapis (po PK: userId+equipmentId)
+                                        //    Prilagodi imenu metode tvog DAO-a ako je drugačije:
+                                        //    npr. getByUserAndEquipment / get / findOne
+                                        UserEquipment existing =
+                                                db.userEquipmentRepository().getByUserAndEquipment(meId, equipmentId);
+
+                                        if (existing == null) {
+                                            // (Ako FK na Equipment ne postoji lokalno, insert može da padne;
+                                            //  pretpostavka je da imaš seed-ovan Equipment.)
+                                            UserEquipment ue = new UserEquipment();
+                                            ue.setUserId(meId);
+                                            ue.setEquipmentId(equipmentId);
+                                            ue.setBattleCount(battleCount);
+                                            ue.setActive(active);
+                                            db.userEquipmentRepository().add(ue);
+                                            inserted++;
+                                        } else {
+                                            boolean changed = false;
+
+                                            Integer oldBc = existing.getBattleCount();
+                                            if (oldBc == null || !oldBc.equals(battleCount)) {
+                                                existing.setBattleCount(battleCount);
+                                                changed = true;
+                                            }
+
+                                            Boolean oldActive = existing.getActive();
+                                            if (oldActive == null || oldActive.booleanValue() != active) {
+                                                existing.setActive(active);
+                                                changed = true;
+                                            }
+
+                                            if (changed) {
+                                                db.userEquipmentRepository().update(existing);
+                                                updated++;
+                                            }
+                                        }
+                                    } catch (Exception ex) {
+                                        skipped++;
+                                        Log.w("FS_SYNC", "UE upsert skip (eqId=" + equipmentId + "): " + ex.getMessage());
+                                    }
+                                }
+
+                                Log.d("FS_SYNC", "UserEquipment down: ins=" + inserted +
+                                        " upd=" + updated + " skip=" + skipped);
+                            } finally {
+                                postMain(onDone);
+                            }
+                        })
+                )
+                .addOnFailureListener(e -> {
+                    Toast.makeText(ctx, "Sync equipment fail: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    postMain(onDone);
+                });
+    }
+
     public static void syncAllUsersDown(Context ctx, AppDatabase db, Runnable onDone) {
         FirebaseFirestore.getInstance()
                 .collection("users")
