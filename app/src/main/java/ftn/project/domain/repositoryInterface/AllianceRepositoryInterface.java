@@ -18,4 +18,7 @@ public interface AllianceRepositoryInterface {
 
     @Query("SELECT * FROM Alliance WHERE allianceId = :allianceID")
     Alliance getAlliance(int allianceID);
+    @Query("SELECT * FROM Alliance WHERE leader_user_id = :userId")
+    Alliance getAllianceByUser(int userId);
+
 }
