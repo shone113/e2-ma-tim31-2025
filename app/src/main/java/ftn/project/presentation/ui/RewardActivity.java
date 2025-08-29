@@ -199,7 +199,7 @@ public class RewardActivity extends AppCompatActivity {
         // Level up SAMO JEDNOM ✅
         db.userRepository().updateLevel(user.getUserId(), userLevel + 1);
 
-        Intent backIntent = new Intent(this, TaskCalendarActivity.class);
+        Intent backIntent = new Intent(this, MainActivity.class);
         startActivity(backIntent);
         finish();
     }

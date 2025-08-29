@@ -15,6 +15,9 @@ public class BossService {
         AppDatabase db = AppDatabase.getInstance(context);
         this.bossRepository = db.bossRepository();
     }
+    public BossService(BossRepositoryInterface bossRepository){
+        this.bossRepository = bossRepository;
+    }
 
     public Boss getOrCreateBossForLevel(int currentLevel) {
         // 1. Da li ima neporaženih bossova sa manjim levelom?
@@ -77,7 +80,7 @@ public class BossService {
         return hp;
     }
 
-    private int calculateCoinReward(int level) {
+    public int calculateCoinReward(int level) {
         double reward = 200;
         for (int i = 1; i <= level; i++) {
             reward *= 1.2;

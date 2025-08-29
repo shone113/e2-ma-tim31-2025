@@ -18,17 +18,22 @@ import java.util.concurrent.Executors;
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Category;
+import ftn.project.domain.entity.SpecialMission;
+import ftn.project.domain.entity.SpecialMissionProgress;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.CheckQuotaService;
+import ftn.project.domain.usecase.LoggedUserService;
+import ftn.project.domain.usecase.SpecialMissionProgressService;
 
 public class TaskDetailsActivity extends AppCompatActivity {
 
     private TextView tvName, tvDescription, tvStatus, tvStartExecutionTime, tvEndExecutionTime,
             tvDifficulty, tvImportance, tvFrequency, tvXP, tvTaskCategory;
     private Button btnDone, btnCanceled, btnPaused, btnUpdateTask, btnDeleteTask;
+    private SpecialMissionProgressService smps;
 
     private int taskInstanceId;
 
@@ -185,11 +190,18 @@ public class TaskDetailsActivity extends AppCompatActivity {
         btnDone.setOnClickListener(v -> {
             Executors.newSingleThreadExecutor().execute(() -> {
                 AppDatabase db = AppDatabase.getInstance(this);
+                LoggedUserService loggedService = new LoggedUserService(this);
+                User user = loggedService.getCurrentUser();
+                smps = new SpecialMissionProgressService(
+                        db.specialMissionRepository(),
+                        db.specialMissionProgressRepository(),
+                        db.taskInstanceRepository()
+                );
 
                 // ✅ Izračunaj XP na osnovu kvota
-                int earnedXp = CheckQuotaService.calculateEarnedXP(taskAndInstance.taskInstance, db);
+                int earnedXp = CheckQuotaService.calculateEarnedXP(taskAndInstance.taskInstance,user.getUserId(), db);
 
-                // ✅ Postavi status na DONE i upiši XP u model
+
                 taskAndInstance.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
                 taskAndInstance.taskInstance.setEarnedXp(earnedXp);
 
@@ -207,6 +219,35 @@ public class TaskDetailsActivity extends AppCompatActivity {
                 // ✅ Ako ima XP, dodaj korisniku
                 if (earnedXp > 0) {
                     updateLoggedUserPoints(taskAndInstance.task.getUserId(), earnedXp);
+                }
+                int increment = smps.punchByEasyTaskIncrement(user.getUserId(), taskAndInstance.taskInstance);
+                int incrementHard = smps.punchByHardTaskIncerement(user.getUserId(), taskAndInstance.taskInstance);
+                if (increment > 0) {
+                    SpecialMission mission = smps.getActiveMission(user.getUserId());
+                    SpecialMissionProgress smp = smps.getActiveMissionProgress(mission.getId(), user.getUserId());
+
+
+                    smp.setEasyNormalTasks(smp.getEasyNormalTasks() + increment);
+                    smp.setTotalDamage(smp.getTotalDamage() + increment);
+
+                    db.specialMissionProgressRepository().update(smp);
+
+                    mission.setBossHp(mission.getBossHp() - increment);
+                    db.specialMissionRepository().update(mission);
+                }
+
+                if(incrementHard > 0)
+                {
+                    SpecialMission mission = smps.getActiveMission(user.getUserId());
+                    SpecialMissionProgress smp = smps.getActiveMissionProgress(mission.getId(), user.getUserId());
+
+                    smp.setOtherTasks(smp.getOtherTasks() + incrementHard);
+                    smp.setTotalDamage(smp.getTotalDamage() + incrementHard * 4);
+
+                    db.specialMissionProgressRepository().update(smp);
+
+                    mission.setBossHp(mission.getBossHp() - incrementHard * 4);
+                    db.specialMissionRepository().update(mission);
                 }
 
                 // ✅ Refresh UI odmah

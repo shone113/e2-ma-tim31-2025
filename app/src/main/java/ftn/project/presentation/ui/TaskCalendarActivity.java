@@ -33,9 +33,12 @@ import java.util.concurrent.Executors;
 
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Alliance;
 import ftn.project.domain.entity.Battle;
 import ftn.project.domain.entity.Boss;
 import ftn.project.domain.entity.Category;
+import ftn.project.domain.entity.SpecialMission;
+import ftn.project.domain.entity.SpecialMissionProgress;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
@@ -43,7 +46,9 @@ import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.BattleStartService;
 import ftn.project.domain.usecase.BossService;
 import ftn.project.domain.usecase.CheckQuotaService;
+import ftn.project.domain.usecase.LoggedUserService;
 import ftn.project.domain.usecase.QuotaFinalizer;
+import ftn.project.domain.usecase.SpecialMissionProgressService;
 import ftn.project.domain.usecase.SuccessRateService;
 import ftn.project.presentation.adapter.HoursAdapter;
 
@@ -51,7 +56,7 @@ public class TaskCalendarActivity extends AppCompatActivity {
 
     private RecyclerView rvHours;
     private FrameLayout flDaySchedule;
-    private FloatingActionButton fabAddTask, fabListTask, fabBattle;
+    private FloatingActionButton fabAddTask, fabListTask, fabBattle, fabAlliance;
     private TextView tvCurrentDay;
     private ImageButton btnPrevDay, btnNextDay;
 
@@ -60,6 +65,7 @@ public class TaskCalendarActivity extends AppCompatActivity {
     private LocalDate selectedDate = LocalDate.now();
     private final DateTimeFormatter headerFormatter =
             DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault());
+    private SpecialMissionProgressService smps;
 
     @Override
     protected void onResume() {
@@ -76,6 +82,7 @@ public class TaskCalendarActivity extends AppCompatActivity {
         fabAddTask = findViewById(R.id.fabAddTask);
         fabListTask = findViewById(R.id.fabListTasks);
         fabBattle = findViewById(R.id.fabBattle);
+        fabAlliance = findViewById(R.id.fabAlliance);
         tvCurrentDay = findViewById(R.id.tvCurrentWeek);
         btnPrevDay = findViewById(R.id.btnPrevDay);
         btnNextDay = findViewById(R.id.btnNextDay);
@@ -126,6 +133,13 @@ public class TaskCalendarActivity extends AppCompatActivity {
             intent.putExtra("hitChance", result.hitChance);
             startActivity(intent);
         });
+        fabAlliance.setOnClickListener(v ->{
+            AppDatabase db = AppDatabase.getInstance(this);
+            User u1 = db.userRepository().getById(1);
+            User u2 = db.userRepository().getById(2);
+            u2.setAllianceId(1);
+            db.userRepository().update(u2);
+        });
 
 
         btnPrevDay.setOnClickListener(v -> {
@@ -168,11 +182,13 @@ public class TaskCalendarActivity extends AppCompatActivity {
     private void loadTasksForDate(LocalDate date) {
         LocalDateTime dayStart = date.atStartOfDay();
         LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
-
+        LoggedUserService loggedService = new LoggedUserService(this);
+        User user = loggedService.getCurrentUser();
         Executors.newSingleThreadExecutor().execute(() -> {
+
             List<TaskInstanceWithTask> dayTasks = AppDatabase.getInstance(this)
                     .taskInstanceRepository()
-                    .getInstancesForDay(dayStart, dayEnd);
+                    .getInstancesForDay(user.getUserId(),dayStart, dayEnd);
 
             List<Category> categories = AppDatabase.getInstance(this)
                     .categoryRepository()
@@ -310,9 +326,16 @@ public class TaskCalendarActivity extends AppCompatActivity {
         btnDone.setOnClickListener(v -> {
             Executors.newSingleThreadExecutor().execute(() -> {
                 AppDatabase db = AppDatabase.getInstance(this);
+                LoggedUserService loggedService = new LoggedUserService(this);
+                User user = loggedService.getCurrentUser();
+                smps = new SpecialMissionProgressService(
+                        db.specialMissionRepository(),
+                        db.specialMissionProgressRepository(),
+                        db.taskInstanceRepository()
+                );
 
                 // ✅ Izračunaj XP na osnovu kvota
-                int earnedXp = CheckQuotaService.calculateEarnedXP(taskInstanceWithTask.taskInstance, db);
+                int earnedXp = CheckQuotaService.calculateEarnedXP(taskInstanceWithTask.taskInstance,user.getUserId(), db);
 
                 // ✅ Postavi status na DONE i upiši XP u model
                 taskInstanceWithTask.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
@@ -332,6 +355,34 @@ public class TaskCalendarActivity extends AppCompatActivity {
                 // ✅ Ako ima XP, dodaj korisniku
                 if (earnedXp > 0) {
                     updateLoggedUserPoints(taskInstanceWithTask.task.getUserId(), earnedXp);
+                }
+                int increment = smps.punchByEasyTaskIncrement(user.getUserId(), taskInstanceWithTask.taskInstance);
+                int incrementHard = smps.punchByHardTaskIncerement(user.getUserId(), taskInstanceWithTask.taskInstance);
+                if (increment > 0) {
+                    SpecialMission mission = smps.getActiveMission(user.getUserId());
+                    SpecialMissionProgress smp = smps.getActiveMissionProgress(mission.getId(), user.getUserId());
+
+                    smp.setEasyNormalTasks(smp.getEasyNormalTasks() + increment);
+                    smp.setTotalDamage(smp.getTotalDamage() + increment);
+
+                    db.specialMissionProgressRepository().update(smp);
+
+                    mission.setBossHp(mission.getBossHp() - increment);
+                    db.specialMissionRepository().update(mission);
+                }
+
+                if(incrementHard > 0)
+                {
+                    SpecialMission mission = smps.getActiveMission(user.getUserId());
+                    SpecialMissionProgress smp = smps.getActiveMissionProgress(mission.getId(), user.getUserId());
+
+                    smp.setOtherTasks(smp.getOtherTasks() + incrementHard);
+                    smp.setTotalDamage(smp.getTotalDamage() + incrementHard * 4);
+
+                    db.specialMissionProgressRepository().update(smp);
+
+                    mission.setBossHp(mission.getBossHp() - incrementHard * 4);
+                    db.specialMissionRepository().update(mission);
                 }
 
                 // ✅ Refresh UI odmah

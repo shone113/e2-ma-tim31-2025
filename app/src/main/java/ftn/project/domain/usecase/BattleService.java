@@ -34,6 +34,7 @@ public class BattleService {
 
     public interface BattleResultListener {
         void onBattleFinished(Battle battle, int coins, String equipmentIcon);
+        void onAttackResult(boolean hit, Battle battle, Boss boss);
     }
 
     private BattleResultListener resultListener;
@@ -52,10 +53,11 @@ public class BattleService {
 
             // smanji broj napada
             battle.setAttacksRemaining(battle.getAttacksRemaining() - 1);
-
+            boolean hit = false;
             int roll = random.nextInt(100);
             if (roll < hitChance) {
                 // pogodak
+                hit = true;
                 boss.setHp(boss.getHp() - userPp);
                 if (boss.getHp() < 0) boss.setHp(0);
 
@@ -74,6 +76,11 @@ public class BattleService {
             // update u bazi
             db.battleRepository().update(battle);
             db.bossRepository().update(boss);
+
+            if (resultListener != null) {
+                boolean finalHit = hit;
+                runOnUi(() -> resultListener.onAttackResult(finalHit, battle, boss));
+            }
 
             // pozovi callback da Activity može da osveži UI
             if (onUiUpdate != null) {

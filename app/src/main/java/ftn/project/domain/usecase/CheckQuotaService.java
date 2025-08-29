@@ -7,14 +7,14 @@ import ftn.project.domain.entity.TaskInstance;
 
 public class CheckQuotaService {
 
-    public static int calculateEarnedXP(TaskInstance taskInstance, AppDatabase db) {
+    public static int calculateEarnedXP(TaskInstance taskInstance,int userId, AppDatabase db) {
         int totalXp = 0;
         boolean inQuota = false;
 
         LocalDateTime ref = taskInstance.getEndExecutionTime();
 
-        int difficultyXp = checkDifficultyQuota(taskInstance, db, ref);
-        int importanceXp = checkImportanceQuota(taskInstance, db, ref);
+        int difficultyXp = checkDifficultyQuota(taskInstance,userId, db, ref);
+        int importanceXp = checkImportanceQuota(taskInstance,userId, db, ref);
 
         totalXp = difficultyXp + importanceXp;
         if (totalXp > 0) inQuota = true;
@@ -25,7 +25,7 @@ public class CheckQuotaService {
         return totalXp;
     }
 
-    private static int checkDifficultyQuota(TaskInstance ti, AppDatabase db, LocalDateTime ref) {
+    private static int checkDifficultyQuota(TaskInstance ti, int userId, AppDatabase db, LocalDateTime ref) {
         TaskInstance.DifficultyEnum diff = ti.getDifficultyInstance();
         int limit;
         LocalDateTime start, end;
@@ -52,12 +52,12 @@ public class CheckQuotaService {
         }
 
         int count = db.taskInstanceRepository()
-                .countTakenSlotsByDifficulty(diff.name(), start, end);
+                .countTakenSlotsByDifficulty(userId,diff.name(), start, end);
 
         return (count < limit) ? diff.getXp() : 0;
     }
 
-    private static int checkImportanceQuota(TaskInstance ti, AppDatabase db, LocalDateTime ref) {
+    private static int checkImportanceQuota(TaskInstance ti,int userId, AppDatabase db, LocalDateTime ref) {
         TaskInstance.ImportanceEnum imp = ti.getImportanceInstance();
         int limit;
         LocalDateTime start, end;
@@ -84,7 +84,7 @@ public class CheckQuotaService {
         }
 
         int count = db.taskInstanceRepository()
-                .countTakenSlotsByImportance(imp.name(), start, end);
+                .countTakenSlotsByImportance(userId,imp.name(), start, end);
 
         return (count < limit) ? imp.getXp() : 0;
     }
