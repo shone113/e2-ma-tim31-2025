@@ -7,10 +7,10 @@ import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.TaskInstance;
 
 public class SuccessRateService {
-    public static double calculateStageSuccessRate(AppDatabase db, LocalDateTime stageStart, LocalDateTime stageEnd) {
+    public static double calculateStageSuccessRate(AppDatabase db, int userId, LocalDateTime stageStart, LocalDateTime stageEnd) {
         // uzmi samo one taskove koji su u kvoti
         List<TaskInstance> inQuota = db.taskInstanceRepository()
-                .getInQuotaTasksBetween(stageStart, stageEnd);
+                .getInQuotaTasksBetween(userId,stageStart, stageEnd);
 
         int totalTasks = inQuota.size();
         int doneTasks = (int) inQuota.stream()

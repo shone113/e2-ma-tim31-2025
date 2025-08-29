@@ -31,8 +31,11 @@ import java.util.ArrayList;
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Equipment;
+import ftn.project.domain.entity.SpecialMission;
+import ftn.project.domain.entity.SpecialMissionProgress;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.entity.UserEquipment;
+import ftn.project.domain.usecase.SpecialMissionProgressService;
 import ftn.project.presentation.adapter.ShopAdapter;
 import ftn.project.presentation.adapter.UserAdapter;
 import ftn.project.presentation.util.ImageResId;
@@ -42,6 +45,7 @@ public class ShopActivity extends AppCompatActivity {
 
     private ArrayList<Equipment> equipment;
     private ShopAdapter adapter;
+    private SpecialMissionProgressService specialMissionProgressService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +68,11 @@ public class ShopActivity extends AppCompatActivity {
         String path = db.getOpenHelper().getWritableDatabase().getPath();
         android.util.Log.d("DB", "Opened DB at: " + path);
         equipment = new ArrayList<>();
+        specialMissionProgressService = new SpecialMissionProgressService(
+                db.specialMissionRepository(),
+                db.specialMissionProgressRepository(),
+                db.taskInstanceRepository()
+        );
 
         GridView gvItems = findViewById(R.id.gvShop);
 
@@ -135,6 +144,7 @@ public class ShopActivity extends AppCompatActivity {
             startActivity(new Intent(this, AuthActivity.class));
             return;
         }
+
         String uid = fb.getUid();
 
         java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
@@ -165,6 +175,25 @@ public class ShopActivity extends AppCompatActivity {
                 ue.setBattleCount(equipment.getBattleCount());
                 ue.setActive(equipment.getInitActiveType());
                 db.userEquipmentRepository().add(ue);
+
+
+                if(specialMissionProgressService.punchByShopping(u.getUserId()))
+                {
+                    SpecialMission specialMission = specialMissionProgressService.getActiveMission(u.getUserId());
+                    if (specialMission != null) {
+                        SpecialMissionProgress smp = specialMissionProgressService
+                                .getActiveMissionProgress(specialMission.getId(), u.getUserId());
+
+                        if (smp != null) {
+                            smp.setShopPurchases(smp.getShopPurchases() + 1);
+                            smp.setTotalDamage(smp.getTotalDamage() + 2);
+                            db.specialMissionProgressRepository().update(smp);
+
+                            specialMission.setBossHp(specialMission.getBossHp() - 2);
+                            db.specialMissionRepository().update(specialMission);
+                        }
+                    }
+                }
             });
 
             runOnUiThread(() -> {

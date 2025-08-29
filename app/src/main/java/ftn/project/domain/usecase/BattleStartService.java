@@ -44,13 +44,13 @@ public class BattleStartService {
 
         LocalDate current = startDate;
         while (!current.isAfter(endDate)) {
-            QuotaFinalizer.finalizeDayQuota(db, current);
+            QuotaFinalizer.finalizeDayQuota(db,currentUser.getUserId(), current);
             current = current.plusDays(1);
         }
 
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
-        double hitChance = SuccessRateService.calculateStageSuccessRate(db, startDateTime, endDateTime);
+        double hitChance = SuccessRateService.calculateStageSuccessRate(db, currentUser.getUserId(),startDateTime, endDateTime);
         int hitChanceInt = (int) Math.round(hitChance);
 
         return new BattleStartResult((int) battleId, hitChanceInt);

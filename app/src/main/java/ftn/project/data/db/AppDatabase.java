@@ -23,9 +23,12 @@ import ftn.project.domain.entity.Converters;
 import ftn.project.domain.entity.Equipment;
 import ftn.project.domain.entity.Friendship;
 import ftn.project.domain.entity.Level;
+import ftn.project.domain.entity.SpecialMission;
+import ftn.project.domain.entity.SpecialMissionProgress;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.repositoryInterface.AllianceRepositoryInterface;
 import ftn.project.domain.repositoryInterface.BattleRepositoryInterface;
 import ftn.project.domain.repositoryInterface.BossRepositoryInterface;
 import ftn.project.domain.entity.UserBadge;
@@ -34,6 +37,8 @@ import ftn.project.domain.entity.UserEquipment;
 import ftn.project.domain.repositoryInterface.EquipmentRepositoryInterface;
 import ftn.project.domain.repositoryInterface.FriendshipRepositoryInterface;
 import ftn.project.domain.repositoryInterface.LevelRepositoryInterface;
+import ftn.project.domain.repositoryInterface.SpecialMissionProgressRepositoryInterface;
+import ftn.project.domain.repositoryInterface.SpecialMissionRepositoryInterface;
 import ftn.project.domain.repositoryInterface.TaskInstanceRepositoryInterface;
 import ftn.project.domain.repositoryInterface.TaskRepositoryInterface;
 import ftn.project.domain.repositoryInterface.UserBadgeRepositoryInterface;
@@ -43,7 +48,7 @@ import ftn.project.domain.repositoryInterface.UserRepositoryInterface;
 
 @Database(entities = {User.class, Task.class, Category.class, TaskInstance.class,
         Equipment.class, UserEquipment.class, UserBadge.class, Level.class, Friendship.class,
-        Alliance.class, Battle.class, Boss.class}, version = 1, exportSchema = false)
+        Alliance.class, Battle.class, Boss.class, SpecialMission.class, SpecialMissionProgress.class}, version = 1, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -58,6 +63,9 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract UserBadgeRepositoryInterface userBadgeRepository();
     public abstract LevelRepositoryInterface levelRepository();
     public abstract FriendshipRepositoryInterface friendshipRepository();
+    public abstract AllianceRepositoryInterface allianceRepository();
+    public abstract SpecialMissionProgressRepositoryInterface specialMissionProgressRepository();
+    public abstract SpecialMissionRepositoryInterface specialMissionRepository();
     private static AppDatabase INSTANCE;
     private static Context appContext;
 

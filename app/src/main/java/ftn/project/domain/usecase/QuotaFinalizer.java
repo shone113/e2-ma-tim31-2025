@@ -10,21 +10,21 @@ import ftn.project.domain.entity.TaskInstance;
 
 public class QuotaFinalizer {
 
-    public static void finalizeDayQuota(AppDatabase db, LocalDate day) {
+    public static void finalizeDayQuota(AppDatabase db, int userId, LocalDate day) {
         LocalDateTime start = day.atStartOfDay();
         LocalDateTime end   = day.atTime(23,59,59);
 
         // ==== Kvote po TEŽINI ====
         int usedVeryEasy = db.taskInstanceRepository()
-                .countTakenSlotsByDifficulty(TaskInstance.DifficultyEnum.VERY_EASY.name(), start, end);
+                .countTakenSlotsByDifficulty(userId, TaskInstance.DifficultyEnum.VERY_EASY.name(), start, end);
         int leftVeryEasy = 5 - usedVeryEasy;
 
         int usedEasy = db.taskInstanceRepository()
-                .countTakenSlotsByDifficulty(TaskInstance.DifficultyEnum.EASY.name(), start, end);
+                .countTakenSlotsByDifficulty(userId, TaskInstance.DifficultyEnum.EASY.name(), start, end);
         int leftEasy = 5 - usedEasy;
 
         int usedHard = db.taskInstanceRepository()
-                .countTakenSlotsByDifficulty(TaskInstance.DifficultyEnum.HARD.name(), start, end);
+                .countTakenSlotsByDifficulty(userId, TaskInstance.DifficultyEnum.HARD.name(), start, end);
         int leftHard = 2 - usedHard;
 
         // Nedeljna kvota za EXTREME
@@ -34,20 +34,20 @@ public class QuotaFinalizer {
         LocalDateTime weekEndDt = weekEnd.atTime(23,59,59);
 
         int usedExtreme = db.taskInstanceRepository()
-                .countTakenSlotsByDifficulty(TaskInstance.DifficultyEnum.EXTREME.name(), weekStartDt, weekEndDt);
+                .countTakenSlotsByDifficulty(userId, TaskInstance.DifficultyEnum.EXTREME.name(), weekStartDt, weekEndDt);
         int leftExtreme = 1 - usedExtreme;
 
         // ==== Kvote po BITNOSTI ====
         int usedNormal = db.taskInstanceRepository()
-                .countTakenSlotsByImportance(TaskInstance.ImportanceEnum.NORMAL.name(), start, end);
+                .countTakenSlotsByImportance(userId, TaskInstance.ImportanceEnum.NORMAL.name(), start, end);
         int leftNormal = 5 - usedNormal;
 
         int usedImportant = db.taskInstanceRepository()
-                .countTakenSlotsByImportance(TaskInstance.ImportanceEnum.IMPORTANT.name(), start, end);
+                .countTakenSlotsByImportance(userId, TaskInstance.ImportanceEnum.IMPORTANT.name(), start, end);
         int leftImportant = 5 - usedImportant;
 
         int usedVeryImportant = db.taskInstanceRepository()
-                .countTakenSlotsByImportance(TaskInstance.ImportanceEnum.VERY_IMPORTANT.name(), start, end);
+                .countTakenSlotsByImportance(userId, TaskInstance.ImportanceEnum.VERY_IMPORTANT.name(), start, end);
         int leftVeryImportant = 2 - usedVeryImportant;
 
         // Mesečna kvota za SPECIAL
@@ -57,13 +57,13 @@ public class QuotaFinalizer {
         LocalDateTime monthEndDt = monthEnd.atTime(23,59,59);
 
         int usedSpecial = db.taskInstanceRepository()
-                .countTakenSlotsByImportance(TaskInstance.ImportanceEnum.SPECIAL.name(), monthStartDt, monthEndDt);
+                .countTakenSlotsByImportance(userId, TaskInstance.ImportanceEnum.SPECIAL.name(), monthStartDt, monthEndDt);
         int leftSpecial = 1 - usedSpecial;
 
 
         // ==== Preostale aktivne / nerešene ====
         List<TaskInstance> pending = db.taskInstanceRepository()
-                .getActiveOrUnfinishedForDayOrdered(start, end);
+                .getActiveOrUnfinishedForDayOrdered(userId, start, end);
 
         for (TaskInstance ti : pending) {
             boolean canDiff = false, canImp = false;
