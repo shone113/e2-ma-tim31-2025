@@ -206,24 +206,6 @@ public class AuthActivity extends AppCompatActivity {
                                                 }
                                             });
                                 });
-
-                                user.sendEmailVerification()
-                                        .addOnCompleteListener(AuthActivity.this, new OnCompleteListener<Void>() {
-                                            @Override
-                                            public void onComplete(@NonNull Task<Void> t) {
-                                                if (t.isSuccessful()) {
-                                                    Toast.makeText(AuthActivity.this,
-                                                            "Poslat je verifikacioni email. Proveri inbox/spam.",
-                                                            Toast.LENGTH_LONG).show();
-                                                            startVerificationPolling();
-                                                } else {
-                                                    Toast.makeText(AuthActivity.this,
-                                                            "Greška pri slanju verifikacije: " +
-                                                                    (t.getException() != null ? t.getException().getMessage() : ""),
-                                                            Toast.LENGTH_LONG).show();
-                                                }
-                                            }
-                                        });
                             }
                         } else {
                             Log.w(TAG, "createUserWithEmail:failure", task.getException());
@@ -311,6 +293,16 @@ public class AuthActivity extends AppCompatActivity {
             Long existing = (snap.exists() ? snap.getLong("intId") : null);
             if (existing != null) {
                 int intId = existing.intValue();
+
+                // Merge inicijalnih polja AKO fale
+                java.util.Map<String, Object> patch = new java.util.HashMap<>();
+                if (snap.get("experiencePoints") == null) patch.put("experiencePoints", 0);
+                if (snap.get("level") == null)           patch.put("level", 3);
+                if (snap.get("avatarImage") == null)     patch.put("avatarImage", getResources().getResourceEntryName(selectedAvatarResId));
+                if (!patch.isEmpty()) {
+                    userRef.set(patch, com.google.firebase.firestore.SetOptions.merge());
+                }
+
                 saveLocally(intId, fb.getUid(), username, selectedAvatarResId);
                 if (onDone != null) runOnUiThread(onDone);   // ← (3) POZIV CALLBACK-a
                 return; // ← (4) PREKINI DALJE IZVRŠAVANJE
@@ -334,6 +326,9 @@ public class AuthActivity extends AppCompatActivity {
                 java.util.Map<String, Object> data = new java.util.HashMap<>();
                 data.put("intId", next);
                 data.put("username", username);
+                data.put("avatarImage", getResources().getResourceEntryName(selectedAvatarResId));       // ← NOVO
+                data.put("experiencePoints", 0);           // ← NOVO
+                data.put("level", 3);
                 data.put("createdAt", com.google.firebase.Timestamp.now());
                 tr.set(userRef, data, com.google.firebase.firestore.SetOptions.merge());
 
@@ -365,8 +360,9 @@ public class AuthActivity extends AppCompatActivity {
                 nu.setUserId(userId);                 // ← ključni deo: koristimo globalni int
                 nu.setFirebaseUid(firebaseUid);
                 nu.setUsername(username);
-                // ako čuvaš ime slike, ne resId:
-                // nu.setAvatarImage(ImageResId.nameForRes(this, selectedAvatarResId));
+                nu.setAvatarImage(getResources().getResourceEntryName(selectedAvatarResId));     // ← NOVO
+                nu.setExperiencePoints(0);         // ← NOVO (dodaj field u entitet)
+                nu.setLevel(3);
                 db.userRepository().insert(nu);
             } else {
                 // već postoji lokalno (npr. re-instalacija): po želji sync-uj username/avatar
@@ -465,7 +461,7 @@ public class AuthActivity extends AppCompatActivity {
                                 Runnable goNext = () -> {
                                     animView.cancelAnimation();
                                     showVerifyUI(false);
-                                    startActivity(new Intent(AuthActivity.this, AllUsersActivity.class));
+                                    startActivity(new Intent(AuthActivity.this, ShopActivity.class));
                                     finish();
                                 };
 

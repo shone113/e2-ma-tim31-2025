@@ -92,10 +92,6 @@ public class Equipment {
         return null;
     }
     public boolean getInitActiveType(){
-        if(this.type == EquipmentType.POTION){
-            return true;
-        }else{
-            return false;
-        }
+        return false;
     }
 }

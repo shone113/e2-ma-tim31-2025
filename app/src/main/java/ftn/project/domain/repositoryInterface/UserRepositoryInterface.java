@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import java.util.List;
 
@@ -16,6 +17,9 @@ import ftn.project.domain.entity.User;
 public interface UserRepositoryInterface {
     @Insert
     long insert(User user);
+
+    @Update
+    int update(User user);
 
     @Query("SELECT * FROM User")
     List<User> getAll();

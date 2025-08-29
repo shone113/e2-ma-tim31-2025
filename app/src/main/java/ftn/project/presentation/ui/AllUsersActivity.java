@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import ftn.project.R;
+import ftn.project.data.database.FirestoreSync;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.data.dto.UserFriendDTO;
 import ftn.project.data.repository.FriendshipRepository;
@@ -57,7 +58,20 @@ public class AllUsersActivity extends AppCompatActivity {
             return insets;
         });
         db = AppDatabase.getInstance(getApplicationContext());
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         friendshipService = new FriendshipService();
+
+        FirestoreSync.syncAllUsersDown(
+                getApplicationContext(),
+                db,
+                () -> Toast.makeText(this, "Users synced ✔", Toast.LENGTH_SHORT).show()
+        );
+        FirestoreSync.syncFriendshipsDown(
+                getApplicationContext(),
+                db,
+                firebaseUser.getUid(),
+                () -> Toast.makeText(this, "Friendships synced ✔", Toast.LENGTH_SHORT).show()
+        );
 
         ListView lvUsers = findViewById(R.id.lvUsers);
         EditText etSearch = findViewById(R.id.etSearch);
@@ -90,7 +104,6 @@ public class AllUsersActivity extends AppCompatActivity {
             barcodeLauncher.launch(options);
         });
 
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         loggedUser = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
         ArrayList<Friendship> friendships = new ArrayList<>(db.friendshipRepository().getAllForUserId(loggedUser.getUserId()));
         List<User> users = db.userRepository().getAll();
@@ -101,6 +114,14 @@ public class AllUsersActivity extends AppCompatActivity {
             friendship.setFirstUserId(loggedUser.getUserId());
             friendship.setSecondUserId(userFriendDTO.userId);
             db.friendshipRepository().insert(friendship);
+
+            User friend = db.userRepository().getById(friendship.secondUserId);
+            FirestoreSync.mirrorFriendshipToFirestore(
+                    getApplicationContext(),
+                    firebaseUser.getUid(),
+                    friendship.firstUserId,
+                    friend.getFirebaseUid(),
+                    friendship.getSecondUserId());
         });
 
         lvUsers.setAdapter(adapter);
@@ -178,10 +199,16 @@ public class AllUsersActivity extends AppCompatActivity {
                 Friendship f = new Friendship();
                 f.setFirstUserId(me.getUserId());
                 f.setSecondUserId(other.getUserId());
-                // ako imaš status: f.setStatus(FriendStatus.ACCEPTED);
 
                 db.friendshipRepository().insert(f);
 
+                FirestoreSync.mirrorFriendshipToFirestore(
+                        getApplicationContext(),
+                        firebaseUser.getUid(),
+                        me.getUserId(),
+                        other.getFirebaseUid(),
+                        other.getUserId()
+                );
                 runOnUiThread(() -> {
                     //toast("Dodat prijatelj: " + other.getUsername());
                     // osveži listu, adapter.submitList(...) itd. po potrebi

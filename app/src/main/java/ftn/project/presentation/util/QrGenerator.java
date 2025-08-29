@@ -16,7 +16,7 @@ public class QrGenerator {
         BarcodeEncoder encoder = new BarcodeEncoder();
         Map<EncodeHintType, Object> hints = new HashMap<>();
         hints.put(EncodeHintType.CHARACTER_SET, StandardCharsets.UTF_8.name());
-        hints.put(EncodeHintType.MARGIN, 1); // tanak border
+        hints.put(EncodeHintType.MARGIN, 1);
         return encoder.encodeBitmap(content, BarcodeFormat.QR_CODE, sizePx, sizePx, hints);
     }
 }

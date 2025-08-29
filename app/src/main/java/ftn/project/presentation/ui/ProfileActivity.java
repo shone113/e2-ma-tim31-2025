@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 import ftn.project.R;
+import ftn.project.data.database.FirestoreSync;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Badge;
 import ftn.project.domain.entity.Equipment;
@@ -53,11 +54,11 @@ public class ProfileActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        AppDatabase db = AppDatabase.getInstance(getApplicationContext());
 
         int userId = getIntent().getIntExtra(EXTRA_USER_ID, -1);
         if (userId == -1) { finish(); return; }
 
-        AppDatabase db = AppDatabase.getInstance(getApplicationContext());
         User user = db.userRepository().getById(userId);
 
         TextView tvUsername = findViewById(R.id.tvUsername);
