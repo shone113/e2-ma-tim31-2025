@@ -43,8 +43,10 @@ public interface TaskInstanceRepositoryInterface {
     void deleteFutureInstances(int taskId, LocalDateTime fromDate);
 
     @Transaction
-    @Query("SELECT * FROM task_instances")
-    List<TaskInstanceWithTask> getAllTaskInstancesWithTask();
+    @Query("SELECT ti.* FROM task_instances ti " +
+            "INNER JOIN tasks t ON ti.taskId = t.id " +
+            "WHERE t.userId = :userId")
+    List<TaskInstanceWithTask> getAllTaskInstancesWithTask(int userId);
 
     @Transaction
     @Query("SELECT * FROM task_instances WHERE endExecutionTime > :now")
@@ -61,29 +63,39 @@ public interface TaskInstanceRepositoryInterface {
 
 
     @Transaction
-    @Query("SELECT * FROM task_instances " +
-            "WHERE startExecutionTime >= :dayStart AND startExecutionTime < :dayEnd")
-    List<TaskInstanceWithTask> getInstancesForDay(LocalDateTime dayStart, LocalDateTime dayEnd);
+    @Query("SELECT ti.* FROM task_instances ti " +
+            "INNER JOIN tasks t ON ti.taskId = t.id " +
+            "WHERE t.userId = :userId " +
+            "AND ti.startExecutionTime >= :dayStart " +
+            "AND ti.startExecutionTime < :dayEnd")
+    List<TaskInstanceWithTask> getInstancesForDay(int userId, LocalDateTime dayStart, LocalDateTime dayEnd);
 
     // Broj završenih po težini
-    @Query("SELECT COUNT(*) FROM task_instances " +
-            "WHERE difficultyInstance = :diff " +
-            "AND (status = 'DONE' OR isWithinQuota = 1) " +
-            "AND endExecutionTime BETWEEN :start AND :end")
-    int countTakenSlotsByDifficulty(String diff, LocalDateTime start, LocalDateTime end);
+    @Query("SELECT COUNT(*) FROM task_instances ti " +
+            "INNER JOIN tasks t ON ti.taskId = t.id " +
+            "WHERE t.userId = :userId " +
+            "AND ti.difficultyInstance = :diff " +
+            "AND (ti.status = 'DONE' OR ti.isWithinQuota = 1) " +
+            "AND ti.endExecutionTime BETWEEN :start AND :end")
+    int countTakenSlotsByDifficulty(int userId, String diff, LocalDateTime start, LocalDateTime end);
 
-    @Query("SELECT COUNT(*) FROM task_instances " +
-            "WHERE importanceInstance = :imp " +
-            "AND (status = 'DONE' OR isWithinQuota = 1) " +
-            "AND endExecutionTime BETWEEN :start AND :end")
-    int countTakenSlotsByImportance(String imp, LocalDateTime start, LocalDateTime end);
+    @Query("SELECT COUNT(*) FROM task_instances ti " +
+            "INNER JOIN tasks t ON ti.taskId = t.id " +
+            "WHERE t.userId = :userId " +
+            "AND ti.importanceInstance = :imp " +
+            "AND (ti.status = 'DONE' OR ti.isWithinQuota = 1) " +
+            "AND ti.endExecutionTime BETWEEN :start AND :end")
+    int countTakenSlotsByImportance(int userId, String imp, LocalDateTime start, LocalDateTime end);
+
 
     // Vrati sve koji su aktivni ili unfinished za dan
-    @Query("SELECT * FROM task_instances " +
-            "WHERE (status = 'ACTIVE' OR status = 'UNFINISHED') " +
-            "AND startExecutionTime BETWEEN :start AND :end " +
-            "ORDER BY startExecutionTime ASC")
-    List<TaskInstance> getActiveOrUnfinishedForDayOrdered(LocalDateTime start, LocalDateTime end);
+    @Query("SELECT ti.* FROM task_instances ti " +
+            "INNER JOIN tasks t ON ti.taskId = t.id " +
+            "WHERE t.userId = :userId " +
+            "AND (ti.status = 'ACTIVE' OR ti.status = 'UNFINISHED') " +
+            "AND ti.startExecutionTime BETWEEN :start AND :end " +
+            "ORDER BY ti.startExecutionTime ASC")
+    List<TaskInstance> getActiveOrUnfinishedForDayOrdered(int userId, LocalDateTime start, LocalDateTime end);
 
     // isto možeš napraviti za nedelju i mesec (ili koristiš day parametre da računaš start/end)
 
@@ -95,9 +107,20 @@ public interface TaskInstanceRepositoryInterface {
     @Query("UPDATE task_instances SET isWithinQuota = :withinQuota WHERE id = :id")
     void updateWithinQuota(int id, boolean withinQuota);
 
-    @Query("SELECT * FROM task_instances " +
-            "WHERE isWithinQuota = 1 AND startExecutionTime BETWEEN :start AND :end")
-    List<TaskInstance> getInQuotaTasksBetween(LocalDateTime start, LocalDateTime end);
+    @Query("SELECT ti.* FROM task_instances ti " +
+            "INNER JOIN tasks t ON ti.taskId = t.id " +
+            "WHERE t.userId = :userId " +
+            "AND ti.isWithinQuota = 1 " +
+            "AND ti.startExecutionTime BETWEEN :start AND :end")
+    List<TaskInstance> getInQuotaTasksBetween(int userId, LocalDateTime start, LocalDateTime end);
+
+    @Transaction
+    @Query("SELECT ti.* FROM task_instances ti " +
+            "INNER JOIN tasks t ON ti.taskId = t.id " +
+            "WHERE t.userId = :userId " +
+            "AND ti.startExecutionTime >= :start " +
+            "AND ti.startExecutionTime <= :end")
+    List<TaskInstance> getTasksForUserInPeriod(int userId, LocalDateTime start, LocalDateTime end);
 
 
 

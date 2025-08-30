@@ -25,11 +25,15 @@ import java.time.LocalDateTime;
 
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.SpecialMission;
+import ftn.project.domain.entity.SpecialMissionProgress;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.CheckQuotaService;
+import ftn.project.domain.usecase.LoggedUserService;
+import ftn.project.domain.usecase.SpecialMissionProgressService;
 import ftn.project.presentation.adapter.TaskAdapter;
 
 public class TaskListActivity extends AppCompatActivity {
@@ -39,6 +43,7 @@ public class TaskListActivity extends AppCompatActivity {
     private List<TaskInstanceWithTask> allTasks = new ArrayList<>();
     private List<TaskInstanceWithTask> allActiveTasks = new ArrayList<>();
     private List<TaskInstanceWithTask> filteredTasks = new ArrayList<>();
+    private SpecialMissionProgressService smps;
     //private ActivityResultLauncher<Intent> taskDetailsLauncher;
 
     @Override
@@ -61,7 +66,14 @@ public class TaskListActivity extends AppCompatActivity {
                 Executors.newSingleThreadExecutor().execute(() -> {
                     AppDatabase db = AppDatabase.getInstance(TaskListActivity.this);
 
-                    int earnedXp = CheckQuotaService.calculateEarnedXP(taskWithInstance.taskInstance, db);
+                    LoggedUserService loggedService = new LoggedUserService(TaskListActivity.this);
+                    User user = loggedService.getCurrentUser();
+                    smps = new SpecialMissionProgressService(
+                            db.specialMissionRepository(),
+                            db.specialMissionProgressRepository(),
+                            db.taskInstanceRepository()
+                    );
+                    int earnedXp = CheckQuotaService.calculateEarnedXP(taskWithInstance.taskInstance,user.getUserId(), db);
 
                     taskWithInstance.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
                     taskWithInstance.taskInstance.setEarnedXp(earnedXp);
@@ -78,6 +90,34 @@ public class TaskListActivity extends AppCompatActivity {
 
                     if (earnedXp > 0) {
                         updateLoggedUserPoints(taskWithInstance.task.getUserId(), earnedXp);
+                    }
+                    int increment = smps.punchByEasyTaskIncrement(user.getUserId(), taskWithInstance.taskInstance);
+                    int incrementHard = smps.punchByHardTaskIncerement(user.getUserId(), taskWithInstance.taskInstance);
+                    if (increment > 0) {
+                        SpecialMission mission = smps.getActiveMission(user.getUserId());
+                        SpecialMissionProgress smp = smps.getActiveMissionProgress(mission.getId(), user.getUserId());
+
+                        smp.setEasyNormalTasks(smp.getEasyNormalTasks() + increment);
+                        smp.setTotalDamage(smp.getTotalDamage() + increment);
+
+                        db.specialMissionProgressRepository().update(smp);
+
+                        mission.setBossHp(mission.getBossHp() - increment);
+                        db.specialMissionRepository().update(mission);
+                    }
+
+                    if(incrementHard > 0)
+                    {
+                        SpecialMission mission = smps.getActiveMission(user.getUserId());
+                        SpecialMissionProgress smp = smps.getActiveMissionProgress(mission.getId(), user.getUserId());
+
+                        smp.setOtherTasks(smp.getOtherTasks() + incrementHard);
+                        smp.setTotalDamage(smp.getTotalDamage() + incrementHard * 4);
+
+                        db.specialMissionProgressRepository().update(smp);
+
+                        mission.setBossHp(mission.getBossHp() - incrementHard * 4);
+                        db.specialMissionRepository().update(mission);
                     }
 
                     runOnUiThread(() -> {
@@ -120,7 +160,9 @@ public class TaskListActivity extends AppCompatActivity {
         Executor executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             AppDatabase db = AppDatabase.getInstance(this);
-            allTasks = db.taskInstanceRepository().getAllTaskInstancesWithTask();
+            LoggedUserService loggedService = new LoggedUserService(this);
+            User user = loggedService.getCurrentUser();
+            allTasks = db.taskInstanceRepository().getAllTaskInstancesWithTask(user.getUserId());
             allActiveTasks.clear();
             for(TaskInstanceWithTask t : allTasks)
             {

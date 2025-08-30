@@ -23,8 +23,11 @@ import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Battle;
 import ftn.project.domain.entity.Boss;
+import ftn.project.domain.entity.SpecialMission;
+import ftn.project.domain.entity.SpecialMissionProgress;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.BattleService;
+import ftn.project.domain.usecase.SpecialMissionProgressService;
 
 public class BattleActivity extends AppCompatActivity {
 
@@ -40,6 +43,7 @@ public class BattleActivity extends AppCompatActivity {
     private int hitChance;
 
     private BattleService battleService;
+    private SpecialMissionProgressService specialMissionProgressService;
     private AppDatabase db;
     private SensorManager sensorManager;
     private Sensor accelerometer;
@@ -56,6 +60,11 @@ public class BattleActivity extends AppCompatActivity {
         initViews();
         battleService = new BattleService(this);
         db = AppDatabase.getInstance(this);
+        specialMissionProgressService = new SpecialMissionProgressService(
+                db.specialMissionRepository(),
+                db.specialMissionProgressRepository(),
+                db.taskInstanceRepository()
+        );
 
         int battleId = getIntent().getIntExtra("battleId", -1);
         hitChance = getIntent().getIntExtra("hitChance", -1);
@@ -89,15 +98,45 @@ public class BattleActivity extends AppCompatActivity {
         setupUi();
 
         // 🔹 Kad se završi battle, ide u RewardActivity
-        battleService.setBattleResultListener((battle, coins, equipmentIcon) -> {
-            Intent rewardIntent = new Intent(this, RewardActivity.class);
-            rewardIntent.putExtra("coins", coins);
-            rewardIntent.putExtra("equipment", equipmentIcon);
-            rewardIntent.putExtra("battleId", battle.getId());
-            rewardIntent.putExtra("hitChance", hitChance);
-            startActivity(rewardIntent);
-            finish();
+        battleService.setBattleResultListener(new BattleService.BattleResultListener() {
+            @Override
+            public void onBattleFinished(Battle battle, int coins, String equipmentIcon) {
+                Intent rewardIntent = new Intent(BattleActivity.this, RewardActivity.class);
+                rewardIntent.putExtra("coins", coins);
+                rewardIntent.putExtra("equipment", equipmentIcon);
+                rewardIntent.putExtra("battleId", battle.getId());
+                rewardIntent.putExtra("hitChance", hitChance);
+                startActivity(rewardIntent);
+                finish();
+            }
+
+
+            @Override
+            public void onAttackResult(boolean hit, Battle battle, Boss boss) {
+                if (hit) {
+                    AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+
+                    if (specialMissionProgressService.punchByBattle(currentUser.getUserId())) {
+                        SpecialMission specialMission = specialMissionProgressService.getActiveMission(currentUser.getUserId());
+                        if (specialMission != null) {
+                            SpecialMissionProgress smp = specialMissionProgressService
+                                    .getActiveMissionProgress(specialMission.getId(), currentUser.getUserId());
+
+                            if (smp != null) {
+                                smp.setRegularBossHits(smp.getRegularBossHits() + 1);
+                                smp.setTotalDamage(smp.getTotalDamage() + 2);
+                                db.specialMissionProgressRepository().update(smp);
+
+                                specialMission.setBossHp(specialMission.getBossHp() - 2);
+                                db.specialMissionRepository().update(specialMission);
+                            }
+                        }
+                    }
+                }
+            }
+
         });
+
 
 
         attackButton.setOnClickListener(v -> {
