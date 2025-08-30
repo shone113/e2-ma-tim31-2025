@@ -28,6 +28,7 @@ import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.BattleStartService;
 import ftn.project.domain.usecase.LoggedUserService;
 import ftn.project.domain.worker.MissionEndWorker;
+import ftn.project.presentation.notification.Notifier;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -60,6 +61,22 @@ public class MainActivity extends AppCompatActivity {
         AppDatabase db = AppDatabase.getInstance(this);
         setContentView(R.layout.activity_main);
 
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    != getPackageManager().PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1001);
+            }
+        }
+
+        Notifier.showInvite(
+                this,
+                "testInviteId",
+                "allianceId123",
+                "Savez Sovice",
+                "inviterUidX",
+                "Rema"
+        );
+
         // --- Dugmad ---
         btnActSpecMission = findViewById(R.id.btnActSpecMission);
         btnTaskCalendar = findViewById(R.id.btnTaskCalendar);
@@ -74,43 +91,48 @@ public class MainActivity extends AppCompatActivity {
         User logged = loggedUserService.getCurrentUser();
         Alliance alliance = db.allianceRepository().getAllianceByUser(logged.getUserId());
 
-        List<SpecialMission> activeSpecialMission =
-                db.specialMissionRepository().activeSpecialMissionByAlliance(alliance.getAllianceId());
-
-        if (logged.getUserId() == alliance.getLeaderUserId() && activeSpecialMission.isEmpty())
-            btnActSpecMission.setVisibility(View.VISIBLE);
-        else
+        if(alliance == null){
             btnActSpecMission.setVisibility(View.GONE);
+        }else{
+            List<SpecialMission> activeSpecialMission =
+                    db.specialMissionRepository().activeSpecialMissionByAlliance(alliance.getAllianceId());
 
-        int allianceCount = db.userRepository().allianceCount(alliance.getAllianceId());
+            if (logged.getUserId() == alliance.getLeaderUserId() && activeSpecialMission.isEmpty())
+                btnActSpecMission.setVisibility(View.VISIBLE);
+            else
+                btnActSpecMission.setVisibility(View.GONE);
 
-        // --- Specijalna misija ---
-        btnActSpecMission.setOnClickListener(v -> {
-            List<User> allianceUsers = db.userRepository().getAllUserInAlliance(alliance.getAllianceId());
-            SpecialMission specialMission = new SpecialMission(
-                    0,
-                    alliance.getAllianceId(),
-                    allianceCount * 100,
-                    LocalDateTime.now(),
-                    LocalDateTime.now().plusWeeks(2),
-                    true
-            );
-            long missionId = db.specialMissionRepository().insert(specialMission);
+            int allianceCount= db.userRepository().allianceCount(alliance.getAllianceId());
 
-            for (User u : allianceUsers) {
-                SpecialMissionProgress specialMissionProgress = new SpecialMissionProgress(
+
+            // --- Specijalna misija ---
+            btnActSpecMission.setOnClickListener(v -> {
+                List<User> allianceUsers = db.userRepository().getAllUserInAlliance(alliance.getAllianceId());
+                SpecialMission specialMission = new SpecialMission(
                         0,
-                        (int) missionId,
-                        u.getUserId(),
-                        0, 0, 0, 0, 0,
-                        true,
-                        0
+                        alliance.getAllianceId(),
+                        allianceCount * 100,
+                        LocalDateTime.now(),
+                        LocalDateTime.now().plusWeeks(2),
+                        true
                 );
-                db.specialMissionProgressRepository().insert(specialMissionProgress);
-            }
+                long missionId = db.specialMissionRepository().insert(specialMission);
 
-            scheduleMissionEndWorker((int) missionId, specialMission.getEndDate());
-        });
+                for (User u : allianceUsers) {
+                    SpecialMissionProgress specialMissionProgress = new SpecialMissionProgress(
+                            0,
+                            (int) missionId,
+                            u.getUserId(),
+                            0, 0, 0, 0, 0,
+                            true,
+                            0
+                    );
+                    db.specialMissionProgressRepository().insert(specialMissionProgress);
+                }
+
+                scheduleMissionEndWorker((int) missionId, specialMission.getEndDate());
+            });
+        }
 
         // --- Ostala dugmad (otvaraju activity-je) ---
         btnTaskCalendar.setOnClickListener(v -> {

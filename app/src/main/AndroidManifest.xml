@@ -9,6 +9,7 @@
         android:required="false" />
 
     <application
+        android:name=".MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -52,6 +53,17 @@
         <activity
             android:name=".presentation.ui.ProfileActivity"
             android:exported="false" />
+
+        <service
+            android:name=".presentation.notification.AppMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+
+        <receiver android:name=".presentation.notification.AcceptInviteReceiver" android:exported="false"/>
+        <receiver android:name=".presentation.notification.DeclineInviteReceiver" android:exported="false"/>
     </application>
 
 </manifest>

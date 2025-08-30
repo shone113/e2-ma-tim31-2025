@@ -24,9 +24,6 @@ public interface UserRepositoryInterface {
     @Query("SELECT * FROM User")
     List<User> getAll();
 
-    @Update
-    void update(User user);
-
     @Query("SELECT * FROM User WHERE firebaseUid = :uid LIMIT 1")
     LiveData<User> observeByFirebaseUid(String uid);
 
