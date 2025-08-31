@@ -11,7 +11,7 @@ import ftn.project.domain.entity.User;
 @Dao
 public interface AllianceRepositoryInterface {
     @Insert
-    void insert(Alliance alliance);
+    long insert(Alliance alliance);
 
     @Update
     void update(Alliance alliance);

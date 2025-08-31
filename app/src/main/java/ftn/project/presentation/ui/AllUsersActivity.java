@@ -1,5 +1,6 @@
 package ftn.project.presentation.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.inputmethod.EditorInfo;
@@ -76,6 +77,11 @@ public class AllUsersActivity extends AppCompatActivity {
         ListView lvUsers = findViewById(R.id.lvUsers);
         EditText etSearch = findViewById(R.id.etSearch);
         Button btnSearch = findViewById(R.id.btnSearch);
+        Button btnAlliance = findViewById(R.id.btnAlliance);
+
+        btnAlliance.setOnClickListener(v -> {
+            startActivity(new Intent(this, AllianceActivity.class));
+        });
 
         btnSearch.setOnClickListener(v -> performSearch());
 

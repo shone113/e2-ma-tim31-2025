@@ -1,15 +1,14 @@
 package ftn.project.domain.usecase;
 
-import ftn.project.data.repository.AllianceInviteRepository;
-import ftn.project.domain.repositoryInterface.AllianceInviteRepositoryInterface;
+import ftn.project.domain.repositoryInterface.AllianceInvitationRepositoryInterface;
 
 public class AcceptAllianceInviteService {
-    private final AllianceInviteRepositoryInterface repo;
-    public AcceptAllianceInviteService(AllianceInviteRepositoryInterface repo) {
+    private final AllianceInvitationRepositoryInterface repo;
+    public AcceptAllianceInviteService(AllianceInvitationRepositoryInterface repo) {
         this.repo = repo;
     }
 
-    public void execute(String inviteId) throws Exception {
+    public void execute(int inviteId) throws Exception {
         repo.accept(inviteId);
     }
 }

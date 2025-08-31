@@ -2,6 +2,7 @@ package ftn.project.presentation.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -13,6 +14,10 @@ import androidx.work.WorkManager;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -34,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
     private LinearLayout btnActSpecMission;
     private LinearLayout btnTaskCalendar, btnShop, btnNewTask, btnBattle, btnCategories, btnAllUsers;
+    private ListenerRegistration inviteReg;
 
     private void scheduleMissionEndWorker(int missionId, LocalDateTime endDate) {
         long delayMillis = ChronoUnit.MILLIS.between(LocalDateTime.now(), endDate);
@@ -67,15 +73,6 @@ public class MainActivity extends AppCompatActivity {
                 requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1001);
             }
         }
-
-        Notifier.showInvite(
-                this,
-                "testInviteId",
-                "allianceId123",
-                "Savez Sovice",
-                "inviterUidX",
-                "Rema"
-        );
 
         // --- Dugmad ---
         btnActSpecMission = findViewById(R.id.btnActSpecMission);
@@ -170,5 +167,50 @@ public class MainActivity extends AppCompatActivity {
         btnAllUsers.setOnClickListener(v -> {
             startActivity(new Intent(this, AllUsersActivity.class));
         });
+    }
+
+    @Override protected void onStart() {
+        super.onStart();
+
+        String myUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        inviteReg = db.collection("allianceInvites")
+                .whereEqualTo("inviteeUid", myUid)
+                .whereEqualTo("status", "PENDING")
+                .addSnapshotListener((snap, e) -> {
+                    if (e != null || snap == null) return;
+
+                    for (DocumentChange dc : snap.getDocumentChanges()) {
+                        if (dc.getType() != DocumentChange.Type.ADDED) continue;
+
+                        DocumentSnapshot d = dc.getDocument();
+                        Long allianceIdL = d.getLong("allianceId");           // Firestore number -> Long
+                        if (allianceIdL == null) {
+                            Log.w("INVITES", "invite bez allianceId: " + d.getId());
+                            return; // ili continue; ako si u for-petlji
+                        }
+                        int allianceId = Math.toIntExact(allianceIdL);
+                        String inviteId     = d.getId();
+                        String allianceName = d.getString("allianceName");
+                        String inviterUid   = d.getString("inviterUid");
+                        String inviterName  = d.getString("inviterName");
+
+                        // lokalna notifikacija na PRIMAOČU
+                        ftn.project.presentation.notification.Notifier.showInvite(
+                                getApplicationContext(),
+                                inviteId,
+                                String.valueOf(allianceId),
+                                allianceName,
+                                inviterUid,
+                                inviterName
+                        );
+                    }
+                });
+    }
+
+    @Override protected void onStop() {
+        if (inviteReg != null) { inviteReg.remove(); inviteReg = null; }
+        super.onStop();
     }
 }

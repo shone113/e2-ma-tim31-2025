@@ -14,7 +14,7 @@ import ftn.project.domain.entity.User;
 
 @Dao
 public interface FriendshipRepositoryInterface {
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     long insert(Friendship f);
     @Upsert
     void upsert(Friendship f);
