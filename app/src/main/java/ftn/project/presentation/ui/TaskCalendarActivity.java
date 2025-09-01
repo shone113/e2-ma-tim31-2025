@@ -135,10 +135,18 @@ public class TaskCalendarActivity extends AppCompatActivity {
         });
         fabAlliance.setOnClickListener(v ->{
             AppDatabase db = AppDatabase.getInstance(this);
-            User u1 = db.userRepository().getById(1);
-            User u2 = db.userRepository().getById(2);
+            Alliance alliance = new Alliance();
+            alliance.setAllianceId(1);
+            alliance.setName("Alijansa");
+            alliance.setLeaderUserId(1027);
+            db.allianceRepository().insert(alliance);
+
+            User u1 = db.userRepository().getById(1027);
+            User u2 = db.userRepository().getById(1028);
             u2.setAllianceId(1);
+            u1.setAllianceId(1);
             db.userRepository().update(u2);
+            db.userRepository().update(u1);
         });
 
 

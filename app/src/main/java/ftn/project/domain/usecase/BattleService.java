@@ -65,9 +65,9 @@ public class BattleService {
                     boss.setDefeated(true);
                     finishBattle(battle, boss, true);
                 }
-            } else {
+            } /*else {
                 runOnUi(() -> Toast.makeText(context, "Promašaj!", Toast.LENGTH_SHORT).show());
-            }
+            }*/
 
             if (battle.getAttacksRemaining() == 0 && !boss.isDefeated()) {
                 finishBattle(battle, boss, false);

@@ -13,6 +13,12 @@ public class QuotaFinalizer {
     public static void finalizeDayQuota(AppDatabase db, int userId, LocalDate day) {
         LocalDateTime start = day.atStartOfDay();
         LocalDateTime end   = day.atTime(23,59,59);
+        List <TaskInstance> others = db.taskInstanceRepository().getCanceledOrPausedForDayOrdered(userId, start, end);
+        for(TaskInstance ti : others)
+        {
+            ti.setWithinQuota(false);
+            db.taskInstanceRepository().updateWithinQuota(ti.getId(), false);
+        }
 
         // ==== Kvote po TEŽINI ====
         int usedVeryEasy = db.taskInstanceRepository()
@@ -65,9 +71,15 @@ public class QuotaFinalizer {
         List<TaskInstance> pending = db.taskInstanceRepository()
                 .getActiveOrUnfinishedForDayOrdered(userId, start, end);
 
+        for (TaskInstance ti : pending){
+            ti.setWithinQuota(false);
+            db.taskInstanceRepository().updateWithinQuota(ti.getId(), false);
+        }
         for (TaskInstance ti : pending) {
             boolean canDiff = false, canImp = false;
 
+            System.out.println("Task " + ti.getId() + " BEFORE diff: " + ti.getDifficultyInstance() + " leftHard=" + leftHard);
+            System.out.println("Task " + ti.getId() + " BEFORE imp: " + ti.getImportanceInstance() + " leftVeryImportant=" + leftVeryImportant);
             // --- Težina ---
             switch (ti.getDifficultyInstance()) {
                 case VERY_EASY: if (leftVeryEasy > 0) { canDiff = true; leftVeryEasy--; } break;
@@ -83,6 +95,8 @@ public class QuotaFinalizer {
                 case VERY_IMPORTANT: if (leftVeryImportant > 0) { canImp = true; leftVeryImportant--; } break;
                 case SPECIAL: if (leftSpecial > 0) { canImp = true; leftSpecial--; } break;
             }
+            System.out.println("Task " + ti.getId() + " AFTER diff: " + ti.getDifficultyInstance() + " leftHard=" + leftHard);
+            System.out.println("Task " + ti.getId() + " AFTER imp: " + ti.getImportanceInstance() + " leftVeryImportant=" + leftVeryImportant);
 
             if (canDiff || canImp) {
                 ti.setWithinQuota(true);

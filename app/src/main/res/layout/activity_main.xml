@@ -173,6 +173,27 @@
 
         <!-- Special Mission -->
         <LinearLayout
+            android:id="@+id/btnSpecMission"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@android:drawable/btn_default"
+            android:padding="16dp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1">
+
+            <ImageView
+                android:src="@android:drawable/ic_menu_compass"
+                android:layout_width="48dp"
+                android:layout_height="48dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Special Mission View"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+        <LinearLayout
             android:id="@+id/btnActSpecMission"
             android:orientation="vertical"
             android:gravity="center"

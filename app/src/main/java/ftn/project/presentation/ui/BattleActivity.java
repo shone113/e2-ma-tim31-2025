@@ -6,8 +6,11 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -35,6 +38,8 @@ public class BattleActivity extends AppCompatActivity {
     private TextView chanceToHitText, attacksLeftText, bossTitle, userPpText, rewardCoins;
     private Button attackButton;
     private ImageView bossImageView;
+    private MediaPlayer hitSound, missSound;
+    private Animation punchAnimation;
 
     private Boss currentBoss;
     private Battle currentBattle;
@@ -116,6 +121,12 @@ public class BattleActivity extends AppCompatActivity {
                 if (hit) {
                     AppDatabase db = AppDatabase.getInstance(getApplicationContext());
 
+                    bossImageView.startAnimation(punchAnimation);
+
+                    // ZVUK
+                    if (hitSound.isPlaying()) hitSound.seekTo(0);
+                    hitSound.start();
+
                     if (specialMissionProgressService.punchByBattle(currentUser.getUserId())) {
                         SpecialMission specialMission = specialMissionProgressService.getActiveMission(currentUser.getUserId());
                         if (specialMission != null) {
@@ -132,6 +143,14 @@ public class BattleActivity extends AppCompatActivity {
                             }
                         }
                     }
+                }
+                else {
+                    Toast.makeText(BattleActivity.this, "Promašaj!", Toast.LENGTH_SHORT).show();
+
+                    // ZVUK
+                    if (missSound.isPlaying()) missSound.seekTo(0);
+                    missSound.start();
+
                 }
             }
 
@@ -191,6 +210,9 @@ public class BattleActivity extends AppCompatActivity {
         attackButton = findViewById(R.id.attackButton);
         bossImageView = findViewById(R.id.bossImage);
         rewardCoins = findViewById(R.id.rewardCoins);
+        hitSound = MediaPlayer.create(this, R.raw.hit);
+        missSound = MediaPlayer.create(this, R.raw.miss);
+        punchAnimation = AnimationUtils.loadAnimation(this, R.drawable.punch_pop);
     }
 
     private void setupUi() {

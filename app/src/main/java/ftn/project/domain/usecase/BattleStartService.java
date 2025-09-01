@@ -40,7 +40,7 @@ public class BattleStartService {
 
         // 3. Izračunaj hitChance
         LocalDate startDate = currentUser.getNewLevelTime().toLocalDate();
-        LocalDate endDate = LocalDate.of(2025, 8, 31);
+        LocalDate endDate = LocalDate.of(2025, 9, 3);
 
         LocalDate current = startDate;
         while (!current.isAfter(endDate)) {

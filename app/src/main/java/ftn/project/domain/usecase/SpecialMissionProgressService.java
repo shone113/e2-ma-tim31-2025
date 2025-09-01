@@ -160,4 +160,12 @@ public class SpecialMissionProgressService {
     public SpecialMissionProgress getActiveMissionProgress(int missionId, int userId){
         return missionProgressRepository.getProgressByMissionAndUser(missionId, userId);
     }
+    public int getTotalProgress(SpecialMission specialMission){
+        List <SpecialMissionProgress> allProgress = missionProgressRepository.getAllByMission(specialMission.getId());
+        int totalDamage = 0;
+        for(SpecialMissionProgress smp : allProgress){
+            totalDamage += smp.getTotalDamage();
+        }
+        return totalDamage;
+    }
 }
