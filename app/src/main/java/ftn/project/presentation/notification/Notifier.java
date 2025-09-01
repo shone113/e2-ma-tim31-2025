@@ -18,21 +18,26 @@ public final class Notifier {
                                   String allianceId,
                                   String allianceName,
                                   String inviterUid,
-                                  String inviterName) {
+                                  String inviterName,
+                                  int invitationId,
+                                  int inviteeUserId) {
 
         int nid = (inviteId != null ? inviteId.hashCode() : (int)System.currentTimeMillis());
 
         // Accept
-        Intent accept = new Intent(ctx, AcceptInviteReceiver.class)
+        Intent accept = new Intent(ctx, AllianceInvitationReceiver.class)
+                .setAction("ftn.project.ACTION_ACCEPT_INVITE")
                 .putExtra("inviteId", inviteId)
                 .putExtra("allianceId", allianceId)
-                .putExtra("notificationId", nid);
+                .putExtra("invitationId", invitationId)
+                .putExtra("inviteeUserId", inviteeUserId);
         PendingIntent piAccept = PendingIntent.getBroadcast(
                 ctx, nid, accept, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
         // Decline
-        Intent decline = new Intent(ctx, DeclineInviteReceiver.class)
+        Intent decline = new Intent(ctx, AllianceInvitationReceiver.class)
+                .setAction("ftn.project.ACTION_DECLINE_INVITE")
                 .putExtra("inviteId", inviteId)
                 .putExtra("notificationId", nid);
         PendingIntent piDecline = PendingIntent.getBroadcast(

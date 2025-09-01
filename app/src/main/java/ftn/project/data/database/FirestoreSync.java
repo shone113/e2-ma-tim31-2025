@@ -27,6 +27,7 @@ public class FirestoreSync {
         FirebaseFirestore fs = FirebaseFirestore.getInstance();
 
         Map<String, Object> data = new HashMap<>();
+        data.put("userEquipmentId", ue.getUserEquipmentId());
         data.put("equipmentId", ue.getEquipmentId());
         data.put("userId", userId); // tvoj intId (opciono)
         data.put("battleCount", ue.getBattleCount() == null ? 0 : ue.getBattleCount());
@@ -82,6 +83,7 @@ public class FirestoreSync {
 
                                 int inserted = 0, updated = 0, skipped = 0;
 
+                                db.userEquipmentRepository().removeAllForUser(me.getUserId());
                                 // 2) Prođi kroz sve instance iz Firestore-a
                                 for (com.google.firebase.firestore.DocumentSnapshot d : snaps) {
                                     Long eqL = d.getLong("equipmentId");
@@ -94,17 +96,18 @@ public class FirestoreSync {
                                     Boolean activeB = d.getBoolean("active");
                                     boolean active = (activeB != null) && activeB;
 
+                                    Long ueIdL = d.getLong("userEquipmentId");
+                                    Integer userEquipmentId = ueIdL.intValue();
                                     try {
                                         // 3) Učitaj postojeći zapis (po PK: userId+equipmentId)
                                         //    Prilagodi imenu metode tvog DAO-a ako je drugačije:
                                         //    npr. getByUserAndEquipment / get / findOne
                                         UserEquipment existing =
-                                                db.userEquipmentRepository().getByUserAndEquipment(meId, equipmentId);
+                                                db.userEquipmentRepository().getById(userEquipmentId);
 
                                         if (existing == null) {
-                                            // (Ako FK na Equipment ne postoji lokalno, insert može da padne;
-                                            //  pretpostavka je da imaš seed-ovan Equipment.)
                                             UserEquipment ue = new UserEquipment();
+                                            ue.setUserEquipmentId(ue.getUserEquipmentId());
                                             ue.setUserId(meId);
                                             ue.setEquipmentId(equipmentId);
                                             ue.setBattleCount(battleCount);

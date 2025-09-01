@@ -464,7 +464,7 @@ public class AuthActivity extends AppCompatActivity {
                                 Runnable goNext = () -> {
                                     animView.cancelAnimation();
                                     showVerifyUI(false);
-                                    startActivity(new Intent(AuthActivity.this, ShopActivity.class));
+                                    startActivity(new Intent(AuthActivity.this, MainActivity.class));
                                     finish();
                                 };
 

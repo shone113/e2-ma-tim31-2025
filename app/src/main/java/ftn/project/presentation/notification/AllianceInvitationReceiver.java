@@ -3,29 +3,52 @@ package ftn.project.presentation.notification;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 import androidx.core.app.NotificationManagerCompat;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.InvitationStatus;
+
 public class AllianceInvitationReceiver extends BroadcastReceiver {
     public static final String ACTION_UI_STATUS_CHANGED = "ftn.project.ACTION_UI_STATUS_CHANGED";
     public static final String EXTRA_NEW_STATUS = "extra_new_status";
     public static final String EXTRA_INVITE_ID = "extra_invite_id";
+    public static final String EXTRA_INVITATION_ID = "extra_invitation_id";
+    private AppDatabase db;
 
     @Override public void onReceive(Context ctx, Intent intent) {
+        db = AppDatabase.getInstance(ctx);
         String action   = intent.getAction();
         String inviteId = intent.getStringExtra("inviteId");
         int nid         = intent.getIntExtra("notificationId", 0);
+        int invitationId = intent.getIntExtra("invitationId", -1);
+        int allianceId = intent.getIntExtra("allianceId", -1);
+        int inviteeUserId = intent.getIntExtra("inviteeUserId", -1);
+
+        if (invitationId == -1) return;
         if (inviteId == null) return;
 
-        String newStatus = "NONE";
-        if ("ftn.project.ACTION_ACCEPT_INVITE".equals(action)) newStatus = "ACCEPTED";
+        String tmpStatus = "NONE";
+        if ("ftn.project.ACTION_ACCEPT_INVITE".equals(action)){
+            tmpStatus = "ACCEPTED";
+            db.userRepository().updateAllianceId(inviteeUserId, allianceId);
+        }else if("ftn.project.ACTION_DECLINE_INVITE".equals(action)){
+        }
 
+        final String newStatus = tmpStatus;
         FirebaseFirestore.getInstance()
                 .collection("allianceInvites")
                 .document(inviteId)
-                .update("status", newStatus);
+                .update("status", newStatus)
+                .addOnSuccessListener(unused -> {
+                    db.allianceInvitationRepository().updateStatus(
+                            invitationId,  // ili drugi ID koji koristiš u Room
+                            InvitationStatus.valueOf(newStatus)
+                    );
+                });
 
         if (nid != 0) NotificationManagerCompat.from(ctx).cancel(nid);
     }

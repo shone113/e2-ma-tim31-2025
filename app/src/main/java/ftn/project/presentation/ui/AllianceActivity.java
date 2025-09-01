@@ -1,6 +1,6 @@
 package ftn.project.presentation.ui;
 
-import android.content.IntentFilter;
+import android.content.BroadcastReceiver;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -8,7 +8,6 @@ import android.widget.ListView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -17,9 +16,10 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,9 +38,7 @@ import ftn.project.domain.entity.InvitationStatus;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.FriendshipService;
 import ftn.project.presentation.adapter.FriendAdapter;
-import ftn.project.presentation.adapter.UserAdapter;
 import ftn.project.presentation.notification.AllianceInvitationReceiver;
-import ftn.project.presentation.notification.Notifier;
 
 public class AllianceActivity extends AppCompatActivity {
     private FriendAdapter adapter;
@@ -48,6 +46,7 @@ public class AllianceActivity extends AppCompatActivity {
     private FriendshipService friendshipService;
     private AppDatabase db;
     private User loggedUser;
+    private ListenerRegistration sentInvitesReg;
 
 
     @Override
@@ -69,6 +68,18 @@ public class AllianceActivity extends AppCompatActivity {
         MaterialButton btnDisband = findViewById(R.id.btnDisbandAlliance);
         TextInputEditText etName = findViewById(R.id.etAllianceName);
 
+        if(loggedUser.getAllianceId() != null){
+            Alliance alliance = db.allianceRepository().getAlliance(loggedUser.getAllianceId());
+            etName.setText(alliance.getName());
+            etName.setEnabled(false);
+            btnCreate.setVisibility(View.GONE);
+            if(alliance.getLeaderUserId() == loggedUser.getUserId()){
+                btnDisband.setVisibility(View.VISIBLE);
+            }else{
+                btnDisband.setVisibility(View.GONE);
+            }
+        }
+
         Alliance alliance = new Alliance();
         btnCreate.setOnClickListener(v -> {
             etName.setEnabled(false);
@@ -79,6 +90,9 @@ public class AllianceActivity extends AppCompatActivity {
             alliance.setLeaderUserId(loggedUser.getUserId());
 
             int newAllianceId = (int)db.allianceRepository().insert(alliance);
+            db.userRepository().updateAllianceId(loggedUser.getUserId(), newAllianceId);
+            Log.w("SERBIA", " " + newAllianceId);
+
             if(newAllianceId <= 0){
                 btnCreate.setVisibility(View.VISIBLE);
                 btnDisband.setVisibility(View.GONE);
@@ -109,10 +123,7 @@ public class AllianceActivity extends AppCompatActivity {
             friendship.setFirstUserId(loggedUser.getUserId());
             friendship.setSecondUserId(userFriendDTO.userId);
             long rowId = db.friendshipRepository().insert(friendship);
-            Log.w("UNET_RED", " " + rowId);
-            Log.w("SVI_REDOVI", " " + db.allianceInvitationRepository().findAllByInviter(loggedUser.getUserId()).stream().count());
             User friend = db.userRepository().getById(friendship.secondUserId);
-
             sendInvite(
                     friend.getFirebaseUid(),
                     userFriendDTO.userId,
@@ -130,11 +141,10 @@ public class AllianceActivity extends AppCompatActivity {
                     friendship.getSecondUserId());
         });
         ListView lvFriends = findViewById(R.id.lvFriends);
-        if (lvFriends == null) {
-            Log.e("AllianceActivity","lvFriends not found in layout activity_alliance.xml");
-            return;
+        if (lvFriends != null) {
+            lvFriends.setAdapter(adapter);
+            attachSentInvitesListener();
         }
-        lvFriends.setAdapter(adapter);
     }
     private void sendInvite(
             String inviteeFirebaseUid,
@@ -150,73 +160,77 @@ public class AllianceActivity extends AppCompatActivity {
 
         String inviterUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        Map<String, Object> inv = new HashMap<>();
-        inv.put("allianceId",       allianceId);
-        inv.put("allianceName",     allianceName);
-        inv.put("inviterUid",       inviterUid);          // string (Firebase UID)
-        inv.put("inviteeUid",       inviteeFirebaseUid);  // string (Firebase UID)
-        inv.put("inviterUserId",    inviterUserId);
-        inv.put("inviteeUserId",    inviteeUserId);
-        inv.put("inviterName",      inviterName);
-        inv.put("status",           "PENDING");
-        inv.put("createdAt",        FieldValue.serverTimestamp());
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AllianceInvitation ai = new AllianceInvitation();
+            ai.setAllianceId(allianceId);
+            ai.setInviterUserId(inviterUserId);
+            ai.setInviteeUserId(inviteeUserId);
+            ai.setStatus(InvitationStatus.PENDING);
 
-        fs.collection("allianceInvites").document(docId).set(inv)
-                .addOnSuccessListener(unused -> {
-                    Log.i("INVITE","sent: "+docId);
+            long invitationId = db.allianceInvitationRepository().upsert(ai);
 
-                    // upiši LOKALNO u Room (optimistički), u background-u:
-                    Executors.newSingleThreadExecutor().execute(() -> {
-                        AllianceInvitation ai = new AllianceInvitation();
-                        ai.setAllianceId(allianceId);
-                        ai.setInviterUserId(inviterUserId);
-                        ai.setInviteeUserId(inviteeUserId);
-                        ai.setStatus(InvitationStatus.PENDING);
+            Map<String, Object> inv = new HashMap<>();
+            inv.put("invitationId", invitationId);
+            inv.put("allianceId", allianceId);
+            inv.put("allianceName", allianceName);
+            inv.put("inviterUid", inviterUid);          // string (Firebase UID)
+            inv.put("inviteeUid", inviteeFirebaseUid);  // string (Firebase UID)
+            inv.put("inviterUserId", inviterUserId);
+            inv.put("inviteeUserId", inviteeUserId);
+            inv.put("inviterName", inviterName);
+            inv.put("status", "PENDING");
+            inv.put("createdAt", FieldValue.serverTimestamp());
 
-                        db.allianceInvitationRepository().upsert(ai);
+            fs.collection("allianceInvites").document(docId).set(inv)
+                    .addOnSuccessListener(unused -> {
+                        Log.i("INVITE", "sent: " + docId);
 
-                        int c = db.allianceInvitationRepository()
-                                .findAllByInviter(inviterUserId).size();
-                        Log.w("SVI_REDOVI"," "+c);
 
-                        // osveži UI (označi kliknutog kao PENDING)
-                        runOnUiThread(() -> {
-                            for (var d : friendDTOs) {
-                                if (d.userId == inviteeUserId) {
-                                    d.invitationStatus = ftn.project.domain.entity.InvitationStatus.PENDING;
-                                    break;
-                                }
-                            }
-                            adapter.replaceAll(friendDTOs);
-                        });
-                    });
-                })
-                .addOnFailureListener(e -> Log.e("INVITE","fail: "+e.getMessage(), e));
-       }
-    private final android.content.BroadcastReceiver allianceStatusReceiver =
-            new android.content.BroadcastReceiver() {
-                @Override public void onReceive(android.content.Context c, android.content.Intent i) {
-                    String inviteId = i.getStringExtra(AllianceInvitationReceiver.EXTRA_INVITE_ID);
-                    String status   = i.getStringExtra(AllianceInvitationReceiver.EXTRA_NEW_STATUS);
-                    // reci adapteru da promeni tekst dugmeta
-                    adapter.updateStatus(inviteId, status);
-                }
-            };
+                    })
+                    .addOnFailureListener(e -> Log.e("INVITE", "fail: " + e));
 
-    @Override protected void onStart() {
-        super.onStart();
-        IntentFilter f = new IntentFilter(AllianceInvitationReceiver.ACTION_UI_STATUS_CHANGED);
-        // samo unutar tvoje app-ke
-        ContextCompat.registerReceiver(
-                this,
-                allianceStatusReceiver,
-                f,
-                ContextCompat.RECEIVER_NOT_EXPORTED
-        );
+        });
     }
 
-    @Override protected void onStop() {
-        unregisterReceiver(allianceStatusReceiver);
-        super.onStop();
+    private void attachSentInvitesListener() {
+        if (sentInvitesReg != null) return;           // već aktivan
+        if (adapter == null) return;                  // još nemamo adapter -> nema listeniranja
+
+        String myUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseFirestore fs = FirebaseFirestore.getInstance();
+
+        sentInvitesReg = fs.collection("allianceInvites")
+                .whereEqualTo("inviterUid", myUid)
+                .addSnapshotListener((snap, e) -> {
+                    if (e != null || snap == null) return;
+                    if (adapter == null || friendDTOs == null) return;
+
+                    for (DocumentChange dc : snap.getDocumentChanges()) {
+                        String statusStr = dc.getDocument().getString("status"); // "PENDING" | "ACCEPTED" | "DECLINED"
+                        Number inviteeUserIdNum = (Number) dc.getDocument().get("inviteeUserId");
+                        if (inviteeUserIdNum == null || statusStr == null) continue;
+
+                        int inviteeUserId = inviteeUserIdNum.intValue();
+                        updateInvitationStatus(inviteeUserId, statusStr);
+                    }
+                });
+    }
+
+    private void detachSentInvitesListener() {
+        if (sentInvitesReg != null) { sentInvitesReg.remove(); sentInvitesReg = null; }
+    }
+
+    private void updateInvitationStatus(int inviteeUserId, String statusStr) {
+        // Ako koristiš enum InvitationStatus, prebaci:
+        InvitationStatus st;
+        try { st = InvitationStatus.valueOf(statusStr); } catch (Exception ex) { st = InvitationStatus.PENDING; }
+
+        for (UserFriendDTO d : friendDTOs) {
+            if (d.userId == inviteeUserId) {
+                d.invitationStatus = st;
+                break;
+            }
+        }
+        runOnUiThread(() -> { if (adapter != null) adapter.replaceAll(friendDTOs); });
     }
 }

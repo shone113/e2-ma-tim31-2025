@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout btnActSpecMission;
     private LinearLayout btnTaskCalendar, btnShop, btnNewTask, btnBattle, btnCategories, btnAllUsers;
     private ListenerRegistration inviteReg;
+    private AppDatabase db;
 
     private void scheduleMissionEndWorker(int missionId, LocalDateTime endDate) {
         long delayMillis = ChronoUnit.MILLIS.between(LocalDateTime.now(), endDate);
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        AppDatabase db = AppDatabase.getInstance(this);
+        db = AppDatabase.getInstance(this);
         setContentView(R.layout.activity_main);
 
         if (android.os.Build.VERSION.SDK_INT >= 33) {
@@ -173,9 +174,9 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
 
         String myUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        FirebaseFirestore dbf = FirebaseFirestore.getInstance();
 
-        inviteReg = db.collection("allianceInvites")
+        inviteReg = dbf.collection("allianceInvites")
                 .whereEqualTo("inviteeUid", myUid)
                 .whereEqualTo("status", "PENDING")
                 .addSnapshotListener((snap, e) -> {
@@ -190,11 +191,19 @@ public class MainActivity extends AppCompatActivity {
                             Log.w("INVITES", "invite bez allianceId: " + d.getId());
                             return; // ili continue; ako si u for-petlji
                         }
+
+                        Long invitationIdLong = d.getLong("invitationId");
+                        int invitationId = 0;
+                        if (invitationIdLong != null) {
+                            invitationId = invitationIdLong.intValue(); // konvertuje Long u int
+                        }
+
                         int allianceId = Math.toIntExact(allianceIdL);
                         String inviteId     = d.getId();
                         String allianceName = d.getString("allianceName");
                         String inviterUid   = d.getString("inviterUid");
                         String inviterName  = d.getString("inviterName");
+                        String inviteeUserId = d.getString("inviteeUserId");
 
                         // lokalna notifikacija na PRIMAOČU
                         ftn.project.presentation.notification.Notifier.showInvite(
@@ -203,7 +212,9 @@ public class MainActivity extends AppCompatActivity {
                                 String.valueOf(allianceId),
                                 allianceName,
                                 inviterUid,
-                                inviterName
+                                inviterName,
+                                invitationId,
+                                Integer.parseInt(inviteeUserId)
                         );
                     }
                 });
