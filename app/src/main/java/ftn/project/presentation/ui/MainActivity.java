@@ -16,6 +16,7 @@ import com.google.firebase.auth.FirebaseUser;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -31,7 +32,7 @@ import ftn.project.domain.worker.MissionEndWorker;
 
 public class MainActivity extends AppCompatActivity {
 
-    private LinearLayout btnActSpecMission;
+    private LinearLayout btnActSpecMission, btnSpecMission;
     private LinearLayout btnTaskCalendar, btnShop, btnNewTask, btnBattle, btnCategories, btnAllUsers;
 
     private void scheduleMissionEndWorker(int missionId, LocalDateTime endDate) {
@@ -68,21 +69,28 @@ public class MainActivity extends AppCompatActivity {
         btnBattle = findViewById(R.id.btnBattle);
         btnCategories = findViewById(R.id.btnCategories);
         btnAllUsers = findViewById(R.id.btnAllUsers);
+        btnSpecMission = findViewById(R.id.btnSpecMission);
 
         // --- Provera lidera i specijalne misije ---
         LoggedUserService loggedUserService = new LoggedUserService(this);
         User logged = loggedUserService.getCurrentUser();
         Alliance alliance = db.allianceRepository().getAllianceByUser(logged.getUserId());
+        int allianceCount;
+        List<SpecialMission> activeSpecialMission = new ArrayList<SpecialMission>();
+        if(alliance != null)
+        {
+            activeSpecialMission = db.specialMissionRepository().activeSpecialMissionByAlliance(alliance.getAllianceId());
+            allianceCount = db.userRepository().allianceCount(alliance.getAllianceId());
+        } else {
+            allianceCount = 0;
+        }
 
-        List<SpecialMission> activeSpecialMission =
-                db.specialMissionRepository().activeSpecialMissionByAlliance(alliance.getAllianceId());
 
-        if (logged.getUserId() == alliance.getLeaderUserId() && activeSpecialMission.isEmpty())
-            btnActSpecMission.setVisibility(View.VISIBLE);
-        else
+        if (!activeSpecialMission.isEmpty() || alliance == null || logged.getUserId() != alliance.getLeaderUserId())
             btnActSpecMission.setVisibility(View.GONE);
+        else if (logged.getUserId() == alliance.getLeaderUserId() && activeSpecialMission.isEmpty())
+            btnActSpecMission.setVisibility(View.VISIBLE);
 
-        int allianceCount = db.userRepository().allianceCount(alliance.getAllianceId());
 
         // --- Specijalna misija ---
         btnActSpecMission.setOnClickListener(v -> {
@@ -112,6 +120,15 @@ public class MainActivity extends AppCompatActivity {
             scheduleMissionEndWorker((int) missionId, specialMission.getEndDate());
         });
 
+        SpecialMission loggedSpecialMission = db.specialMissionRepository().getActiveMissionForUser(logged.getUserId());
+        if(loggedSpecialMission != null)
+            btnSpecMission.setEnabled(true);
+        else
+            btnSpecMission.setEnabled(false);
+
+        btnSpecMission.setOnClickListener(v ->{
+            startActivity(new Intent(this, SpecialMissionActivity.class));
+        });
         // --- Ostala dugmad (otvaraju activity-je) ---
         btnTaskCalendar.setOnClickListener(v -> {
             startActivity(new Intent(this, TaskCalendarActivity.class));

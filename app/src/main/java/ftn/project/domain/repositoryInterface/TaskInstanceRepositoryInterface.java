@@ -75,7 +75,7 @@ public interface TaskInstanceRepositoryInterface {
             "INNER JOIN tasks t ON ti.taskId = t.id " +
             "WHERE t.userId = :userId " +
             "AND ti.difficultyInstance = :diff " +
-            "AND (ti.status = 'DONE' OR ti.isWithinQuota = 1) " +
+            "AND ti.status = 'DONE'" +
             "AND ti.endExecutionTime BETWEEN :start AND :end")
     int countTakenSlotsByDifficulty(int userId, String diff, LocalDateTime start, LocalDateTime end);
 
@@ -83,7 +83,7 @@ public interface TaskInstanceRepositoryInterface {
             "INNER JOIN tasks t ON ti.taskId = t.id " +
             "WHERE t.userId = :userId " +
             "AND ti.importanceInstance = :imp " +
-            "AND (ti.status = 'DONE' OR ti.isWithinQuota = 1) " +
+            "AND ti.status = 'DONE'" +
             "AND ti.endExecutionTime BETWEEN :start AND :end")
     int countTakenSlotsByImportance(int userId, String imp, LocalDateTime start, LocalDateTime end);
 
@@ -97,7 +97,13 @@ public interface TaskInstanceRepositoryInterface {
             "ORDER BY ti.startExecutionTime ASC")
     List<TaskInstance> getActiveOrUnfinishedForDayOrdered(int userId, LocalDateTime start, LocalDateTime end);
 
-    // isto možeš napraviti za nedelju i mesec (ili koristiš day parametre da računaš start/end)
+    @Query("SELECT ti.* FROM task_instances ti " +
+            "INNER JOIN tasks t ON ti.taskId = t.id " +
+            "WHERE t.userId = :userId " +
+            "AND (ti.status = 'CANCELED' OR ti.status = 'PAUSED') " +
+            "AND ti.startExecutionTime BETWEEN :start AND :end " +
+            "ORDER BY ti.startExecutionTime ASC")
+    List<TaskInstance> getCanceledOrPausedForDayOrdered(int userId, LocalDateTime start, LocalDateTime end);
 
     // Update earnedXp + flag + status
     @Query("UPDATE task_instances SET earnedXp = :xp, isWithinQuota = :withinQuota WHERE id = :id")

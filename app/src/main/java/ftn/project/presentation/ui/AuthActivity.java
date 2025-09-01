@@ -363,6 +363,7 @@ public class AuthActivity extends AppCompatActivity {
                 nu.setAvatarImage(getResources().getResourceEntryName(selectedAvatarResId));     // ← NOVO
                 nu.setExperiencePoints(0);         // ← NOVO (dodaj field u entitet)
                 nu.setLevel(3);
+                nu.setNewLevelTime(LocalDateTime.now());
                 db.userRepository().insert(nu);
             } else {
                 // već postoji lokalno (npr. re-instalacija): po želji sync-uj username/avatar
