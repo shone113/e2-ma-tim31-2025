@@ -19,6 +19,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HabitQuest">
         <activity
+            android:name=".presentation.ui.ChatActivity"
+            android:exported="false" />
+        <activity
             android:name=".presentation.ui.AllianceActivity"
             android:exported="false" />
         <activity
