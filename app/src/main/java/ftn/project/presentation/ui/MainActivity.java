@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.work.Data;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import ftn.project.R;
+import ftn.project.data.database.FirestoreSync;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Alliance;
 import ftn.project.domain.entity.SpecialMission;
@@ -74,6 +76,12 @@ public class MainActivity extends AppCompatActivity {
                 requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1001);
             }
         }
+
+        FirestoreSync.syncAllAlliancesDown(
+                getApplicationContext(),
+                db,
+                () -> Toast.makeText(this, "Friendships synced ✔", Toast.LENGTH_SHORT).show()
+        );
 
         // --- Dugmad ---
         btnActSpecMission = findViewById(R.id.btnActSpecMission);
@@ -203,7 +211,7 @@ public class MainActivity extends AppCompatActivity {
                         String allianceName = d.getString("allianceName");
                         String inviterUid   = d.getString("inviterUid");
                         String inviterName  = d.getString("inviterName");
-                        String inviteeUserId = d.getString("inviteeUserId");
+                        Long inviteeUserId = d.getLong("inviteeUserId");
 
                         // lokalna notifikacija na PRIMAOČU
                         ftn.project.presentation.notification.Notifier.showInvite(
@@ -214,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
                                 inviterUid,
                                 inviterName,
                                 invitationId,
-                                Integer.parseInt(inviteeUserId)
+                                inviteeUserId.intValue()
                         );
                     }
                 });

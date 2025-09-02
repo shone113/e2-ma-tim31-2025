@@ -30,7 +30,8 @@ public final class Notifier {
                 .putExtra("inviteId", inviteId)
                 .putExtra("allianceId", allianceId)
                 .putExtra("invitationId", invitationId)
-                .putExtra("inviteeUserId", inviteeUserId);
+                .putExtra("inviteeUserId", inviteeUserId)
+                .putExtra("notificationId", nid);
         PendingIntent piAccept = PendingIntent.getBroadcast(
                 ctx, nid, accept, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );

@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 
 import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Alliance;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.entity.UserEquipment;
 
@@ -57,6 +58,53 @@ public class FirestoreSync {
         doc.set(data, SetOptions.merge())
                 .addOnFailureListener(e -> Toast.makeText(ctx, "Sync badge fail: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
+
+    public static void syncAllAlliancesDown(Context ctx, AppDatabase db, Runnable onDone) {
+        FirebaseFirestore.getInstance()
+                .collection("alliances")
+                .get()
+                .addOnSuccessListener(snaps -> {
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        int count = 0;
+                        for (var d : snaps) {
+                            Long allianceIdL = d.getLong("allianceId");
+                            String name = d.getString("name");
+                            Long leaderIdL = d.getLong("leaderUserId");
+
+                            if (allianceIdL == null) continue;
+                            int allianceId = allianceIdL.intValue();
+                            Integer leaderUserId = leaderIdL == null ? null : leaderIdL.intValue();
+
+                            Alliance local = db.allianceRepository().getAlliance(allianceId);
+                            if (local == null) {
+                                Alliance a = new Alliance();
+                                a.setAllianceId(allianceId);
+                                a.setName(name);
+                                a.setLeaderUserId(leaderUserId);
+                                db.allianceRepository().insert(a);
+                            } else {
+                                boolean changed = false;
+                                if (name != null && !name.equals(local.getName())) {
+                                    local.setName(name);
+                                    changed = true;
+                                }
+                                if (leaderUserId != null && !leaderUserId.equals(local.getLeaderUserId())) {
+                                    local.setLeaderUserId(leaderUserId);
+                                    changed = true;
+                                }
+                                if (changed) db.allianceRepository().update(local);
+                            }
+                            count++;
+                        }
+                        if (onDone != null) new android.os.Handler(Looper.getMainLooper()).post(onDone);
+                        Log.d("FS_SYNC", "Synced alliances: " + count);
+                    });
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(ctx, "Sync alliances fail: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                );
+    }
+
 
     public static void syncUserEquipmentDown(
             Context ctx,

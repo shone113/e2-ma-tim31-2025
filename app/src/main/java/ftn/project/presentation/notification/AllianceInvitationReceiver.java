@@ -4,11 +4,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.core.app.NotificationManagerCompat;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import ftn.project.data.database.FirestoreSync;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.InvitationStatus;
 
@@ -31,11 +33,18 @@ public class AllianceInvitationReceiver extends BroadcastReceiver {
         if (invitationId == -1) return;
         if (inviteId == null) return;
 
+        FirestoreSync.syncAllAlliancesDown(
+                ctx,
+                db,
+                () -> Toast.makeText(ctx, "Alliances synced ✔", Toast.LENGTH_SHORT).show()
+        );
+
         String tmpStatus = "NONE";
         if ("ftn.project.ACTION_ACCEPT_INVITE".equals(action)){
             tmpStatus = "ACCEPTED";
             db.userRepository().updateAllianceId(inviteeUserId, allianceId);
         }else if("ftn.project.ACTION_DECLINE_INVITE".equals(action)){
+
         }
 
         final String newStatus = tmpStatus;

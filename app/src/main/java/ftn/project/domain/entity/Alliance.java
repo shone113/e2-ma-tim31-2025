@@ -20,7 +20,7 @@ import androidx.room.PrimaryKey;
         }
 )
 public class Alliance {
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey(autoGenerate = false)
     private int allianceId;
     private String name;
     @ColumnInfo(name = "leader_user_id")

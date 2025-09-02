@@ -73,6 +73,11 @@ public class AllUsersActivity extends AppCompatActivity {
                 firebaseUser.getUid(),
                 () -> Toast.makeText(this, "Friendships synced ✔", Toast.LENGTH_SHORT).show()
         );
+        FirestoreSync.syncAllAlliancesDown(
+                getApplicationContext(),
+                db,
+                () -> Toast.makeText(this, "Friendships synced ✔", Toast.LENGTH_SHORT).show()
+        );
 
         ListView lvUsers = findViewById(R.id.lvUsers);
         EditText etSearch = findViewById(R.id.etSearch);

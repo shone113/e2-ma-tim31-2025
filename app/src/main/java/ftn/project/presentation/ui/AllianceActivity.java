@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -36,6 +37,7 @@ import ftn.project.domain.entity.AllianceInvitation;
 import ftn.project.domain.entity.Friendship;
 import ftn.project.domain.entity.InvitationStatus;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.AllianceService;
 import ftn.project.domain.usecase.FriendshipService;
 import ftn.project.presentation.adapter.FriendAdapter;
 import ftn.project.presentation.notification.AllianceInvitationReceiver;
@@ -73,6 +75,7 @@ public class AllianceActivity extends AppCompatActivity {
             etName.setText(alliance.getName());
             etName.setEnabled(false);
             btnCreate.setVisibility(View.GONE);
+            showFriends(alliance.getAllianceId(), alliance.getName());
             if(alliance.getLeaderUserId() == loggedUser.getUserId()){
                 btnDisband.setVisibility(View.VISIBLE);
             }else{
@@ -80,28 +83,33 @@ public class AllianceActivity extends AppCompatActivity {
             }
         }
 
-        Alliance alliance = new Alliance();
         btnCreate.setOnClickListener(v -> {
             etName.setEnabled(false);
             btnCreate.setVisibility(View.GONE);
             btnDisband.setVisibility(View.VISIBLE);
 
+            Alliance alliance = new Alliance();
+
             alliance.setName(etName.getText().toString());
             alliance.setLeaderUserId(loggedUser.getUserId());
 
-            int newAllianceId = (int)db.allianceRepository().insert(alliance);
-            db.userRepository().updateAllianceId(loggedUser.getUserId(), newAllianceId);
-            Log.w("SERBIA", " " + newAllianceId);
+            AllianceService allianceService = new AllianceService();
+            allianceService.createAlliance(etName.getText().toString(),
+                            loggedUser.getUserId(),
+                            () -> Toast.makeText(getApplicationContext(), "Alliances synced ✔", Toast.LENGTH_SHORT).show()
+                    )
+                    .addOnSuccessListener(allianceId -> {
+                        alliance.setAllianceId(allianceId);
+                        final int newAllianceId = (int)db.allianceRepository().insert(alliance);
+                        Log.w("OVDE_PUCA", "allianceId: " + allianceId + ", newAllianceId: " + newAllianceId);
+                        db.userRepository().updateAllianceId(loggedUser.getUserId(), newAllianceId);
 
-            if(newAllianceId <= 0){
-                btnCreate.setVisibility(View.VISIBLE);
-                btnDisband.setVisibility(View.GONE);
-                etName.setEnabled(true);
-                Log.e("AllianceActivity","Alliance insert failed");
-                return;
-            }
-            alliance.setAllianceId(newAllianceId);
-            showFriends(newAllianceId, alliance.getName());
+                        updateCreateButtonUI(newAllianceId, btnCreate, btnDisband, etName);
+                        showFriends(newAllianceId, alliance.getName());
+
+                        Log.w("SERBIA", " " + allianceId);
+                    });
+
         });
 
         btnDisband.setOnClickListener(v -> {
@@ -109,6 +117,20 @@ public class AllianceActivity extends AppCompatActivity {
             btnDisband.setVisibility(View.VISIBLE);
             btnDisband.setEnabled(false);
         });
+    }
+
+    public void updateCreateButtonUI(
+            int newAllianceId,
+            MaterialButton btnCreate,
+            MaterialButton btnDisband,
+            TextInputEditText etName){
+
+        if(newAllianceId <= 0){
+            btnCreate.setVisibility(View.VISIBLE);
+            btnDisband.setVisibility(View.GONE);
+            etName.setEnabled(true);
+            Log.e("AllianceActivity","Alliance insert failed");
+        }
     }
     public void showFriends(int allianceId, String allianceName){
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
