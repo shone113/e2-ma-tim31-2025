@@ -30,35 +30,65 @@ public class AllianceInvitationReceiver extends BroadcastReceiver {
         int allianceId = intent.getIntExtra("allianceId", -1);
         int inviteeUserId = intent.getIntExtra("inviteeUserId", -1);
 
+        Log.w("LALALALA", " " + allianceId);
+
         if (invitationId == -1) return;
         if (inviteId == null) return;
 
-        FirestoreSync.syncAllAlliancesDown(
-                ctx,
-                db,
-                () -> Toast.makeText(ctx, "Alliances synced ✔", Toast.LENGTH_SHORT).show()
-        );
+        final PendingResult pr = goAsync();
 
-        String tmpStatus = "NONE";
-        if ("ftn.project.ACTION_ACCEPT_INVITE".equals(action)){
-            tmpStatus = "ACCEPTED";
-            db.userRepository().updateAllianceId(inviteeUserId, allianceId);
-        }else if("ftn.project.ACTION_DECLINE_INVITE".equals(action)){
-
+        if ("ftn.project.ACTION_ACCEPT_INVITE".equals(action)) {
+            FirestoreSync.syncAllUsersDown(ctx, db, () ->
+                    FirestoreSync.syncAllAlliancesDown(
+                        ctx, db,
+                        () -> {
+                            // (opciono) dodatna garancija da parent postoji
+                            // if (db.allianceDao().exists(allianceId) == 0) { /* upsert stub ili retry */ }
+                            FirebaseFirestore.getInstance()
+                                    .collection("allianceInvites")
+                                    .document(inviteId)
+                                    .update("status", "ACCEPTED")
+                                    .addOnSuccessListener(unused ->{
+                                        db.allianceInvitationRepository()
+                                                .updateStatus(invitationId, InvitationStatus.ACCEPTED);
+                                        db.userRepository().updateAllianceId(inviteeUserId, allianceId);
+                                    })
+                                    .addOnCompleteListener(done -> {
+                                        if (nid != 0) NotificationManagerCompat.from(ctx).cancel(nid);
+                                        pr.finish();
+                                    });
+                        })
+            );
+        } else if ("ftn.project.ACTION_DECLINE_INVITE".equals(action)) {
+            FirebaseFirestore.getInstance()
+                    .collection("allianceInvites")
+                    .document(inviteId)
+                    .update("status", "NONE")
+                    .addOnSuccessListener(unused ->
+                            db.allianceInvitationRepository()
+                                    .updateStatus(invitationId, InvitationStatus.NONE)
+                    )
+                    .addOnCompleteListener(done -> {
+                        if (nid != 0) NotificationManagerCompat.from(ctx).cancel(nid);
+                        pr.finish();
+                    });
+        } else {
+            pr.finish();
         }
 
-        final String newStatus = tmpStatus;
-        FirebaseFirestore.getInstance()
-                .collection("allianceInvites")
-                .document(inviteId)
-                .update("status", newStatus)
-                .addOnSuccessListener(unused -> {
-                    db.allianceInvitationRepository().updateStatus(
-                            invitationId,  // ili drugi ID koji koristiš u Room
-                            InvitationStatus.valueOf(newStatus)
-                    );
-                });
 
-        if (nid != 0) NotificationManagerCompat.from(ctx).cancel(nid);
+//        final String newStatus = tmpStatus;
+//        FirebaseFirestore.getInstance()
+//                .collection("allianceInvites")
+//                .document(inviteId)
+//                .update("status", newStatus)
+//                .addOnSuccessListener(unused -> {
+//                    db.allianceInvitationRepository().updateStatus(
+//                            invitationId,  // ili drugi ID koji koristiš u Room
+//                            InvitationStatus.valueOf(newStatus)
+//                    );
+//                });
+
+//        if (nid != 0) NotificationManagerCompat.from(ctx).cancel(nid);
     }
 }

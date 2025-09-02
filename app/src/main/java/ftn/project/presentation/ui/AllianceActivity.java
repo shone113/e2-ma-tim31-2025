@@ -34,6 +34,7 @@ import ftn.project.data.db.AppDatabase;
 import ftn.project.data.dto.UserFriendDTO;
 import ftn.project.domain.entity.Alliance;
 import ftn.project.domain.entity.AllianceInvitation;
+import ftn.project.domain.entity.AllianceMessage;
 import ftn.project.domain.entity.Friendship;
 import ftn.project.domain.entity.InvitationStatus;
 import ftn.project.domain.entity.User;
@@ -46,6 +47,7 @@ public class AllianceActivity extends AppCompatActivity {
     private FriendAdapter adapter;
     private ArrayList<UserFriendDTO> friendDTOs;
     private FriendshipService friendshipService;
+    private AllianceService allianceService;
     private AppDatabase db;
     private User loggedUser;
     private ListenerRegistration sentInvitesReg;
@@ -65,6 +67,7 @@ public class AllianceActivity extends AppCompatActivity {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         loggedUser = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
         friendshipService = new FriendshipService();
+        allianceService = new AllianceService(this);
 
         MaterialButton btnCreate = findViewById(R.id.btnCreateAlliance);
         MaterialButton btnDisband = findViewById(R.id.btnDisbandAlliance);
@@ -93,7 +96,6 @@ public class AllianceActivity extends AppCompatActivity {
             alliance.setName(etName.getText().toString());
             alliance.setLeaderUserId(loggedUser.getUserId());
 
-            AllianceService allianceService = new AllianceService();
             allianceService.createAlliance(etName.getText().toString(),
                             loggedUser.getUserId(),
                             () -> Toast.makeText(getApplicationContext(), "Alliances synced ✔", Toast.LENGTH_SHORT).show()
@@ -137,9 +139,11 @@ public class AllianceActivity extends AppCompatActivity {
         ArrayList<Friendship> friendships = new ArrayList<>(db.friendshipRepository().getAllForUserId(loggedUser.getUserId()));
         List<User> users = db.userRepository().getAll();
         List<AllianceInvitation> allianceInvitations = db.allianceInvitationRepository().findAllByInviter(loggedUser.getUserId());
+        Alliance alliance = db.allianceRepository().getAlliance(allianceId);
+        boolean leaderUser = alliance.getLeaderUserId() == loggedUser.getUserId() ? true : false;
         friendDTOs = friendshipService.getFriendsWithInvitationForUser(friendships, users, loggedUser.getUserId(), allianceInvitations);
 
-        adapter = new FriendAdapter(this, friendDTOs, userFriendDTO -> {
+        adapter = new FriendAdapter(this, friendDTOs, leaderUser,userFriendDTO -> {
             Log.w("ISPIS", "IZVRSIO SAM SE");
             Friendship friendship = new Friendship();
             friendship.setFirstUserId(loggedUser.getUserId());
@@ -154,14 +158,8 @@ public class AllianceActivity extends AppCompatActivity {
                     loggedUser.getUsername(),
                     loggedUser.getUserId()
             );
-
-            FirestoreSync.mirrorFriendshipToFirestore(
-                    getApplicationContext(),
-                    firebaseUser.getUid(),
-                    friendship.firstUserId,
-                    friend.getFirebaseUid(),
-                    friendship.getSecondUserId());
         });
+
         ListView lvFriends = findViewById(R.id.lvFriends);
         if (lvFriends != null) {
             lvFriends.setAdapter(adapter);

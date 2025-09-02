@@ -15,7 +15,7 @@ public final class Notifier {
 
     public static void showInvite(Context ctx,
                                   String inviteId,
-                                  String allianceId,
+                                  int allianceId,
                                   String allianceName,
                                   String inviterUid,
                                   String inviterName,

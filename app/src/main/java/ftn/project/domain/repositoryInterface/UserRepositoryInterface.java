@@ -85,4 +85,7 @@ public interface UserRepositoryInterface {
 
     @Query("UPDATE User SET alliance_id=:allianceId WHERE userId=:userId")
     void updateAllianceId(int userId, int allianceId);
+
+    @Query("SELECT COUNT(*) FROM User WHERE userId=:id")
+    int existsById(int id);
 }

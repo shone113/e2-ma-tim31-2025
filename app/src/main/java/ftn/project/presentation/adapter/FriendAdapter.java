@@ -29,10 +29,12 @@ public class FriendAdapter extends ArrayAdapter<UserFriendDTO> {
     }
     private ArrayList<UserFriendDTO> aFriends;
     private final OnInviteFriendClick listener;
+    private final boolean leaderUser;
 
-    public FriendAdapter(Context context, ArrayList<UserFriendDTO> friendDTOs, OnInviteFriendClick listener) {
+    public FriendAdapter(Context context, ArrayList<UserFriendDTO> friendDTOs, boolean leaderUser, OnInviteFriendClick listener) {
         super(context, R.layout.user_card, new ArrayList<>());
         this.aFriends = new ArrayList<>(friendDTOs);
+        this.leaderUser = leaderUser;
         this.listener = listener;
     }
     public void replaceAll(List<UserFriendDTO> newItems) {
@@ -72,15 +74,20 @@ public class FriendAdapter extends ArrayAdapter<UserFriendDTO> {
         Button btnAddFriend = convertView.findViewById(R.id.btnAddFriend);
 
         Log.w("UU123", "" + userFriendDTO.friend);
-        if(userFriendDTO.invitationStatus == InvitationStatus.ACCEPTED){
-            btnAddFriend.setEnabled(false);
-            btnAddFriend.setText("Member");
-        }else if(userFriendDTO.invitationStatus == InvitationStatus.PENDING){
-            btnAddFriend.setEnabled(false);
-            btnAddFriend.setText("Pending");
+
+        if(leaderUser){
+            if(userFriendDTO.invitationStatus == InvitationStatus.ACCEPTED){
+                btnAddFriend.setEnabled(false);
+                btnAddFriend.setText("Member");
+            }else if(userFriendDTO.invitationStatus == InvitationStatus.PENDING){
+                btnAddFriend.setEnabled(false);
+                btnAddFriend.setText("Pending");
+            }else{
+                btnAddFriend.setEnabled(true);
+                btnAddFriend.setText("Invite friend");
+            }
         }else{
-            btnAddFriend.setEnabled(true);
-            btnAddFriend.setText("Invite friend");
+            btnAddFriend.setVisibility(View.GONE);
         }
 
         if(userFriendDTO != null){

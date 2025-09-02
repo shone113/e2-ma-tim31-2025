@@ -61,6 +61,7 @@ public class AllUsersActivity extends AppCompatActivity {
         db = AppDatabase.getInstance(getApplicationContext());
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         friendshipService = new FriendshipService();
+        loggedUser = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
 
         FirestoreSync.syncAllUsersDown(
                 getApplicationContext(),
@@ -71,6 +72,7 @@ public class AllUsersActivity extends AppCompatActivity {
                 getApplicationContext(),
                 db,
                 firebaseUser.getUid(),
+                loggedUser.getUserId(),
                 () -> Toast.makeText(this, "Friendships synced ✔", Toast.LENGTH_SHORT).show()
         );
         FirestoreSync.syncAllAlliancesDown(
@@ -115,7 +117,6 @@ public class AllUsersActivity extends AppCompatActivity {
             barcodeLauncher.launch(options);
         });
 
-        loggedUser = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
         ArrayList<Friendship> friendships = new ArrayList<>(db.friendshipRepository().getAllForUserId(loggedUser.getUserId()));
         List<User> users = db.userRepository().getAll();
         friendDTOs = friendshipService.getFriendsForUser(friendships, users, loggedUser.getUserId());

@@ -77,10 +77,16 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        FirestoreSync.syncAllAlliancesDown(
+        FirestoreSync.syncAllUsersDown(
                 getApplicationContext(),
                 db,
-                () -> Toast.makeText(this, "Friendships synced ✔", Toast.LENGTH_SHORT).show()
+                () -> {
+                    FirestoreSync.syncAllAlliancesDown(
+                            getApplicationContext(),
+                            db,
+                            () -> Toast.makeText(this, "Friendships synced ✔", Toast.LENGTH_SHORT).show()
+                    );
+                }
         );
 
         // --- Dugmad ---
@@ -217,7 +223,7 @@ public class MainActivity extends AppCompatActivity {
                         ftn.project.presentation.notification.Notifier.showInvite(
                                 getApplicationContext(),
                                 inviteId,
-                                String.valueOf(allianceId),
+                                allianceId,
                                 allianceName,
                                 inviterUid,
                                 inviterName,

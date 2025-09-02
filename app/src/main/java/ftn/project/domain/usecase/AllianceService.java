@@ -1,5 +1,6 @@
 package ftn.project.domain.usecase;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -10,14 +11,23 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import ftn.project.data.db.AppDatabase;
+import ftn.project.data.dto.UserFriendDTO;
+import ftn.project.domain.entity.User;
+import kotlin.collections.ArrayDeque;
 
 public class AllianceService {
     private final FirebaseFirestore fs;
+    private AppDatabase db;
 
-    public AllianceService() {
+    public AllianceService(Context ctx) {
         this.fs = FirebaseFirestore.getInstance();
+        db = AppDatabase.getInstance(ctx);
     }
     public Task<Integer> createAlliance(String name, Integer leaderUserId, Runnable onDone) {
         com.google.firebase.firestore.DocumentReference counterRef =
