@@ -8,10 +8,11 @@ import androidx.room.PrimaryKey;
 @Entity(tableName = "AllianceMessage",
         indices = {@Index("allianceId"), @Index("sentAt")})
 public class AllianceMessage {
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = false)
     @NonNull
     private int messageId;
     private int allianceId;
+    private int creatorUserId;
     @NonNull private String creatorUsername;
     @NonNull private String content;
     private long sentAt;
@@ -21,6 +22,9 @@ public class AllianceMessage {
     public void setMessageId(@NonNull int messageId) { this.messageId = messageId; }
     public int getAllianceId() { return allianceId; }
     public void setAllianceId(int allianceId) { this.allianceId = allianceId; }
+
+    public int getCreatorUserId(){ return creatorUserId; }
+    public void setCreatorUserId(int creatorUserId) {this.creatorUserId = creatorUserId; }
     @NonNull public String getCreatorUsername() { return creatorUsername; }
     public void setCreatorUsername(@NonNull String creatorUsername) { this.creatorUsername = creatorUsername; }
 

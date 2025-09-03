@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DIALOG" />
-        <DropdownSelection timestamp="2025-09-02T15:07:29.514566800Z">
+        <DropdownSelection timestamp="2025-09-03T09:06:48.544200500Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT31PHVTB" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT90YNCVJ" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -15,12 +15,12 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT31PHVTB" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT90YNCVJ" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT90YNCVJ" />
+                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\nenad\.android\avd\Medium_Phone_2.avd" />
               </handle>
             </Target>
           </targets>

@@ -65,4 +65,49 @@ public final class Notifier {
 
         NotificationManagerCompat.from(ctx).notify(nid, b.build());
     }
+
+    public static void showChatMessage(Context ctx,
+                                       int messageId,
+                                       int allianceId,
+                                       String content,
+                                       int creatorUserId,
+                                       String creatorUsername,
+                                       Long sentAt,
+                                       String allianceName
+    ) {
+        // Otvaranje chat ekrana na klik
+        Intent openChat = new Intent(ctx, ftn.project.presentation.ui.ChatActivity.class)
+                .putExtra("allianceId", allianceId)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent contentPi = PendingIntent.getActivity(
+                ctx, allianceId, openChat, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        // Stabilan ID po savezu (da nova poruka zameni prethodnu notifikaciju tog saveza)
+        // Ako želiš da svaka poruka bude zasebna notifikacija, koristi messageId.hashCode().
+        int nid = ("chat-" + allianceId).hashCode();
+
+        // (Opcionalno) Android MessagingStyle – lepši prikaz konverzacije
+        NotificationCompat.MessagingStyle style =
+                new NotificationCompat.MessagingStyle(creatorUsername) // "ja" ako želiš Person za sebe
+                        .setConversationTitle(allianceName)
+                        .setGroupConversation(true)
+                        .addMessage(content, sentAt, creatorUsername);
+
+        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, MyApp.CHANNEL_MESSAGES)
+                .setSmallIcon(R.drawable.chat) // zameni svojom ikonom
+                .setContentTitle(allianceName)
+                .setContentText(creatorUsername + ": " + content)
+                .setStyle(style) // ili .setStyle(new BigTextStyle().bigText(senderName + ": " + previewText))
+                .setWhen(sentAt)
+                .setShowWhen(true)
+                .setContentIntent(contentPi)
+                .setAutoCancel(true)
+                .setOnlyAlertOnce(true)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT); // stavi HIGH ako želiš heads-up
+
+        NotificationManagerCompat.from(ctx).notify(nid, b.build());
+    }
+
 }

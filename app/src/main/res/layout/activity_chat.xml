@@ -8,13 +8,14 @@
     tools:context=".presentation.ui.ChatActivity">
 
     <!-- Lista poruka -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvMessages"
+    <ListView
+        android:id="@+id/lvMessages"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
-        android:clipToPadding="false"
+        android:divider="@null"
+        android:dividerHeight="0dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/inputBar"
         app:layout_constraintStart_toStartOf="parent"

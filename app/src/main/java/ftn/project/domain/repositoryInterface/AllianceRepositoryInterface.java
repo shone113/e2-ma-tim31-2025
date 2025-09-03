@@ -15,7 +15,6 @@ public interface AllianceRepositoryInterface {
 
     @Update
     void update(Alliance alliance);
-
     @Query("SELECT * FROM Alliance WHERE allianceId = :allianceID")
     Alliance getAlliance(int allianceID);
     @Query("SELECT * FROM Alliance WHERE leader_user_id = :userId")

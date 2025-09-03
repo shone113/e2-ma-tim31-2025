@@ -1,6 +1,7 @@
 package ftn.project.presentation.ui;
 
 import android.content.BroadcastReceiver;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -51,6 +52,7 @@ public class AllianceActivity extends AppCompatActivity {
     private AppDatabase db;
     private User loggedUser;
     private ListenerRegistration sentInvitesReg;
+    private int currentAllianceId;
 
 
     @Override
@@ -72,6 +74,7 @@ public class AllianceActivity extends AppCompatActivity {
         MaterialButton btnCreate = findViewById(R.id.btnCreateAlliance);
         MaterialButton btnDisband = findViewById(R.id.btnDisbandAlliance);
         TextInputEditText etName = findViewById(R.id.etAllianceName);
+        MaterialButton btnChat = findViewById(R.id.btnChat);
 
         if(loggedUser.getAllianceId() != null){
             Alliance alliance = db.allianceRepository().getAlliance(loggedUser.getAllianceId());
@@ -102,14 +105,11 @@ public class AllianceActivity extends AppCompatActivity {
                     )
                     .addOnSuccessListener(allianceId -> {
                         alliance.setAllianceId(allianceId);
-                        final int newAllianceId = (int)db.allianceRepository().insert(alliance);
-                        Log.w("OVDE_PUCA", "allianceId: " + allianceId + ", newAllianceId: " + newAllianceId);
-                        db.userRepository().updateAllianceId(loggedUser.getUserId(), newAllianceId);
+                        currentAllianceId = (int)db.allianceRepository().insert(alliance);
+                        db.userRepository().updateAllianceId(loggedUser.getUserId(), currentAllianceId);
 
-                        updateCreateButtonUI(newAllianceId, btnCreate, btnDisband, etName);
-                        showFriends(newAllianceId, alliance.getName());
-
-                        Log.w("SERBIA", " " + allianceId);
+                        updateCreateButtonUI(currentAllianceId, btnCreate, btnDisband, etName);
+                        showFriends(currentAllianceId, alliance.getName());
                     });
 
         });
@@ -118,6 +118,12 @@ public class AllianceActivity extends AppCompatActivity {
             etName.setEnabled(false);
             btnDisband.setVisibility(View.VISIBLE);
             btnDisband.setEnabled(false);
+        });
+
+        btnChat.setOnClickListener(v -> {
+            Intent i = new Intent(this, ChatActivity.class);
+            i.putExtra(ChatActivity.EXTRA_ALLIANCE_ID, currentAllianceId);
+            this.startActivity(i);
         });
     }
 

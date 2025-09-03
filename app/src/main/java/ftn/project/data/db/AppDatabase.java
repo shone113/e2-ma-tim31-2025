@@ -31,6 +31,7 @@ import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.repositoryInterface.AllianceInvitationRepositoryInterface;
+import ftn.project.domain.repositoryInterface.AllianceMessageRepositoryInterface;
 import ftn.project.domain.repositoryInterface.AllianceRepositoryInterface;
 import ftn.project.domain.repositoryInterface.BattleRepositoryInterface;
 import ftn.project.domain.repositoryInterface.BossRepositoryInterface;
@@ -71,6 +72,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract SpecialMissionProgressRepositoryInterface specialMissionProgressRepository();
     public abstract SpecialMissionRepositoryInterface specialMissionRepository();
     public abstract AllianceInvitationRepositoryInterface allianceInvitationRepository();
+    public abstract AllianceMessageRepositoryInterface allianceMessageRepository();
     private static AppDatabase INSTANCE;
     private static Context appContext;
 
@@ -90,7 +92,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (INSTANCE == null) {
             appContext = context.getApplicationContext();
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                     AppDatabase.class, "habit_quest_baza45.db")
+                     AppDatabase.class, "habit_quest_baza47.db")
                     //.addMigrations(MIGRATION_1_2)
                     .addCallback(prepopulateCallback)
                     .allowMainThreadQueries()

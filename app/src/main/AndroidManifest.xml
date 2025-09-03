@@ -20,6 +20,7 @@
         android:theme="@style/Theme.HabitQuest">
         <activity
             android:name=".presentation.ui.ChatActivity"
+            android:windowSoftInputMode="adjustPan"
             android:exported="false" />
         <activity
             android:name=".presentation.ui.AllianceActivity"
@@ -59,15 +60,8 @@
         <activity
             android:name=".presentation.ui.ProfileActivity"
             android:exported="false" />
-
         <receiver
             android:name=".presentation.notification.AllianceInvitationReceiver"
-            android:exported="false" />
-        <receiver
-            android:name=".presentation.notification.AcceptInviteReceiver"
-            android:exported="false" />
-        <receiver
-            android:name=".presentation.notification.DeclineInviteReceiver"
             android:exported="false" />
     </application>
 
