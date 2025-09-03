@@ -35,6 +35,9 @@ public interface UserEquipmentRepositoryInterface {
     @Query("SELECT * FROM UserEquipment WHERE userId=:userId AND equipmentId=:equipmentId LIMIT 1")
     UserEquipment getByUserAndEquipment(int userId, int equipmentId);
 
+    @Query("SELECT * FROM UserEquipment WHERE userEquipmentId=:userEquipmentId LIMIT 1")
+    UserEquipment getById(int userEquipmentId);
+
     @Query("DELETE FROM UserEquipment WHERE userId = :uid AND equipmentId = :eid")
     void remove(int uid, int eid);
 

@@ -2,11 +2,13 @@ package ftn.project.data.dto;
 
 import androidx.room.Ignore;
 
+import ftn.project.domain.entity.InvitationStatus;
+
 public class UserFriendDTO {
     public int userId;
     public String username;
     public boolean friend;
-
+    public InvitationStatus invitationStatus;
     public UserFriendDTO(){}
 
     @Ignore

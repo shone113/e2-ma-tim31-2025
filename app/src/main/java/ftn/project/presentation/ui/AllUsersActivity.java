@@ -1,5 +1,6 @@
 package ftn.project.presentation.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.inputmethod.EditorInfo;
@@ -60,6 +61,7 @@ public class AllUsersActivity extends AppCompatActivity {
         db = AppDatabase.getInstance(getApplicationContext());
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         friendshipService = new FriendshipService();
+        loggedUser = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
 
         FirestoreSync.syncAllUsersDown(
                 getApplicationContext(),
@@ -70,12 +72,23 @@ public class AllUsersActivity extends AppCompatActivity {
                 getApplicationContext(),
                 db,
                 firebaseUser.getUid(),
+                loggedUser.getUserId(),
+                () -> Toast.makeText(this, "Friendships synced ✔", Toast.LENGTH_SHORT).show()
+        );
+        FirestoreSync.syncAllAlliancesDown(
+                getApplicationContext(),
+                db,
                 () -> Toast.makeText(this, "Friendships synced ✔", Toast.LENGTH_SHORT).show()
         );
 
         ListView lvUsers = findViewById(R.id.lvUsers);
         EditText etSearch = findViewById(R.id.etSearch);
         Button btnSearch = findViewById(R.id.btnSearch);
+        Button btnAlliance = findViewById(R.id.btnAlliance);
+
+        btnAlliance.setOnClickListener(v -> {
+            startActivity(new Intent(this, AllianceActivity.class));
+        });
 
         btnSearch.setOnClickListener(v -> performSearch());
 
@@ -104,7 +117,6 @@ public class AllUsersActivity extends AppCompatActivity {
             barcodeLauncher.launch(options);
         });
 
-        loggedUser = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
         ArrayList<Friendship> friendships = new ArrayList<>(db.friendshipRepository().getAllForUserId(loggedUser.getUserId()));
         List<User> users = db.userRepository().getAll();
         friendDTOs = friendshipService.getFriendsForUser(friendships, users, loggedUser.getUserId());

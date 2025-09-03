@@ -16,6 +16,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import ftn.project.domain.entity.Alliance;
+import ftn.project.domain.entity.AllianceInvitation;
+import ftn.project.domain.entity.AllianceMessage;
 import ftn.project.domain.entity.Battle;
 import ftn.project.domain.entity.Boss;
 import ftn.project.domain.entity.Category;
@@ -28,6 +30,8 @@ import ftn.project.domain.entity.SpecialMissionProgress;
 import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.repositoryInterface.AllianceInvitationRepositoryInterface;
+import ftn.project.domain.repositoryInterface.AllianceMessageRepositoryInterface;
 import ftn.project.domain.repositoryInterface.AllianceRepositoryInterface;
 import ftn.project.domain.repositoryInterface.BattleRepositoryInterface;
 import ftn.project.domain.repositoryInterface.BossRepositoryInterface;
@@ -48,7 +52,8 @@ import ftn.project.domain.repositoryInterface.UserRepositoryInterface;
 
 @Database(entities = {User.class, Task.class, Category.class, TaskInstance.class,
         Equipment.class, UserEquipment.class, UserBadge.class, Level.class, Friendship.class,
-        Alliance.class, Battle.class, Boss.class, SpecialMission.class, SpecialMissionProgress.class}, version = 1, exportSchema = false)
+        Alliance.class, Battle.class, Boss.class, SpecialMission.class, SpecialMissionProgress.class,
+        AllianceInvitation.class, AllianceMessage.class}, version = 1, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -66,6 +71,8 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract AllianceRepositoryInterface allianceRepository();
     public abstract SpecialMissionProgressRepositoryInterface specialMissionProgressRepository();
     public abstract SpecialMissionRepositoryInterface specialMissionRepository();
+    public abstract AllianceInvitationRepositoryInterface allianceInvitationRepository();
+    public abstract AllianceMessageRepositoryInterface allianceMessageRepository();
     private static AppDatabase INSTANCE;
     private static Context appContext;
 
@@ -85,7 +92,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (INSTANCE == null) {
             appContext = context.getApplicationContext();
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                     AppDatabase.class, "habit_quest_baza32.db")
+                     AppDatabase.class, "habit_quest_baza57.db")
                     //.addMigrations(MIGRATION_1_2)
                     .addCallback(prepopulateCallback)
                     .allowMainThreadQueries()

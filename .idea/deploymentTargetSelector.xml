@@ -3,11 +3,16 @@
   <component name="deploymentTargetSelector">
     <selectionStates>
       <SelectionState runConfigName="app">
+<<<<<<< HEAD
         <option name="selectionMode" value="DROPDOWN" />
         <DropdownSelection timestamp="2025-08-28T21:33:21.233759100Z">
+=======
+        <option name="selectionMode" value="DIALOG" />
+        <DropdownSelection timestamp="2025-09-03T09:06:48.544200500Z">
+>>>>>>> feat/alliance
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=PMF4C17B09008666" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT90YNCVJ" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -15,7 +20,7 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=PMF4C17B09008666" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT31PHVTB" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">

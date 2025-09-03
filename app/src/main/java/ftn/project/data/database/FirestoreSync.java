@@ -1,11 +1,15 @@
 package ftn.project.data.database;
 
 import android.content.Context;
+import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
@@ -15,6 +19,8 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 
 import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Alliance;
+import ftn.project.domain.entity.Friendship;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.entity.UserEquipment;
 
@@ -27,6 +33,7 @@ public class FirestoreSync {
         FirebaseFirestore fs = FirebaseFirestore.getInstance();
 
         Map<String, Object> data = new HashMap<>();
+        data.put("userEquipmentId", ue.getUserEquipmentId());
         data.put("equipmentId", ue.getEquipmentId());
         data.put("userId", userId); // tvoj intId (opciono)
         data.put("battleCount", ue.getBattleCount() == null ? 0 : ue.getBattleCount());
@@ -57,11 +64,58 @@ public class FirestoreSync {
                 .addOnFailureListener(e -> Toast.makeText(ctx, "Sync badge fail: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
+    public static void syncAllAlliancesDown(Context ctx, AppDatabase db, Runnable onDone) {
+        FirebaseFirestore.getInstance()
+                .collection("alliances")
+                .get()
+                .addOnSuccessListener(snaps -> {
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        int count = 0;
+                        for (var d : snaps) {
+                            Long allianceIdL = d.getLong("allianceId");
+                            String name = d.getString("name");
+                            Long leaderIdL = d.getLong("leaderUserId");
+
+                            if (allianceIdL == null) continue;
+                            int allianceId = allianceIdL.intValue();
+                            Integer leaderUserId = leaderIdL == null ? null : leaderIdL.intValue();
+
+                            Alliance local = db.allianceRepository().getAlliance(allianceId);
+                            if (local == null) {
+                                Alliance a = new Alliance();
+                                a.setAllianceId(allianceId);
+                                a.setName(name);
+                                a.setLeaderUserId(leaderUserId);
+                                db.allianceRepository().insert(a);
+                            } else {
+                                boolean changed = false;
+                                if (name != null && !name.equals(local.getName())) {
+                                    local.setName(name);
+                                    changed = true;
+                                }
+                                if (leaderUserId != null && !leaderUserId.equals(local.getLeaderUserId())) {
+                                    local.setLeaderUserId(leaderUserId);
+                                    changed = true;
+                                }
+                                if (changed) db.allianceRepository().update(local);
+                            }
+                            count++;
+                        }
+                        if (onDone != null) new Handler(Looper.getMainLooper()).post(onDone);
+                        Log.d("FS_SYNC", "Synced alliances: " + count);
+                    });
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(ctx, "Sync alliances fail: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                );
+    }
+
+
     public static void syncUserEquipmentDown(
             Context ctx,
             AppDatabase db,
             String firebaseUid,
-            @androidx.annotation.Nullable Runnable onDone
+            @Nullable Runnable onDone
     ) {
         FirebaseFirestore fs = FirebaseFirestore.getInstance();
 
@@ -82,8 +136,9 @@ public class FirestoreSync {
 
                                 int inserted = 0, updated = 0, skipped = 0;
 
+                                db.userEquipmentRepository().removeAllForUser(me.getUserId());
                                 // 2) Prođi kroz sve instance iz Firestore-a
-                                for (com.google.firebase.firestore.DocumentSnapshot d : snaps) {
+                                for (DocumentSnapshot d : snaps) {
                                     Long eqL = d.getLong("equipmentId");
                                     if (eqL == null) { skipped++; continue; }
                                     int equipmentId = eqL.intValue();
@@ -94,17 +149,18 @@ public class FirestoreSync {
                                     Boolean activeB = d.getBoolean("active");
                                     boolean active = (activeB != null) && activeB;
 
+                                    Long ueIdL = d.getLong("userEquipmentId");
+                                    Integer userEquipmentId = ueIdL.intValue();
                                     try {
                                         // 3) Učitaj postojeći zapis (po PK: userId+equipmentId)
                                         //    Prilagodi imenu metode tvog DAO-a ako je drugačije:
                                         //    npr. getByUserAndEquipment / get / findOne
                                         UserEquipment existing =
-                                                db.userEquipmentRepository().getByUserAndEquipment(meId, equipmentId);
+                                                db.userEquipmentRepository().getById(userEquipmentId);
 
                                         if (existing == null) {
-                                            // (Ako FK na Equipment ne postoji lokalno, insert može da padne;
-                                            //  pretpostavka je da imaš seed-ovan Equipment.)
                                             UserEquipment ue = new UserEquipment();
+                                            ue.setUserEquipmentId(ue.getUserEquipmentId());
                                             ue.setUserId(meId);
                                             ue.setEquipmentId(equipmentId);
                                             ue.setBattleCount(battleCount);
@@ -191,7 +247,7 @@ public class FirestoreSync {
                             }
                             count++;
                         }
-                        if (onDone != null) new android.os.Handler(Looper.getMainLooper()).post(onDone);
+                        if (onDone != null) new Handler(Looper.getMainLooper()).post(onDone);
                         Log.d("FS_SYNC","Synced public users: "+count);
                     });
                 })
@@ -205,132 +261,79 @@ public class FirestoreSync {
             String myUid,      // Firebase UID current user
             int myUserId,      // lokalni int ID current user-a
             String otherUid,   // Firebase UID prijatelja
-            @androidx.annotation.Nullable Integer otherUserId // može null ako ne znaš još
+            @Nullable Integer otherUserId // može null ako ne znaš još
     ) {
         FirebaseFirestore fs = FirebaseFirestore.getInstance();
 
-        // stabilan ključ dokumenta: leksikografski sortiran par UID-ova
-        String a = (myUid.compareTo(otherUid) <= 0) ? myUid : otherUid;
-        String b = (a.equals(myUid)) ? otherUid : myUid;
-        String pairKey = a + "_" + b;
-
-        DocumentReference doc = fs.collection("friendships").document(pairKey);
-
-        java.util.List<String> uids = java.util.Arrays.asList(a, b);
-
-        java.util.Map<String, Object> uidToId = new java.util.HashMap<>();
+        String docId = fs.collection("friendships").document().getId();
+        Map<String, Object> uidToId = new HashMap<>();
         uidToId.put(myUid, myUserId);
         if (otherUserId != null) {
             uidToId.put(otherUid, otherUserId);
         }
 
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
-        data.put("uids", uids);
+        Map<String, Object> data = new HashMap<>();
+        data.put("firstUserId", myUserId);
+        data.put("secondUserId", otherUserId);
         data.put("uidToId", uidToId); // merge-ovaćemo, pa će se popuniti i drugi ID kad ga saznaš
-        data.put("status", "accepted");
-        data.put("createdAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
-        data.put("updatedAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
+        data.put("createdAt", FieldValue.serverTimestamp());
+        data.put("updatedAt", FieldValue.serverTimestamp());
 
-        doc.set(data, com.google.firebase.firestore.SetOptions.merge())
-                .addOnSuccessListener(v -> android.util.Log.d("FS_SYNC", "Friendship mirror OK: " + pairKey))
+        fs.collection("friendships").document(docId).set(data)
+                .addOnSuccessListener(unused -> {
+                    Log.i("FRIENDSHIP", "sent: " + docId);
+                })
+                .addOnFailureListener(e -> Log.e("FRIENDSHIP", "fail: " + e));
+    }
+
+    public static void syncFriendshipsDown(
+            Context ctx,
+            AppDatabase db,
+            String myUid,
+            int myUserId,
+            @Nullable Runnable onDone
+    ) {
+        FirebaseFirestore.getInstance()
+                .collection("friendships")
+                .get()
+                .addOnSuccessListener(snaps -> {
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        int count = 0;
+                        for (var d : snaps) {
+                            Long firstUserId = d.getLong("firstUserId");
+                            Long secondUserId = d.getLong("secondUserId");
+
+                            Log.w("IDIIIII", "firstId: " + firstUserId + ", secondId: " + secondUserId);
+                            Friendship local = null;
+                            int firstId = -1;
+                            int secondId = -1;
+                            if (firstUserId != null && secondUserId != null) {
+                                firstId = Math.toIntExact(firstUserId);
+                                secondId = Math.toIntExact(secondUserId);
+
+                                local = db.friendshipRepository().getFriendhipForUsers(firstId, secondId);
+                            }
+
+                            if (local == null) {
+                                Friendship f = new Friendship();
+                                f.setFirstUserId(firstId);
+                                f.setSecondUserId(secondId);
+                                db.friendshipRepository().insert(f);
+                            }
+                            count++;
+                        }
+                        if (onDone != null) new Handler(Looper.getMainLooper()).post(onDone);
+                        Log.d("FRIENDSHIPS_SYNC","Synced friendships: "+count);
+                    });
+                })
                 .addOnFailureListener(e ->
-                        android.widget.Toast.makeText(ctx, "Sync friendship fail: " + e.getMessage(), android.widget.Toast.LENGTH_SHORT).show()
+                        Toast.makeText(ctx, "Sync friendships fail: " + e.getMessage(), Toast.LENGTH_LONG).show()
                 );
     }
 
-    /**
-     * Povuci SVA prijateljstva koja uključuju myUid i upiši u lokalni Room.
-     * Pretpostavka: imaš lokalno kreiranog "me" korisnika (po myUid).
-     * Za "drugog" korisnika, ako ne postoji lokalno, napravimo stub i/ili
-     * oslonimo se na publicUsers sync koji već imaš.
-     */
-    public static void syncFriendshipsDown(
-            Context ctx,
-            ftn.project.data.db.AppDatabase db,
-            String myUid,
-            @androidx.annotation.Nullable Runnable onDone
-    ) {
-        FirebaseFirestore fs = FirebaseFirestore.getInstance();
-
-        fs.collection("friendships")
-                .whereArrayContains("uids", myUid)
-                .get()
-                .addOnSuccessListener(snaps -> java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
-                    try {
-                        // 1) "me" iz lokalne baze
-                        ftn.project.domain.entity.User me = db.userRepository().getByFirebaseUid(myUid);
-                        if (me == null) {
-                            // nema lokalnog korisnika – nema smisla dalje
-                            postMain(onDone);
-                            return;
-                        }
-
-                        int meId = me.getUserId();
-
-                        for (com.google.firebase.firestore.DocumentSnapshot d : snaps) {
-                            java.util.List<String> uids = (java.util.List<String>) d.get("uids");
-                            if (uids == null || uids.size() != 2) continue;
-                            String uidA = uids.get(0);
-                            String uidB = uids.get(1);
-                            String otherUid = myUid.equals(uidA) ? uidB : uidA;
-
-                            // 2) "other" user: probaj lokalno; ako nema, napravi stub
-                            ftn.project.domain.entity.User other = db.userRepository().getByFirebaseUid(otherUid);
-                            if (other == null) {
-                                other = new ftn.project.domain.entity.User();
-                                other.setFirebaseUid(otherUid);
-                                other.setUsername("Friend"); // biće osvežen preko publicUsers sync-a
-                                long rid = db.userRepository().insert(other);
-                                if (rid == -1) {
-                                    // ako INSERT fail zbog unique, učitaj opet
-                                    other = db.userRepository().getByFirebaseUid(otherUid);
-                                } else {
-                                    other.setUserId((int) rid);
-                                }
-                            }
-                            if (other == null) continue; // safety
-
-                            int otherId = other.getUserId();
-
-                            // 3) Ako nema lokalno prijateljstvo – upiši
-                            boolean exists = db.friendshipRepository().existsBetween(meId, otherId);
-                            if (!exists) {
-                                ftn.project.domain.entity.Friendship f = new ftn.project.domain.entity.Friendship();
-                                f.setFirstUserId(meId);
-                                f.setSecondUserId(otherId);
-                                db.friendshipRepository().insert(f);
-                            }
-
-                            // 4) (opciono) ako doc sadrži uidToId, pokušaj da dopuniš nedostajući ID u cloudu
-                            java.util.Map<String, Object> uidToId = (java.util.Map<String, Object>) d.get("uidToId");
-                            boolean needBackfill = false;
-                            if (uidToId == null || !uidToId.containsKey(myUid) || !uidToId.containsKey(otherUid)) {
-                                needBackfill = true;
-                            }
-                            if (needBackfill) {
-                                // dopuni cloud mapu da i druga strana kasnije ima int ID
-                                java.util.Map<String, Object> patch = new java.util.HashMap<>();
-                                java.util.Map<String, Object> map = new java.util.HashMap<>();
-                                map.put(myUid, meId);
-                                map.put(otherUid, otherId);
-                                patch.put("uidToId", map);
-                                patch.put("updatedAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
-                                d.getReference().set(patch, com.google.firebase.firestore.SetOptions.merge());
-                            }
-                        }
-                    } finally {
-                        postMain(onDone);
-                    }
-                }))
-                .addOnFailureListener(e -> {
-                    android.widget.Toast.makeText(ctx, "Sync friendships fail: " + e.getMessage(), android.widget.Toast.LENGTH_LONG).show();
-                    postMain(onDone);
-                });
-    }
-
-    private static void postMain(@androidx.annotation.Nullable Runnable r) {
+    private static void postMain(@Nullable Runnable r) {
         if (r == null) return;
-        new android.os.Handler(android.os.Looper.getMainLooper()).post(r);
+        new Handler(Looper.getMainLooper()).post(r);
     }
 
 }

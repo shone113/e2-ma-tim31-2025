@@ -11,11 +11,10 @@ import ftn.project.domain.entity.User;
 @Dao
 public interface AllianceRepositoryInterface {
     @Insert
-    void insert(Alliance alliance);
+    long insert(Alliance alliance);
 
     @Update
     void update(Alliance alliance);
-
     @Query("SELECT * FROM Alliance WHERE allianceId = :allianceID")
     Alliance getAlliance(int allianceID);
     @Query("SELECT * FROM Alliance WHERE leader_user_id = :userId")

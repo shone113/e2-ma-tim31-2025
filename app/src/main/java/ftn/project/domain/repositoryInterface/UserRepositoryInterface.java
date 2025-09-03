@@ -23,10 +23,6 @@ public interface UserRepositoryInterface {
 
     @Query("SELECT * FROM User")
     List<User> getAll();
-
-    //@Update
-    //void update(User user);
-
     @Query("SELECT * FROM User WHERE firebaseUid = :uid LIMIT 1")
     LiveData<User> observeByFirebaseUid(String uid);
 
@@ -85,4 +81,10 @@ public interface UserRepositoryInterface {
 
     @Query("SELECT COUNT(userId) FROM USER WHERE alliance_id = :allianceId")
     int allianceCount(int allianceId);
+
+    @Query("UPDATE User SET alliance_id=:allianceId WHERE userId=:userId")
+    void updateAllianceId(int userId, int allianceId);
+
+    @Query("SELECT COUNT(*) FROM User WHERE userId=:id")
+    int existsById(int id);
 }

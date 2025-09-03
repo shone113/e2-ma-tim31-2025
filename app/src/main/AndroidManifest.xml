@@ -9,6 +9,7 @@
         android:required="false" />
 
     <application
+        android:name=".MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -17,6 +18,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.HabitQuest">
+        <activity
+            android:name=".presentation.ui.ChatActivity"
+            android:windowSoftInputMode="adjustPan"
+            android:exported="false" />
+        <activity
+            android:name=".presentation.ui.AllianceActivity"
+            android:exported="false" />
         <activity
             android:name=".presentation.ui.EquipmentActivationActivity"
             android:exported="false" />
@@ -52,6 +60,9 @@
         <activity android:name=".presentation.ui.SpecialMissionActivity" />
         <activity
             android:name=".presentation.ui.ProfileActivity"
+            android:exported="false" />
+        <receiver
+            android:name=".presentation.notification.AllianceInvitationReceiver"
             android:exported="false" />
     </application>
 

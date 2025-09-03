@@ -14,7 +14,7 @@ import ftn.project.domain.entity.User;
 
 @Dao
 public interface FriendshipRepositoryInterface {
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     long insert(Friendship f);
     @Upsert
     void upsert(Friendship f);
@@ -22,9 +22,12 @@ public interface FriendshipRepositoryInterface {
     @Query("SELECT * FROM Friendship WHERE firstUserId = :id OR secondUserId = :id")
     List<Friendship> getAllForUserId(int id);
 
+    @Query("SELECT * FROM Friendship WHERE (firstUserId = :firstUserId AND secondUserId = :secondUserId)" +
+            " OR  (firstUserId = :secondUserId AND secondUserId = :firstUserId) LIMIT 1")
+    Friendship getFriendhipForUsers(int firstUserId, int secondUserId);
+
     @Query("DELETE FROM Friendship WHERE firstUserId = :userId OR secondUserId = :userId")
     void deleteAllForUser(int userId);
-
 
     @Query(" SELECT EXISTS( " +
            "SELECT 1 FROM Friendship " +
