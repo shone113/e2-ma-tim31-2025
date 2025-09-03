@@ -45,6 +45,8 @@ import ftn.project.presentation.adapter.FriendAdapter;
 import ftn.project.presentation.notification.AllianceInvitationReceiver;
 
 public class AllianceActivity extends AppCompatActivity {
+    public static final String EXTRA_ALLIANCE_ID = "extra_alliance_id";
+
     private FriendAdapter adapter;
     private ArrayList<UserFriendDTO> friendDTOs;
     private FriendshipService friendshipService;
@@ -52,7 +54,7 @@ public class AllianceActivity extends AppCompatActivity {
     private AppDatabase db;
     private User loggedUser;
     private ListenerRegistration sentInvitesReg;
-    private int currentAllianceId;
+    private Integer currentAllianceId;
 
 
     @Override
@@ -71,10 +73,22 @@ public class AllianceActivity extends AppCompatActivity {
         friendshipService = new FriendshipService();
         allianceService = new AllianceService(this);
 
+        int fromIntent = getIntent().getIntExtra(EXTRA_ALLIANCE_ID, -1);
+        if (fromIntent != -1) {
+            currentAllianceId = fromIntent;
+        } else if (loggedUser != null) {
+            currentAllianceId = loggedUser.getAllianceId();
+        }
+
         MaterialButton btnCreate = findViewById(R.id.btnCreateAlliance);
         MaterialButton btnDisband = findViewById(R.id.btnDisbandAlliance);
         TextInputEditText etName = findViewById(R.id.etAllianceName);
         MaterialButton btnChat = findViewById(R.id.btnChat);
+        if(currentAllianceId == null){
+            btnChat.setEnabled(false);
+        }else{
+            btnChat.setEnabled(true);
+        }
 
         if(loggedUser.getAllianceId() != null){
             Alliance alliance = db.allianceRepository().getAlliance(loggedUser.getAllianceId());
@@ -110,6 +124,8 @@ public class AllianceActivity extends AppCompatActivity {
 
                         updateCreateButtonUI(currentAllianceId, btnCreate, btnDisband, etName);
                         showFriends(currentAllianceId, alliance.getName());
+
+                        btnChat.setEnabled(true);
                     });
 
         });
@@ -149,7 +165,7 @@ public class AllianceActivity extends AppCompatActivity {
         boolean leaderUser = alliance.getLeaderUserId() == loggedUser.getUserId() ? true : false;
         friendDTOs = friendshipService.getFriendsWithInvitationForUser(friendships, users, loggedUser.getUserId(), allianceInvitations);
 
-        adapter = new FriendAdapter(this, friendDTOs, leaderUser,userFriendDTO -> {
+        adapter = new FriendAdapter(this, friendDTOs, leaderUser, alliance.getLeaderUserId(), userFriendDTO -> {
             Log.w("ISPIS", "IZVRSIO SAM SE");
             Friendship friendship = new Friendship();
             friendship.setFirstUserId(loggedUser.getUserId());

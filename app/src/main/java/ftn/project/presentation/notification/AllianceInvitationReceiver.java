@@ -12,7 +12,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import ftn.project.data.database.FirestoreSync;
 import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Alliance;
 import ftn.project.domain.entity.InvitationStatus;
+import ftn.project.domain.entity.User;
 
 public class AllianceInvitationReceiver extends BroadcastReceiver {
     public static final String ACTION_UI_STATUS_CHANGED = "ftn.project.ACTION_UI_STATUS_CHANGED";
@@ -52,6 +54,7 @@ public class AllianceInvitationReceiver extends BroadcastReceiver {
                                         db.allianceInvitationRepository()
                                                 .updateStatus(invitationId, InvitationStatus.ACCEPTED);
                                         db.userRepository().updateAllianceId(inviteeUserId, allianceId);
+
                                     })
                                     .addOnCompleteListener(done -> {
                                         if (nid != 0) NotificationManagerCompat.from(ctx).cancel(nid);
@@ -64,9 +67,10 @@ public class AllianceInvitationReceiver extends BroadcastReceiver {
                     .collection("allianceInvites")
                     .document(inviteId)
                     .update("status", "NONE")
-                    .addOnSuccessListener(unused ->
-                            db.allianceInvitationRepository()
-                                    .updateStatus(invitationId, InvitationStatus.NONE)
+                    .addOnSuccessListener(unused -> {
+                                db.allianceInvitationRepository()
+                                        .updateStatus(invitationId, InvitationStatus.NONE);
+                            }
                     )
                     .addOnCompleteListener(done -> {
                         if (nid != 0) NotificationManagerCompat.from(ctx).cancel(nid);

@@ -1,14 +1,17 @@
 package ftn.project.presentation.notification;
 
+import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
+import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import ftn.project.MyApp;
 import ftn.project.R;
+import ftn.project.presentation.ui.ChatActivity;
 
 public final class Notifier {
     private Notifier() {}
@@ -77,7 +80,7 @@ public final class Notifier {
     ) {
         // Otvaranje chat ekrana na klik
         Intent openChat = new Intent(ctx, ftn.project.presentation.ui.ChatActivity.class)
-                .putExtra("allianceId", allianceId)
+                .putExtra(ChatActivity.EXTRA_ALLIANCE_ID, allianceId)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent contentPi = PendingIntent.getActivity(
                 ctx, allianceId, openChat, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
@@ -108,6 +111,34 @@ public final class Notifier {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT); // stavi HIGH ako želiš heads-up
 
         NotificationManagerCompat.from(ctx).notify(nid, b.build());
+    }
+    // Notifier.java
+    public static void showInvitationRespond(
+            Context ctx,
+            int allianceId,
+            @Nullable String allianceName,
+            int invitationId,
+            String inviteeName,
+            String status
+    ) {
+        String text = "";
+        if(status.equals("Accepted")){
+            text  = inviteeName + " joined in " + (allianceName != null ? " " + allianceName : "");
+        }else{
+            text  = inviteeName + " canceled invitation in " + (allianceName != null ? " " + allianceName : "");
+        }
+
+        String channelId = MyApp.CHANNEL_RESPOND;
+        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, channelId)
+                .setSmallIcon(R.drawable.group)
+                .setContentTitle(status)
+                .setContentText(text)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(Notification.CATEGORY_EVENT);
+
+        int notifId = 30_000 + invitationId;
+        NotificationManagerCompat.from(ctx).notify(notifId, b.build());
     }
 
 }

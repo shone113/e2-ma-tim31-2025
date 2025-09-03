@@ -30,11 +30,13 @@ public class FriendAdapter extends ArrayAdapter<UserFriendDTO> {
     private ArrayList<UserFriendDTO> aFriends;
     private final OnInviteFriendClick listener;
     private final boolean leaderUser;
+    private final int leaderUserId;
 
-    public FriendAdapter(Context context, ArrayList<UserFriendDTO> friendDTOs, boolean leaderUser, OnInviteFriendClick listener) {
+    public FriendAdapter(Context context, ArrayList<UserFriendDTO> friendDTOs, boolean leaderUser, int leaderUserId, OnInviteFriendClick listener) {
         super(context, R.layout.user_card, new ArrayList<>());
         this.aFriends = new ArrayList<>(friendDTOs);
         this.leaderUser = leaderUser;
+        this.leaderUserId = leaderUserId;
         this.listener = listener;
     }
     public void replaceAll(List<UserFriendDTO> newItems) {
@@ -86,8 +88,9 @@ public class FriendAdapter extends ArrayAdapter<UserFriendDTO> {
                 btnAddFriend.setEnabled(true);
                 btnAddFriend.setText("Invite friend");
             }
-        }else{
-            btnAddFriend.setVisibility(View.GONE);
+        }else if(userFriendDTO.userId == leaderUserId){
+            btnAddFriend.setText("Leader");
+            btnAddFriend.setEnabled(false);
         }
 
         if(userFriendDTO != null){

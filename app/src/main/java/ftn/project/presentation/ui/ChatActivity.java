@@ -81,6 +81,7 @@ public class ChatActivity extends AppCompatActivity {
                 message.setContent(content);
                 message.setCreatorUsername(loggedUser.getUsername());
                 message.setSentAt(System.currentTimeMillis());
+                Log.w("OOOOOOOO", "allianceId: " + allianceId);
 
                 allianceMessageService.createMessage(message,
                         () -> Toast.makeText(getApplicationContext(), "Messages synced ✔", Toast.LENGTH_SHORT).show()
