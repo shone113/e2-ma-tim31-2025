@@ -7,10 +7,15 @@ import java.util.ArrayList;
 import ftn.project.data.dto.LevelDTO;
 import ftn.project.domain.entity.Level;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.repositoryInterface.LevelRepositoryInterface;
 
 public class LevelAdvancementService {
 
-    public LevelAdvancementService() {}
+    private final LevelRepositoryInterface levelRepository;
+
+    public LevelAdvancementService(LevelRepositoryInterface levelRepository) {
+        this.levelRepository = levelRepository;
+    }
 
     public ArrayList<LevelDTO> getLevelsForUser(ArrayList<Level> levels, User user){
         ArrayList<LevelDTO> levelDTOs = new ArrayList<>();
@@ -26,4 +31,19 @@ public class LevelAdvancementService {
         }
         return levelDTOs;
     }
+
+    public boolean hasReachedNextLevel(int userXp, int levelNumber){
+        Level level = levelRepository.getByLevelNumber(levelNumber);
+
+        if(userXp >= level.getRequiredXP()){
+            return true;
+        }
+        return false;
+    }
+
+
+
+
+
+
 }

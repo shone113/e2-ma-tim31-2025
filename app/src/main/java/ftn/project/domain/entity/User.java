@@ -39,8 +39,8 @@ public class User {
     @ColumnInfo(defaultValue = "0")
     private boolean emailVerified = false;
     private String avatarImage;
-    @ColumnInfo(defaultValue = "3")
-    private int level = 3;
+    @ColumnInfo(defaultValue = "0")
+    private int level = 0;
     @ColumnInfo(name = "alliance_id", defaultValue = "NULL")
     @Nullable
     private Integer allianceId;
@@ -116,4 +116,5 @@ public class User {
 
     public String getFirebaseUid(){ return firebaseUid; }
     public Integer getAllianceId(){ return allianceId; }
+    
 }

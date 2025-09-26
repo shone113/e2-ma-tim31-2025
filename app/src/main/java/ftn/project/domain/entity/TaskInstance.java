@@ -142,4 +142,26 @@ public class TaskInstance {
     public void setWithinQuota(boolean withinQuota) {
         isWithinQuota = withinQuota;
     }
+
+    public int computeDifficultyXpForLevel(int levelNumber) {
+        if (levelNumber < 0) {
+            throw new IllegalArgumentException("levelNumber must be >= 0");
+        }
+        double xp = this.difficultyInstance.getXp(); // level 0
+        for (int i = 0; i < levelNumber; i++) {
+            xp = Math.ceil(xp * 1.5);
+        }
+        return (int) xp;
+    }
+
+    public int computeImportanceXpForLevel(int levelNumber) {
+        if (levelNumber < 0) {
+            throw new IllegalArgumentException("levelNumber must be >= 0");
+        }
+        double xp = this.importanceInstance.getXp(); // level 0
+        for (int i = 0; i < levelNumber; i++) {
+            xp = Math.ceil(xp * 1.5); // ZAOKRUŽI posle svakog koraka
+        }
+        return (int) xp;
+    }
 }

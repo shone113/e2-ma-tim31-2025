@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.data.dto.LevelDTO;
+import ftn.project.data.repository.LevelRepository;
 import ftn.project.domain.entity.Level;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.repositoryInterface.LevelRepositoryInterface;
 import ftn.project.domain.usecase.LevelAdvancementService;
 import ftn.project.presentation.adapter.LevelAdvancementAdapter;
 import ftn.project.presentation.adapter.ShopAdapter;
@@ -31,7 +33,6 @@ public class LevelAdvancementActivity extends AppCompatActivity {
 
     private LevelAdvancementAdapter adapter;
     private LevelAdvancementService levelAdvancementService;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,9 +49,9 @@ public class LevelAdvancementActivity extends AppCompatActivity {
         TextView tvCoins = findViewById(R.id.tvCoins);
         StatusBarBinder.bind(this, tvXP, tvPP, tvCoins);
 
-
-        levelAdvancementService = new LevelAdvancementService();
         AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+
+        levelAdvancementService = new LevelAdvancementService(db.levelRepository());
 
         ArrayList<Level> levels = new ArrayList<>(db.levelRepository().getAll());
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();

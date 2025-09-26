@@ -13,4 +13,7 @@ public interface LevelRepositoryInterface {
     @Query("SELECT * FROM Level")
     List<Level> getAll();
 
+    @Query("SELECT * FROM Level where levelNumber=:levelNumber")
+    Level getByLevelNumber(int levelNumber);
+
 }

@@ -22,5 +22,4 @@ public class LoggedUserService {
         String firebaseUid = firebaseUser.getUid();
         return db.userRepository().getByFirebaseUid(firebaseUid);
     }
-
 }
