@@ -7,14 +7,14 @@ import ftn.project.domain.entity.TaskInstance;
 
 public class CheckQuotaService {
 
-    public static int calculateEarnedXP(TaskInstance taskInstance,int userId, AppDatabase db) {
+    public static int calculateEarnedXP(TaskInstance taskInstance,int userId,int level, AppDatabase db) {
         int totalXp = 0;
         boolean inQuota = false;
 
         LocalDateTime ref = taskInstance.getEndExecutionTime();
 
-        int difficultyXp = checkDifficultyQuota(taskInstance,userId, db, ref);
-        int importanceXp = checkImportanceQuota(taskInstance,userId, db, ref);
+        int difficultyXp = checkDifficultyQuota(taskInstance,userId,level, db, ref);
+        int importanceXp = checkImportanceQuota(taskInstance,userId,level, db, ref);
 
         totalXp = difficultyXp + importanceXp;
         if (totalXp > 0) inQuota = true;
@@ -25,7 +25,7 @@ public class CheckQuotaService {
         return totalXp;
     }
 
-    private static int checkDifficultyQuota(TaskInstance ti, int userId, AppDatabase db, LocalDateTime ref) {
+    private static int checkDifficultyQuota(TaskInstance ti, int userId,int level, AppDatabase db, LocalDateTime ref) {
         TaskInstance.DifficultyEnum diff = ti.getDifficultyInstance();
         int limit;
         LocalDateTime start, end;
@@ -54,10 +54,10 @@ public class CheckQuotaService {
         int count = db.taskInstanceRepository()
                 .countTakenSlotsByDifficulty(userId,diff.name(), start, end);
 
-        return (count < limit) ? diff.getXp() : 0;
+        return (count < limit) ? computeDifficultyXpForLevel(level,diff) : 0;
     }
 
-    private static int checkImportanceQuota(TaskInstance ti,int userId, AppDatabase db, LocalDateTime ref) {
+    private static int checkImportanceQuota(TaskInstance ti,int userId,int level, AppDatabase db, LocalDateTime ref) {
         TaskInstance.ImportanceEnum imp = ti.getImportanceInstance();
         int limit;
         LocalDateTime start, end;
@@ -86,6 +86,28 @@ public class CheckQuotaService {
         int count = db.taskInstanceRepository()
                 .countTakenSlotsByImportance(userId,imp.name(), start, end);
 
-        return (count < limit) ? imp.getXp() : 0;
+        return (count < limit) ? computeImportanceXpForLevel(level, imp) : 0;
+    }
+
+    public static int computeDifficultyXpForLevel(int levelNumber, TaskInstance.DifficultyEnum difficulty) {
+        if (levelNumber < 0) {
+            throw new IllegalArgumentException("levelNumber must be >= 0");
+        }
+        double xp = difficulty.getXp(); // level 0
+        for (int i = 0; i < levelNumber; i++) {
+            xp = Math.ceil(xp * 1.5);
+        }
+        return (int) xp;
+    }
+
+    private static int computeImportanceXpForLevel(int levelNumber, TaskInstance.ImportanceEnum importance) {
+        if (levelNumber < 0) {
+            throw new IllegalArgumentException("levelNumber must be >= 0");
+        }
+        double xp = importance.getXp(); // level 0
+        for (int i = 0; i < levelNumber; i++) {
+            xp = Math.ceil(xp * 1.5); // ZAOKRUŽI posle svakog koraka
+        }
+        return (int) xp;
     }
 }

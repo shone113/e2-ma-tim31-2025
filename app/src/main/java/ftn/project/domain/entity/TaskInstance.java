@@ -55,6 +55,7 @@ public class TaskInstance {
                         LocalDateTime startExecutionTime,
                         LocalDateTime endExecutionTime,
                         TaskStatusEnum status,
+                        int valueXp,
                         int earnedXp, boolean isWithinQuota) {
         this.id = id;
         this.taskId = taskId;
@@ -65,7 +66,7 @@ public class TaskInstance {
         this.status = status;
         this.earnedXp = earnedXp;
         this.isWithinQuota = isWithinQuota;
-        this.valueXp = difficultyInstance.getXp() + importanceInstance.getXp();
+        this.valueXp = valueXp;
     }
 
     public int getId() {
@@ -130,6 +131,9 @@ public class TaskInstance {
 
     public void setEarnedXp(int earnedXp) {
         this.earnedXp = earnedXp;
+    }
+    public void setValueXp(int valueXp) {
+        this.valueXp = valueXp;
     }
     public int getValueXp() {
         return valueXp;

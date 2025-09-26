@@ -24,7 +24,9 @@ import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.BattleStartService;
 import ftn.project.domain.usecase.CheckQuotaService;
+import ftn.project.domain.usecase.LevelAdvancementService;
 import ftn.project.domain.usecase.LoggedUserService;
 import ftn.project.domain.usecase.SpecialMissionProgressService;
 
@@ -34,6 +36,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
             tvDifficulty, tvImportance, tvFrequency, tvXP, tvTaskCategory;
     private Button btnDone, btnCanceled, btnPaused, btnUpdateTask, btnDeleteTask;
     private SpecialMissionProgressService smps;
+    private LevelAdvancementService levelAdvancementService;
 
     private int taskInstanceId;
 
@@ -195,11 +198,12 @@ public class TaskDetailsActivity extends AppCompatActivity {
                 smps = new SpecialMissionProgressService(
                         db.specialMissionRepository(),
                         db.specialMissionProgressRepository(),
-                        db.taskInstanceRepository()
+                        db.taskInstanceRepository(),
+                        db.allianceMessageRepository()
                 );
 
                 // ✅ Izračunaj XP na osnovu kvota
-                int earnedXp = CheckQuotaService.calculateEarnedXP(taskAndInstance.taskInstance,user.getUserId(), db);
+                int earnedXp = CheckQuotaService.calculateEarnedXP(taskAndInstance.taskInstance,user.getUserId(),user.getLevel(), db);
 
 
                 taskAndInstance.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
@@ -281,16 +285,31 @@ public class TaskDetailsActivity extends AppCompatActivity {
                 runOnUiThread(() -> Toast.makeText(this, "Korisnik nije pronađen!", Toast.LENGTH_SHORT).show());
                 return;
             }
-
+            levelAdvancementService = new LevelAdvancementService(db.levelRepository());
             int oldXP = currentUser.getExperiencePoints();
             int newXP = oldXP + xPValue;
-
+            boolean isNewLevel = levelAdvancementService.hasReachedNextLevel(newXP, currentUser.getLevel());
             if (userId == currentUser.getUserId()) {
                 db.userRepository().updateExperiencePoints(userId, newXP);
 
                 runOnUiThread(() ->
                         Toast.makeText(this, "Dodato " + xPValue + " XP (ukupno: " + newXP + ")", Toast.LENGTH_SHORT).show()
                 );
+                if(isNewLevel)
+                {
+                    int newPP = levelAdvancementService.getPPForLevel(currentUser.getLevel());
+                    currentUser.setPowerPoints(newPP);
+                    db.userRepository().update(currentUser);
+                    BattleStartService starter = new BattleStartService(this);
+                    BattleStartService.BattleStartResult result = starter.startNewBattle(currentUser);
+
+                    Intent intent = new Intent(this, BattleActivity.class);
+                    intent.putExtra("battleId", result.battleId);
+                    intent.putExtra("hitChance", result.hitChance);
+                    startActivity(intent);
+                    currentUser.setNewLevelTime(LocalDateTime.now());
+                    db.userRepository().update(currentUser);
+                }
             } else {
                 runOnUiThread(() ->
                         Toast.makeText(this, "Nije pravilan korisnik!", Toast.LENGTH_SHORT).show()

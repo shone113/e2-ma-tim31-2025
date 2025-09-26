@@ -41,6 +41,26 @@ public class LevelAdvancementService {
         return false;
     }
 
+    public  int getPPForLevel(int levelNumber) {
+        if (levelNumber < 0) {
+            throw new IllegalArgumentException("Level mora biti >= 0");
+        }
+
+        // Prvi level uvek daje 40
+        if (levelNumber == 0) {
+            return 40;
+        }
+
+        // Kreni od levela 1
+        double pp = 40;
+
+        for (int i = 1; i <= levelNumber; i++) {
+            pp = pp + (pp * 0.75); // isto kao pp * 1.75
+        }
+
+        return (int) Math.round(pp);
+    }
+
 
 
 

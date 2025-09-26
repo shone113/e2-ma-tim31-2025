@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.airbnb.lottie.LottieAnimationView;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
 import ftn.project.R;
@@ -198,6 +199,8 @@ public class RewardActivity extends AppCompatActivity {
 
         // Level up SAMO JEDNOM ✅
         db.userRepository().updateLevel(user.getUserId(), userLevel + 1);
+
+
 
         Intent backIntent = new Intent(this, MainActivity.class);
         startActivity(backIntent);

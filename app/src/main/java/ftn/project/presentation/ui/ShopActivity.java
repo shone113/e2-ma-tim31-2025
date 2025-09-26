@@ -70,7 +70,8 @@ public class ShopActivity extends AppCompatActivity {
         specialMissionProgressService = new SpecialMissionProgressService(
                 db.specialMissionRepository(),
                 db.specialMissionProgressRepository(),
-                db.taskInstanceRepository()
+                db.taskInstanceRepository(),
+                db.allianceMessageRepository()
         );
 
         GridView gvItems = findViewById(R.id.gvShop);
