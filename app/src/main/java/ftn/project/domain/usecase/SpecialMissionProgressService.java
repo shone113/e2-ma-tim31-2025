@@ -2,12 +2,15 @@ package ftn.project.domain.usecase;
 
 import android.content.Context;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.SpecialMission;
 import ftn.project.domain.entity.SpecialMissionProgress;
 import ftn.project.domain.entity.TaskInstance;
+import ftn.project.domain.repositoryInterface.AllianceMessageRepositoryInterface;
 import ftn.project.domain.repositoryInterface.SpecialMissionProgressRepositoryInterface;
 import ftn.project.domain.repositoryInterface.SpecialMissionRepositoryInterface;
 import ftn.project.domain.repositoryInterface.TaskInstanceRepositoryInterface;
@@ -16,13 +19,15 @@ public class SpecialMissionProgressService {
     private final SpecialMissionRepositoryInterface missionRepository;
     private final SpecialMissionProgressRepositoryInterface missionProgressRepository;
     private final TaskInstanceRepositoryInterface taskInstanceRepository;
+    private final AllianceMessageRepositoryInterface allianceMessageRepository;
 
     public SpecialMissionProgressService(SpecialMissionRepositoryInterface missionRepository,
                                          SpecialMissionProgressRepositoryInterface missionProgressRepository,
-                                         TaskInstanceRepositoryInterface taskInstanceRepository) {
+                                         TaskInstanceRepositoryInterface taskInstanceRepository, AllianceMessageRepositoryInterface allianceMessageRepository) {
         this.missionRepository = missionRepository;
         this.missionProgressRepository = missionProgressRepository;
         this.taskInstanceRepository = taskInstanceRepository;
+        this.allianceMessageRepository = allianceMessageRepository;
     }
     public boolean isUserInActiveMission(int userId) {
         return missionRepository.getActiveMissionForUser(userId) != null;
@@ -168,4 +173,25 @@ public class SpecialMissionProgressService {
         }
         return totalDamage;
     }
+    public int punchByAllianceMessage(int userId, LocalDate date) {
+        SpecialMission mission = missionRepository.getActiveMissionForUser(userId);
+        if (mission == null) return 0;
+
+        SpecialMissionProgress smp =
+                missionProgressRepository.getProgressByMissionAndUser(mission.getId(), userId);
+        if (smp == null) return 0;
+
+        long startOfDay = date.atStartOfDay().toEpochSecond(ZoneOffset.UTC);
+        long endOfDay   = date.plusDays(1).atStartOfDay().toEpochSecond(ZoneOffset.UTC) - 1;
+
+        int count = allianceMessageRepository.countMessagesForUserInDay(userId, startOfDay, endOfDay);
+
+        if (count > 1) {
+            return 0;
+        }
+
+
+        return 4;
+    }
+
 }

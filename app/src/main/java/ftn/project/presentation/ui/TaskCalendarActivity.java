@@ -46,6 +46,7 @@ import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.BattleStartService;
 import ftn.project.domain.usecase.BossService;
 import ftn.project.domain.usecase.CheckQuotaService;
+import ftn.project.domain.usecase.LevelAdvancementService;
 import ftn.project.domain.usecase.LoggedUserService;
 import ftn.project.domain.usecase.QuotaFinalizer;
 import ftn.project.domain.usecase.SpecialMissionProgressService;
@@ -66,6 +67,7 @@ public class TaskCalendarActivity extends AppCompatActivity {
     private final DateTimeFormatter headerFormatter =
             DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault());
     private SpecialMissionProgressService smps;
+    private LevelAdvancementService levelAdvancementService;
 
     @Override
     protected void onResume() {
@@ -339,11 +341,12 @@ public class TaskCalendarActivity extends AppCompatActivity {
                 smps = new SpecialMissionProgressService(
                         db.specialMissionRepository(),
                         db.specialMissionProgressRepository(),
-                        db.taskInstanceRepository()
+                        db.taskInstanceRepository(),
+                        db.allianceMessageRepository()
                 );
 
                 // ✅ Izračunaj XP na osnovu kvota
-                int earnedXp = CheckQuotaService.calculateEarnedXP(taskInstanceWithTask.taskInstance,user.getUserId(), db);
+                int earnedXp = CheckQuotaService.calculateEarnedXP(taskInstanceWithTask.taskInstance,user.getUserId(),user.getLevel(), db);
 
                 // ✅ Postavi status na DONE i upiši XP u model
                 taskInstanceWithTask.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
@@ -429,6 +432,8 @@ public class TaskCalendarActivity extends AppCompatActivity {
 
             int oldXP = currentUser.getExperiencePoints();
             int newXP = oldXP + xPValue;
+            levelAdvancementService = new LevelAdvancementService(db.levelRepository());
+            boolean isNewLevel = levelAdvancementService.hasReachedNextLevel(newXP, currentUser.getLevel());
 
             if (userId == currentUser.getUserId()) {
                 db.userRepository().updateExperiencePoints(userId, newXP);
@@ -436,6 +441,21 @@ public class TaskCalendarActivity extends AppCompatActivity {
                 runOnUiThread(() ->
                         Toast.makeText(this, "Dodato " + xPValue + " XP (ukupno: " + newXP + ")", Toast.LENGTH_SHORT).show()
                 );
+                if(isNewLevel)
+                {
+                    int newPP = levelAdvancementService.getPPForLevel(currentUser.getLevel());
+                    currentUser.setPowerPoints(newPP);
+                    db.userRepository().update(currentUser);
+                    BattleStartService starter = new BattleStartService(this);
+                    BattleStartService.BattleStartResult result = starter.startNewBattle(currentUser);
+
+                    Intent intent = new Intent(this, BattleActivity.class);
+                    intent.putExtra("battleId", result.battleId);
+                    intent.putExtra("hitChance", result.hitChance);
+                    startActivity(intent);
+                    currentUser.setNewLevelTime(LocalDateTime.now());
+                    db.userRepository().update(currentUser);
+                }
             } else {
                 runOnUiThread(() ->
                         Toast.makeText(this, "Nije pravilan korisnik!", Toast.LENGTH_SHORT).show()

@@ -20,4 +20,9 @@ public interface AllianceMessageRepositoryInterface {
 
     @Query("SELECT * FROM AllianceMessage WHERE allianceId = :allianceId ORDER BY sentAt")
     LiveData<List<AllianceMessage>> getAllianceMessages(int allianceId);
+
+    @Query("SELECT COUNT(*) FROM AllianceMessage " +
+            "WHERE creatorUserId = :userId " +
+            "AND sentAt BETWEEN :startOfDay AND :endOfDay")
+    int countMessagesForUserInDay(int userId, long startOfDay, long endOfDay);
 }

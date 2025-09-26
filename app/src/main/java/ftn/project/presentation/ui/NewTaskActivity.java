@@ -229,8 +229,11 @@ public class NewTaskActivity extends AppCompatActivity {
                         current.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
                         TaskInstance.TaskStatusEnum.ACTIVE,
                         0,
+                        0,
                         false
                 );
+                instance.setValueXp(instance.computeDifficultyXpForLevel(currentUser.getLevel()) +
+                        instance.computeImportanceXpForLevel(currentUser.getLevel()));
                 db.taskInstanceRepository().insert(instance);
 
                 if (frequencyUnit == Task.FrequencyUnitEnum.DAY) current = current.plusDays(interval);
@@ -247,8 +250,11 @@ public class NewTaskActivity extends AppCompatActivity {
                     startDateTime.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
                     TaskInstance.TaskStatusEnum.ACTIVE,
                     0,
+                    0,
                     false
             );
+            instance.setValueXp(instance.computeDifficultyXpForLevel(currentUser.getLevel()) +
+                    instance.computeImportanceXpForLevel(currentUser.getLevel()));
             db.taskInstanceRepository().insert(instance);
         }
 

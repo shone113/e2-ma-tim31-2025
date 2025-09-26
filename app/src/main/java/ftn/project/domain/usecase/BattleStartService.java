@@ -14,6 +14,7 @@ public class BattleStartService {
     private final AppDatabase db;
     private final BossService bossService;
 
+
     public BattleStartService(Context context) {
         this.db = AppDatabase.getInstance(context);
         this.bossService = new BossService(context);
@@ -40,7 +41,8 @@ public class BattleStartService {
 
         // 3. Izračunaj hitChance
         LocalDate startDate = currentUser.getNewLevelTime().toLocalDate();
-        LocalDate endDate = LocalDate.of(2025, 9, 3);
+        //LocalDate endDate = LocalDate.of(2025, 9, 3);
+        LocalDate endDate = LocalDate.now();
 
         LocalDate current = startDate;
         while (!current.isAfter(endDate)) {

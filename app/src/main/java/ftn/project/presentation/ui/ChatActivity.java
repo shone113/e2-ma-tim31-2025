@@ -17,14 +17,18 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.AllianceMessage;
+import ftn.project.domain.entity.SpecialMission;
+import ftn.project.domain.entity.SpecialMissionProgress;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.AllianceMessageService;
+import ftn.project.domain.usecase.SpecialMissionProgressService;
 import ftn.project.presentation.adapter.MessageAdapter;
 
 public class ChatActivity extends AppCompatActivity {
@@ -89,6 +93,30 @@ public class ChatActivity extends AppCompatActivity {
                     message.setMessageId(messageId);
                     Log.w("MID12", "ovaj id mi vraca" + messageId);
                     db.allianceMessageRepository().insert(message);
+                    SpecialMissionProgressService smps = new SpecialMissionProgressService(
+                            db.specialMissionRepository(),
+                            db.specialMissionProgressRepository(),
+                            db.taskInstanceRepository(),
+                            db.allianceMessageRepository()
+                    );
+                    int damage = smps.punchByAllianceMessage(loggedUser.getUserId(), LocalDate.now());
+                    if(damage > 0)
+                    {
+                        SpecialMission specialMission = smps.getActiveMission(loggedUser.getUserId());
+                        if (specialMission != null) {
+                            SpecialMissionProgress smp = smps
+                                    .getActiveMissionProgress(specialMission.getId(), loggedUser.getUserId());
+
+                            if (smp != null) {
+                                smp.setAllianceMessages(smp.getAllianceMessages() + 1);
+                                smp.setTotalDamage(smp.getTotalDamage() + damage);
+                                db.specialMissionProgressRepository().update(smp);
+
+                                specialMission.setBossHp(specialMission.getBossHp() - damage);
+                                db.specialMissionRepository().update(specialMission);
+                            }
+                        }
+                    }
                 });
 
 

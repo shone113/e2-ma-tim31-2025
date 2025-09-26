@@ -68,7 +68,8 @@ public class BattleActivity extends AppCompatActivity {
         specialMissionProgressService = new SpecialMissionProgressService(
                 db.specialMissionRepository(),
                 db.specialMissionProgressRepository(),
-                db.taskInstanceRepository()
+                db.taskInstanceRepository(),
+                db.allianceMessageRepository()
         );
 
         int battleId = getIntent().getIntExtra("battleId", -1);

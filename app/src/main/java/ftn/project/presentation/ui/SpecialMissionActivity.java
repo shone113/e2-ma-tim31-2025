@@ -50,7 +50,8 @@ public class SpecialMissionActivity extends AppCompatActivity {
         AppDatabase db = AppDatabase.getInstance(this);
         specialMissionProgressService = new SpecialMissionProgressService(db.specialMissionRepository(),
                 db.specialMissionProgressRepository(),
-                db.taskInstanceRepository());
+                db.taskInstanceRepository(),
+                db.allianceMessageRepository());
         loggedUserService = new LoggedUserService(this);
         // Boss HP
         User loggedUser = loggedUserService.getCurrentUser();

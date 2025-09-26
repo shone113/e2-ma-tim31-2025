@@ -31,7 +31,9 @@ import ftn.project.domain.entity.Task;
 import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.TaskInstanceWithTask;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.BattleStartService;
 import ftn.project.domain.usecase.CheckQuotaService;
+import ftn.project.domain.usecase.LevelAdvancementService;
 import ftn.project.domain.usecase.LoggedUserService;
 import ftn.project.domain.usecase.SpecialMissionProgressService;
 import ftn.project.presentation.adapter.TaskAdapter;
@@ -44,6 +46,7 @@ public class TaskListActivity extends AppCompatActivity {
     private List<TaskInstanceWithTask> allActiveTasks = new ArrayList<>();
     private List<TaskInstanceWithTask> filteredTasks = new ArrayList<>();
     private SpecialMissionProgressService smps;
+    private LevelAdvancementService levelAdvancementService;
     //private ActivityResultLauncher<Intent> taskDetailsLauncher;
 
     @Override
@@ -71,9 +74,11 @@ public class TaskListActivity extends AppCompatActivity {
                     smps = new SpecialMissionProgressService(
                             db.specialMissionRepository(),
                             db.specialMissionProgressRepository(),
-                            db.taskInstanceRepository()
+                            db.taskInstanceRepository(),
+                            db.allianceMessageRepository()
                     );
-                    int earnedXp = CheckQuotaService.calculateEarnedXP(taskWithInstance.taskInstance,user.getUserId(), db);
+                    levelAdvancementService = new LevelAdvancementService(db.levelRepository());
+                    int earnedXp = CheckQuotaService.calculateEarnedXP(taskWithInstance.taskInstance,user.getUserId(),user.getLevel(), db);
 
                     taskWithInstance.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
                     taskWithInstance.taskInstance.setEarnedXp(earnedXp);
@@ -197,6 +202,9 @@ public class TaskListActivity extends AppCompatActivity {
 
             int oldXP = currentUser.getExperiencePoints();
             int newXP = oldXP + xPValue;
+            //ovde nesto
+            boolean isNewLevel = levelAdvancementService.hasReachedNextLevel(newXP, currentUser.getLevel());
+
 
             if (userId == currentUser.getUserId()) {
                 db.userRepository().updateExperiencePoints(userId, newXP);
@@ -204,6 +212,21 @@ public class TaskListActivity extends AppCompatActivity {
                 runOnUiThread(() ->
                         Toast.makeText(this, "Dodato " + xPValue + " XP (ukupno: " + newXP + ")", Toast.LENGTH_SHORT).show()
                 );
+                if(isNewLevel)
+                {
+                    int newPP = levelAdvancementService.getPPForLevel(currentUser.getLevel());
+                    currentUser.setPowerPoints(newPP);
+                    db.userRepository().update(currentUser);
+                    BattleStartService starter = new BattleStartService(this);
+                    BattleStartService.BattleStartResult result = starter.startNewBattle(currentUser);
+
+                    Intent intent = new Intent(this, BattleActivity.class);
+                    intent.putExtra("battleId", result.battleId);
+                    intent.putExtra("hitChance", result.hitChance);
+                    startActivity(intent);
+                    currentUser.setNewLevelTime(LocalDateTime.now());
+                    db.userRepository().update(currentUser);
+                }
             } else {
                 runOnUiThread(() ->
                         Toast.makeText(this, "Nije pravilan korisnik!", Toast.LENGTH_SHORT).show()

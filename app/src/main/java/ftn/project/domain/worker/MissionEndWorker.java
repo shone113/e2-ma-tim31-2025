@@ -40,7 +40,8 @@ public class MissionEndWorker extends Worker {
         SpecialMissionProgressService smps = new SpecialMissionProgressService(
                 db.specialMissionRepository(),
                 db.specialMissionProgressRepository(),
-                db.taskInstanceRepository()
+                db.taskInstanceRepository(),
+                db.allianceMessageRepository()
         );
 
         // Uzimamo aktivnu misiju
