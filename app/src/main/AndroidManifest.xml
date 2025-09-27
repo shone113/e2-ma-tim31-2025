@@ -19,9 +19,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HabitQuest">
         <activity
-            android:name=".presentation.ui.ChatActivity"
-            android:windowSoftInputMode="adjustPan"
+            android:name=".presentation.ui.ChangePasswordActivity"
             android:exported="false" />
+        <activity
+            android:name=".presentation.ui.ChatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".presentation.ui.AllianceActivity"
             android:exported="false" />
@@ -61,6 +64,7 @@
         <activity
             android:name=".presentation.ui.ProfileActivity"
             android:exported="false" />
+
         <receiver
             android:name=".presentation.notification.AllianceInvitationReceiver"
             android:exported="false" />

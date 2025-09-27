@@ -40,7 +40,7 @@ import ftn.project.presentation.notification.Notifier;
 
 public class MainActivity extends AppCompatActivity {
 
-    private LinearLayout btnActSpecMission,  btnSpecMission;;
+    private LinearLayout btnActSpecMission,  btnSpecMission, btnLogOut, btnMyProfile, btnChangePassword;
     private LinearLayout btnTaskCalendar, btnShop, btnNewTask, btnBattle, btnCategories, btnAllUsers;
     private ListenerRegistration inviteReg;
     private AppDatabase db;
@@ -99,7 +99,9 @@ public class MainActivity extends AppCompatActivity {
         btnCategories = findViewById(R.id.btnCategories);
         btnAllUsers = findViewById(R.id.btnAllUsers);
         btnSpecMission = findViewById(R.id.btnSpecMission);
-
+        btnLogOut = findViewById(R.id.btnLogOut);
+        btnMyProfile = findViewById(R.id.btnMyProfile);
+        btnChangePassword = findViewById(R.id.btnChangePassword);
 
         // --- Provera lidera i specijalne misije ---
         LoggedUserService loggedUserService = new LoggedUserService(this);
@@ -193,6 +195,26 @@ public class MainActivity extends AppCompatActivity {
 
         btnAllUsers.setOnClickListener(v -> {
             startActivity(new Intent(this, AllUsersActivity.class));
+        });
+
+        btnMyProfile.setOnClickListener(v -> {
+            Intent i = new Intent(this, ProfileActivity.class);
+            i.putExtra(ProfileActivity.EXTRA_USER_ID, logged.getUserId());
+            this.startActivity(i);
+        });
+
+        btnChangePassword.setOnClickListener(v -> {
+            startActivity(new Intent(this, ChangePasswordActivity.class));
+        });
+
+        btnLogOut.setOnClickListener(v -> {
+            FirebaseAuth mAuth = FirebaseAuth.getInstance();
+            mAuth.signOut();
+
+            Intent intent = new Intent(MainActivity.this, AuthActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
         });
     }
 

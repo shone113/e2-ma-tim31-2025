@@ -80,6 +80,7 @@
         app:layout_constraintEnd_toEndOf="@id/imgTitle"
         android:layout_marginTop="8dp"/>
 
+
     <!-- 1. Box -->
     <TextView
         android:id="@+id/tvLevelBox"

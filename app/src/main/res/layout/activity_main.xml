@@ -215,5 +215,72 @@
                 android:layout_marginTop="8dp" />
         </LinearLayout>
 
+        <!-- LogOut button -->
+        <LinearLayout
+            android:id="@+id/btnLogOut"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@android:drawable/btn_default"
+            android:padding="16dp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1">
+
+            <ImageView
+                android:src="@drawable/logout"
+                android:layout_width="48dp"
+                android:layout_height="48dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Log out"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/btnChangePassword"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@android:drawable/btn_default"
+            android:padding="16dp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1">
+
+            <ImageView
+                android:src="@android:drawable/ic_lock_lock"
+                android:layout_width="48dp"
+                android:layout_height="48dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reset Password"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <!-- Profile button -->
+        <LinearLayout
+            android:id="@+id/btnMyProfile"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@android:drawable/btn_default"
+            android:padding="16dp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_columnWeight="1">
+
+            <ImageView
+                android:src="@drawable/user"
+                android:layout_width="48dp"
+                android:layout_height="48dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="My profile"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
     </GridLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
