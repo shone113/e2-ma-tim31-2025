@@ -49,6 +49,14 @@ public interface TaskInstanceRepositoryInterface {
     List<TaskInstanceWithTask> getAllTaskInstancesWithTask(int userId);
 
     @Transaction
+    @Query("SELECT ti.* FROM task_instances ti " +
+            "INNER JOIN tasks t ON ti.taskId = t.id " +
+            "WHERE t.userId = :userId " +
+            "ORDER BY ti.endExecutionTime DESC")
+    List<TaskInstanceWithTask> getAllTaskInstancesWithTaskSorted(int userId);
+
+
+    @Transaction
     @Query("SELECT * FROM task_instances WHERE endExecutionTime > :now")
     List<TaskInstance> getActiveInstances(LocalDateTime now);
 

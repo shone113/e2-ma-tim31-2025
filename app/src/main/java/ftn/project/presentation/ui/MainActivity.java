@@ -40,7 +40,7 @@ import ftn.project.presentation.notification.Notifier;
 
 public class MainActivity extends AppCompatActivity {
 
-    private LinearLayout btnActSpecMission,  btnSpecMission, btnLogOut, btnMyProfile, btnChangePassword;
+    private LinearLayout btnActSpecMission,  btnSpecMission, btnLogOut, btnMyProfile, btnChangePassword, btnStatistics;
     private LinearLayout btnTaskCalendar, btnShop, btnNewTask, btnBattle, btnCategories, btnAllUsers;
     private ListenerRegistration inviteReg;
     private AppDatabase db;
@@ -102,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
         btnLogOut = findViewById(R.id.btnLogOut);
         btnMyProfile = findViewById(R.id.btnMyProfile);
         btnChangePassword = findViewById(R.id.btnChangePassword);
+        btnStatistics = findViewById(R.id.btnStatistics);
 
         // --- Provera lidera i specijalne misije ---
         LoggedUserService loggedUserService = new LoggedUserService(this);
@@ -205,6 +206,10 @@ public class MainActivity extends AppCompatActivity {
 
         btnChangePassword.setOnClickListener(v -> {
             startActivity(new Intent(this, ChangePasswordActivity.class));
+        });
+
+        btnStatistics.setOnClickListener(v -> {
+            startActivity(new Intent(this, StatsActivity.class));
         });
 
         btnLogOut.setOnClickListener(v -> {

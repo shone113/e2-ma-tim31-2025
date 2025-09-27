@@ -17,6 +17,9 @@ public interface CategoryRepositoryInterface {
     @Query("SELECT * FROM categories")
     List<Category> getAll();
 
+    @Query("SELECT * FROM categories WHERE id = :id")
+    Category getById(int id);
+
     @Update
     void update(Category category);
     @Query("SELECT c.* FROM categories c WHERE c.id = :categoryId")

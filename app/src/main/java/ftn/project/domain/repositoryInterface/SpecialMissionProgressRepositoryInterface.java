@@ -30,4 +30,7 @@ public interface SpecialMissionProgressRepositoryInterface {
 
     @Query("SELECT * FROM special_mission_progress WHERE missionId = :missionId")
     List<SpecialMissionProgress> getAllProgressForMission(int missionId);
+
+    @Query("SELECT * FROM special_mission_progress WHERE userId = :userId")
+    List<SpecialMissionProgress> getAllProgressForUser(int userId);
 }

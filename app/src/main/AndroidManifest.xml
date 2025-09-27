@@ -19,6 +19,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HabitQuest">
         <activity
+            android:name=".presentation.ui.StatsActivity"
+            android:exported="false" />
+        <activity
             android:name=".presentation.ui.ChangePasswordActivity"
             android:exported="false" />
         <activity

@@ -23,4 +23,7 @@ public interface TaskRepositoryInterface {
 
     @Delete
     void delete(Task task);
+
+    @Query("SELECT * FROM tasks WHERE userId = :userId")
+    List<Task> getAllTasksForUser(int userId);
 }

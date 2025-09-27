@@ -27,7 +27,6 @@ public class TaskInstance {
     private LocalDateTime endExecutionTime;
 
     private TaskStatusEnum status;
-    @Ignore
     private int valueXp;
     private int earnedXp;
     private boolean isWithinQuota;
@@ -68,8 +67,6 @@ public class TaskInstance {
         this.isWithinQuota = isWithinQuota;
         this.valueXp = valueXp;
     }
-
-    public TaskInstance() {}
 
     public int getId() {
         return id;
