@@ -213,7 +213,7 @@ public class BattleActivity extends AppCompatActivity {
         rewardCoins = findViewById(R.id.rewardCoins);
         hitSound = MediaPlayer.create(this, R.raw.hit);
         missSound = MediaPlayer.create(this, R.raw.miss);
-        punchAnimation = AnimationUtils.loadAnimation(this, R.drawable.punch_pop);
+        punchAnimation = AnimationUtils.loadAnimation(this, R.drawable.punch);
     }
 
     private void setupUi() {

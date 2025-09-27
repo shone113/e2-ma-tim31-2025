@@ -69,6 +69,8 @@ public class TaskInstance {
         this.valueXp = valueXp;
     }
 
+    public TaskInstance() {}
+
     public int getId() {
         return id;
     }
