@@ -3,6 +3,7 @@ package ftn.project.presentation.ui;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -35,8 +36,6 @@ public class ChangePasswordActivity extends AppCompatActivity {
             return insets;
         });
 
-        setContentView(R.layout.activity_change_password); // tvoj XML fajl
-
         etOldPass = findViewById(R.id.etOldPassword);
         etNewPass = findViewById(R.id.etNewPassword);
         etConfirmPass = findViewById(R.id.etConfirmPassword);
@@ -44,6 +43,9 @@ public class ChangePasswordActivity extends AppCompatActivity {
         tvFeedback = findViewById(R.id.tvFeedback);
 
         btnReset.setOnClickListener(v -> changePassword());
+
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> finish());
     }
 
     private void changePassword() {
@@ -80,6 +82,9 @@ public class ChangePasswordActivity extends AppCompatActivity {
                     if (updateTask.isSuccessful()) {
                         tvFeedback.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
                         tvFeedback.setText("Lozinka uspešno promenjena!");
+                        etOldPass.setText("");
+                        etNewPass.setText("");
+                        etConfirmPass.setText("");
                     } else {
                         tvFeedback.setText("Greška: " + updateTask.getException().getMessage());
                     }
