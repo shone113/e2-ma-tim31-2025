@@ -246,8 +246,29 @@ public class AuthActivity extends AppCompatActivity {
                                     startActivity(intent);
                                     finish();
                                 } else {
-                                    showError("Nalog nije verifikovan. Proveri email.");
-                                    mAuth.signOut();
+                                    FirebaseFirestore.getInstance()
+                                            .collection("users")
+                                            .document(user.getUid())
+                                            .get()
+                                            .addOnSuccessListener(snap -> {
+                                                com.google.firebase.Timestamp until = snap.getTimestamp("verifyUntil");
+                                                long now = System.currentTimeMillis();
+                                                long deadline = (until != null) ? until.toDate().getTime() : 0L;
+
+                                                if (until != null && now > deadline) {
+                                                    deleteUnverifiedAccountAndLocal(user, () -> {
+                                                        showError("Rok za aktivaciju (24h) je istekao. Registruj se ponovo.");
+                                                        switchAuth.setChecked(true);
+                                                    });
+                                                } else {
+                                                    showError("Nalog nije verifikovan. Proveri email poštu.");
+                                                    mAuth.signOut();
+                                                }
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                showError("Nalog nije verifikovan. Proveri email poštu.");
+                                                mAuth.signOut();
+                                            });
                                 }
                             });
                         } else {
@@ -333,6 +354,12 @@ public class AuthActivity extends AppCompatActivity {
                 data.put("experiencePoints", 0);           // ← NOVO
                 data.put("level", 3);
                 data.put("createdAt", com.google.firebase.Timestamp.now());
+
+                // DEADLINE za verifikaciju: sada + 24h
+                long ms24h = 24L * 60 * 60 * 1000;
+                java.util.Date verifyUntil = new java.util.Date(System.currentTimeMillis() + ms24h);
+                data.put("verifyUntil", new com.google.firebase.Timestamp(verifyUntil));
+
                 tr.set(userRef, data, com.google.firebase.firestore.SetOptions.merge());
 
                 return next;
@@ -595,6 +622,28 @@ public class AuthActivity extends AppCompatActivity {
                 showError("Registracija nije uspela. Pokušaj ponovo.");
                 break;
         }
+    }
+
+    private void deleteUnverifiedAccountAndLocal(FirebaseUser user, Runnable onDone) {
+        // 1) obriši Firestore dokument
+        FirebaseFirestore fs = FirebaseFirestore.getInstance();
+        fs.collection("users").document(user.getUid()).delete()
+                .addOnCompleteListener(d1 -> {
+                    // 2) obriši lokalnog korisnika iz Room-a
+                    Executors.newSingleThreadExecutor().execute(() -> {
+                        AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+                        try {
+                            db.userRepository().deleteByFirebaseUid(user.getUid());
+                        } catch (Exception ignored) {}
+                        runOnUiThread(() -> {
+                            // 3) obriši auth nalog
+                            user.delete().addOnCompleteListener(d2 -> {
+                                mAuth.signOut();
+                                if (onDone != null) onDone.run();
+                            });
+                        });
+                    });
+                });
     }
 
 }

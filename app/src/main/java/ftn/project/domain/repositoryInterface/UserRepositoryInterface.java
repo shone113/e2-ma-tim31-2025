@@ -87,4 +87,7 @@ public interface UserRepositoryInterface {
 
     @Query("SELECT COUNT(*) FROM User WHERE userId=:id")
     int existsById(int id);
+
+    @Query("DELETE FROM User WHERE firebaseUid=:firebaseId")
+    void deleteByFirebaseUid(String firebaseId);
 }
