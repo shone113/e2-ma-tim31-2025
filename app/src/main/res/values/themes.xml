@@ -1,9 +1,10 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.HabitQuest" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-    </style>
+<resources>
+    <style name="Theme.HabitQuest" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Ovo boji pozadinu SVAKOG prozora -->
+        <item name="android:windowBackground">@color/app_blue</item>
 
-    <style name="Theme.HabitQuest" parent="Base.Theme.HabitQuest" />
+        <!-- Ako želiš i status/nav bar u istoj boji -->
+        <item name="android:statusBarColor">@color/app_blue</item>
+        <item name="android:navigationBarColor">@color/app_blue</item>
+    </style>
 </resources>

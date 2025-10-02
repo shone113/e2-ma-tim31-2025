@@ -9,19 +9,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- Opcioni period filter -->
-        <!--
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/periodChips"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:singleSelection="true">
-          <com.google.android.material.chip.Chip android:id="@+id/chip7d" android:text="7d"/>
-          <com.google.android.material.chip.Chip android:id="@+id/chip30d" android:text="30d"/>
-          <com.google.android.material.chip.Chip android:id="@+id/chipAll" android:text="All"/>
-        </com.google.android.material.chip.ChipGroup>
-        -->
-
         <androidx.gridlayout.widget.GridLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -34,7 +21,8 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:cardUseCompatPadding="true"
-                app:layout_columnWeight="1">
+                app:layout_columnWeight="1"
+                app:cardBackgroundColor="@color/darker_blue" >
                 <LinearLayout
                     android:orientation="vertical"
                     android:padding="16dp"
@@ -64,7 +52,8 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:cardUseCompatPadding="true"
-                app:layout_columnWeight="1">
+                app:layout_columnWeight="1"
+                app:cardBackgroundColor="@color/darker_blue" >
                 <LinearLayout
                     android:orientation="vertical"
                     android:padding="16dp"
@@ -94,7 +83,8 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 app:cardUseCompatPadding="true"
-                app:layout_columnWeight="1">
+                app:layout_columnWeight="1"
+                app:cardBackgroundColor="@color/darker_blue" >
                 <LinearLayout
                     android:orientation="vertical"
                     android:padding="16dp"

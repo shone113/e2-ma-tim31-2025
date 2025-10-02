@@ -13,6 +13,7 @@
         app:strokeWidth="2dp"
         app:strokeColor="@android:color/black"
         app:layout_constraintTop_toTopOf="parent"
+        app:cardBackgroundColor="@color/darker_blue"
         >
 
         <LinearLayout

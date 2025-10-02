@@ -6,4 +6,10 @@
     <color name="red_soft">#F44336</color>
     <color name="gray_light">#BDBDBD</color>
     <color name="dark_blue">#AA003399</color>
+<!--    <color name="dark_blue">#052659</color>-->
+    <color name="app_blue">#7DA0CA</color>
+    <color name="darker_blue">#1A3D63</color>
+    <color name="darkest_blue">#0A1931</color>
+    <color name="light_blue">#B3CFE5</color>
+    <color name="middle_blue">#4A7FA7</color>
 </resources>

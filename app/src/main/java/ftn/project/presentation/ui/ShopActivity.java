@@ -62,7 +62,8 @@ public class ShopActivity extends AppCompatActivity {
         TextView tvXP = findViewById(R.id.tvXP);
         TextView tvPP = findViewById(R.id.tvPP);
         TextView tvCoins = findViewById(R.id.tvCoins);
-        StatusBarBinder.bind(this, tvXP, tvPP, tvCoins);
+        ImageView ivTitle = findViewById(R.id.ivTitle);
+        StatusBarBinder.bind(this, ivTitle, tvXP, tvPP, tvCoins);
 
         AppDatabase db = AppDatabase.getInstance(getApplicationContext());
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();

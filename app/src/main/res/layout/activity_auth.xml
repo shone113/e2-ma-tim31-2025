@@ -57,17 +57,18 @@
             <androidx.cardview.widget.CardView
                 android:id="@+id/avatarCard"
                 android:layout_width="match_parent"
-                android:layout_height="220dp"
+                android:layout_height="400dp"
                 android:layout_margin="16dp"
                 android:visibility="gone"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
-                app:cardUseCompatPadding="true">
+                app:cardUseCompatPadding="true"
+                app:cardBackgroundColor="@color/zxing_transparent">
 
                 <androidx.viewpager2.widget.ViewPager2
                     android:id="@+id/avatarPager"
                     android:layout_width="match_parent"
-                    android:layout_height="300dp"
+                    android:layout_height="400dp"
                     android:padding="12dp"
                     android:clipToPadding="false"
                     android:visibility="gone"/>

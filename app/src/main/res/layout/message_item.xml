@@ -18,7 +18,7 @@
         android:text="02.09.2025"
         android:textSize="12sp"
         android:textStyle="bold"
-        android:textColor="@android:color/darker_gray" />
+        android:textColor="@color/darkest_blue" />
 
     <LinearLayout
         android:id="@+id/root"
@@ -34,7 +34,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:cardCornerRadius="16dp"
-            app:cardElevation="1dp">
+            app:cardElevation="1dp"
+            app:cardBackgroundColor="@color/darker_blue"
+            >
 
             <LinearLayout
                 android:id="@+id/message_card_item"
@@ -68,7 +70,8 @@
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintEnd_toStartOf="@id/tvTime" />
+                        app:layout_constraintEnd_toStartOf="@id/tvTime"
+                        />
 
                     <TextView
                         android:id="@+id/tvTime"
@@ -81,7 +84,8 @@
                         android:translationY="2dp"
                         app:layout_constraintStart_toEndOf="@id/tvContent"
                         app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintBottom_toBottomOf="parent" />
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        />
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
             </LinearLayout>

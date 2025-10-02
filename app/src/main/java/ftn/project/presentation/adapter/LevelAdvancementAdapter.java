@@ -11,6 +11,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+
+import com.google.android.material.card.MaterialCardView;
 
 import java.util.ArrayList;
 
@@ -25,10 +28,12 @@ public class LevelAdvancementAdapter extends ArrayAdapter<LevelDTO> {
 
     private ArrayList<LevelDTO> aLevels;
     private final Context context;
-    public LevelAdvancementAdapter(Context context, ArrayList<LevelDTO> levelDTOs){
+    private int currentLevel;
+    public LevelAdvancementAdapter(Context context, ArrayList<LevelDTO> levelDTOs, int currentLevel){
         super(context, R.layout.level_item, levelDTOs);
         this.context = context;
         aLevels = levelDTOs;
+        this.currentLevel = currentLevel;
     }
 
     @NonNull
@@ -39,10 +44,16 @@ public class LevelAdvancementAdapter extends ArrayAdapter<LevelDTO> {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.level_item,
                     parent, false);
         }
+        MaterialCardView card = convertView.findViewById(R.id.level_item_card);
         TextView tvLevelNumber = convertView.findViewById(R.id.tvLevelNumber);
         ImageView ivTitleIcon = convertView.findViewById(R.id.ivTitleIcon);
         TextView tvLevelXP = convertView.findViewById(R.id.tvLevelXP);
         TextView tvRemainingXP = convertView.findViewById(R.id.tvRemainsXP);
+
+        int color = (levelDTO.levelNumber <= currentLevel)
+                ? ContextCompat.getColor(context, R.color.light_blue)
+                : ContextCompat.getColor(context, R.color.darker_blue);
+        card.setCardBackgroundColor(color);
 
         if(levelDTO != null){
             int resId = ImageResId.returnResId(ivTitleIcon.getContext(), levelDTO.titleIconKey);

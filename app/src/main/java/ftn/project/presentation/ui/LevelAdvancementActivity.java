@@ -1,6 +1,7 @@
 package ftn.project.presentation.ui;
 
 import android.os.Bundle;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -47,7 +48,8 @@ public class LevelAdvancementActivity extends AppCompatActivity {
         TextView tvXP = findViewById(R.id.tvXP);
         TextView tvPP = findViewById(R.id.tvPP);
         TextView tvCoins = findViewById(R.id.tvCoins);
-        StatusBarBinder.bind(this, tvXP, tvPP, tvCoins);
+        ImageView ivTitle = findViewById(R.id.ivTitle);
+        StatusBarBinder.bind(this, ivTitle, tvXP, tvPP, tvCoins);
 
         AppDatabase db = AppDatabase.getInstance(getApplicationContext());
 
@@ -61,7 +63,8 @@ public class LevelAdvancementActivity extends AppCompatActivity {
 
         adapter = new LevelAdvancementAdapter(
                 this,
-                levelDTOs);
+                levelDTOs,
+                user.getLevel());
 
         ListView list = findViewById(R.id.listLevels);
         list.setAdapter(adapter);

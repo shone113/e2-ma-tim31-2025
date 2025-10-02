@@ -5,7 +5,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -37,11 +39,12 @@ import ftn.project.domain.usecase.BattleStartService;
 import ftn.project.domain.usecase.LoggedUserService;
 import ftn.project.domain.worker.MissionEndWorker;
 import ftn.project.presentation.notification.Notifier;
+import ftn.project.presentation.util.StatusBarBinder;
 
 public class MainActivity extends AppCompatActivity {
 
     private LinearLayout btnActSpecMission,  btnSpecMission, btnLogOut, btnMyProfile, btnChangePassword, btnStatistics;
-    private LinearLayout btnTaskCalendar, btnShop, btnNewTask, btnBattle, btnCategories, btnAllUsers;
+    private LinearLayout btnLevelAdvancement, btnTaskCalendar, btnShop, btnNewTask, btnBattle, btnCategories, btnAllUsers;
     private ListenerRegistration inviteReg;
     private AppDatabase db;
 
@@ -78,6 +81,12 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        TextView tvXP = findViewById(R.id.tvXP);
+        TextView tvPP = findViewById(R.id.tvPP);
+        TextView tvCoins = findViewById(R.id.tvCoins);
+        ImageView ivTitle = findViewById(R.id.ivTitle);
+        StatusBarBinder.bind(this, ivTitle, tvXP, tvPP, tvCoins);
+
         FirestoreSync.syncAllUsersDown(
                 getApplicationContext(),
                 db,
@@ -103,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
         btnMyProfile = findViewById(R.id.btnMyProfile);
         btnChangePassword = findViewById(R.id.btnChangePassword);
         btnStatistics = findViewById(R.id.btnStatistics);
+        btnLevelAdvancement = findViewById(R.id.btnLevelAdvancement);
 
         // --- Provera lidera i specijalne misije ---
         LoggedUserService loggedUserService = new LoggedUserService(this);
@@ -210,6 +220,10 @@ public class MainActivity extends AppCompatActivity {
 
         btnStatistics.setOnClickListener(v -> {
             startActivity(new Intent(this, StatsActivity.class));
+        });
+
+        btnLevelAdvancement.setOnClickListener(v -> {
+            startActivity(new Intent(this, LevelAdvancementActivity.class));
         });
 
         btnLogOut.setOnClickListener(v -> {

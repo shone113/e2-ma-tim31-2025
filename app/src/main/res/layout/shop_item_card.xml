@@ -9,7 +9,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardCornerRadius="12dp"
-        app:cardElevation="6dp">
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="@color/darker_blue"
+        >
 
         <LinearLayout
             android:id="@+id/shop_item_card"
