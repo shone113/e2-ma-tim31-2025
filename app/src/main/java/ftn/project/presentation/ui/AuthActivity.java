@@ -66,7 +66,7 @@ public class AuthActivity extends AppCompatActivity {
     private Runnable verifyTask;
     private static final long POLL_MS = 4000;
     private TextView tvLogin, tvRegister;
-
+    private TextView tvFeedback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +92,8 @@ public class AuthActivity extends AppCompatActivity {
         btnSubmit = findViewById(R.id.btnSubmit);
         tvLogin = findViewById(R.id.tvLogin);
         tvRegister = findViewById(R.id.tvRegister);
+        tvFeedback = findViewById(R.id.tvFeedback);
+
         setLoginActive();
 
         ArrayList<Integer> avatars = new ArrayList<>();
@@ -113,6 +115,7 @@ public class AuthActivity extends AppCompatActivity {
         switchAuth.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
                 // Register mode
+                clearFeedback();
                 etConfirm.setVisibility(View.VISIBLE);
                 etUsername.setVisibility(View.VISIBLE);
                 avatarPager.setVisibility(View.VISIBLE);
@@ -121,6 +124,7 @@ public class AuthActivity extends AppCompatActivity {
                 setRegisterActive();
                 isRegisterMode = true;
             } else {
+                clearFeedback();
                 animView.cancelAnimation();
                 showVerifyUI(false);
                 // Login mode
@@ -136,6 +140,7 @@ public class AuthActivity extends AppCompatActivity {
 
 
         btnSubmit.setOnClickListener(v -> {
+            clearFeedback();
             if (isRegisterMode) {
                 doRegister();
             } else {
@@ -176,11 +181,11 @@ public class AuthActivity extends AppCompatActivity {
         String username = etUsername.getText().toString().trim();
 
         if (email.isEmpty() || pass.isEmpty() || confirm.isEmpty()) {
-            Toast.makeText(this, "Popunite sva polja", Toast.LENGTH_SHORT).show();
+            showError("Popunite sva polja.");
             return;
         }
         if (!pass.equals(confirm)) {
-            Toast.makeText(this, "Lozinke se ne poklapaju", Toast.LENGTH_SHORT).show();
+            showError("Lozinke se ne poklapaju.");
             return;
         }
 
@@ -197,22 +202,18 @@ public class AuthActivity extends AppCompatActivity {
                                     user.sendEmailVerification()
                                             .addOnCompleteListener(AuthActivity.this, t -> {
                                                 if (t.isSuccessful()) {
-                                                    Toast.makeText(AuthActivity.this,
-                                                            "Poslat je verifikacioni email. Proveri inbox/spam.",
-                                                            Toast.LENGTH_LONG).show();
-                                                    startVerificationPolling(); // ovde smo sigurni da lokalni User postoji
+                                                    showInfo("Poslat je verifikacioni email. Proveri inbox/spam.");
+                                                    startVerificationPolling();
                                                 } else {
-                                                    Toast.makeText(AuthActivity.this,
-                                                            "Greška pri slanju verifikacije: " +
-                                                                    (t.getException() != null ? t.getException().getMessage() : ""),
-                                                            Toast.LENGTH_LONG).show();
+                                                    Log.w(TAG, "emailVerification:failure", t.getException());
+                                                    showError("Greška pri slanju verifikacije. Pokušaj ponovo kasnije.");
                                                 }
                                             });
                                 });
                             }
                         } else {
                             Log.w(TAG, "createUserWithEmail:failure", task.getException());
-                            Toast.makeText(AuthActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                            handleRegisterFailure(task.getException());
                         }
                     }
                 });
@@ -223,7 +224,7 @@ public class AuthActivity extends AppCompatActivity {
         String pass = etPass.getText().toString();
 
         if (email.isEmpty() || pass.isEmpty()) {
-            Toast.makeText(this, "Unesite email i lozinku", Toast.LENGTH_SHORT).show();
+            showError("Unesite email i lozinku");
             return;
         }
 
@@ -236,24 +237,23 @@ public class AuthActivity extends AppCompatActivity {
                             Log.d(TAG, "signInWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
 
-                            if (user == null) { Toast.makeText(AuthActivity.this, "Neuspešna prijava.", Toast.LENGTH_SHORT).show(); return; }
+                            if (user == null) { showError("Neuspešna prijava."); return; }
 
                             user.reload().addOnCompleteListener(r -> {
                                 if (user.isEmailVerified()) {
-                                    Toast.makeText(AuthActivity.this, "Uspešna prijava", Toast.LENGTH_SHORT).show();
+                                    showInfo("Uspešna prijava");
                                     Intent intent = new Intent(AuthActivity.this, MainActivity.class);
                                     startActivity(intent);
                                     finish();
                                 } else {
-                                    Toast.makeText(AuthActivity.this, "Nalog nije verifikovan. Proveri email.", Toast.LENGTH_LONG).show();
+                                    showError("Nalog nije verifikovan. Proveri email.");
                                     mAuth.signOut();
                                 }
                             });
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "signInWithEmail:failure", task.getException());
-                            Toast.makeText(AuthActivity.this, "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
+                            handleLoginFailure(task.getException());
                         }
                     }
                 });
@@ -515,6 +515,86 @@ public class AuthActivity extends AppCompatActivity {
     @Override protected void onDestroy() {
         super.onDestroy();
         stopVerificationPolling();
+    }
+
+    private void showError(String msg) {
+        if (tvFeedback == null) return;
+        tvFeedback.setText(msg);
+        tvFeedback.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark));
+        tvFeedback.setVisibility(View.VISIBLE);
+    }
+
+    private void showInfo(String msg) {
+        if (tvFeedback == null) return;
+        tvFeedback.setText(msg);
+        tvFeedback.setTextColor(ContextCompat.getColor(this, android.R.color.holo_green_dark));
+        tvFeedback.setVisibility(View.VISIBLE);
+    }
+
+    private void clearFeedback() {
+        if (tvFeedback == null) return;
+        tvFeedback.setText("");
+        tvFeedback.setVisibility(View.GONE);
+    }
+    private void handleLoginFailure(Exception ex) {
+        String code = (ex instanceof com.google.firebase.auth.FirebaseAuthException)
+                ? ((com.google.firebase.auth.FirebaseAuthException) ex).getErrorCode()
+                : "";
+
+        switch (code) {
+            case "ERROR_INVALID_EMAIL":
+                showError("Email adresa nije ispravnog formata.");
+                break;
+            case "ERROR_WRONG_PASSWORD":
+                showError("Pogrešna lozinka. Pokušaj ponovo ili resetuj lozinku.");
+                break;
+            case "ERROR_USER_NOT_FOUND":
+                showError("Nalog sa ovom email adresom ne postoji.");
+                break;
+            case "ERROR_USER_DISABLED":
+                showError("Nalog je onemogućen.");
+                break;
+            case "ERROR_TOO_MANY_REQUESTS":
+                showError("Previše pokušaja prijave. Pokušaj kasnije.");
+                break;
+            case "ERROR_NETWORK_REQUEST_FAILED":
+                showError("Greška mreže. Proveri internet vezu i pokušaj ponovo.");
+                break;
+            case "ERROR_INVALID_LOGIN_CREDENTIALS":
+                // Firebase ovo često vraća umesto WRONG_PASSWORD
+                showError("Neispravni podaci za prijavu. Proveri email i lozinku.");
+                break;
+            default:
+                showError("Prijava nije uspela. Pokušaj ponovo.");
+                break;
+        }
+    }
+
+    private void handleRegisterFailure(Exception ex) {
+        String code = (ex instanceof com.google.firebase.auth.FirebaseAuthException)
+                ? ((com.google.firebase.auth.FirebaseAuthException) ex).getErrorCode()
+                : "";
+
+        switch (code) {
+            case "ERROR_EMAIL_ALREADY_IN_USE":
+                showError("Ovaj email je već registrovan. Prijavi se ili resetuj lozinku.");
+                break;
+            case "ERROR_WEAK_PASSWORD":
+                showError("Lozinka je preslaba. Koristi najmanje 6 znakova.");
+                break;
+            case "ERROR_INVALID_EMAIL":
+                showError("Email adresa nije ispravnog formata.");
+                break;
+            case "ERROR_OPERATION_NOT_ALLOWED":
+                showError("Registracija trenutno nije omogućena.");
+                break;
+            case "ERROR_NETWORK_REQUEST_FAILED":
+                showError("Greška mreže. Proveri internet vezu i pokušaj ponovo.");
+                break;
+            default:
+                showError("Registracija nije uspela. Pokušaj ponovo.");
+                break;
+        }
     }
 
 }

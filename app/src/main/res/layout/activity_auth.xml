@@ -53,11 +53,21 @@
                 android:hint="Korisničko ime"
                 android:visibility="gone" />
 
+            <TextView
+                android:id="@+id/tvFeedback"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/holo_red_dark"
+                android:visibility="gone" />
+
             <!-- Avatar (samo u registraciji) -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/avatarCard"
                 android:layout_width="match_parent"
-                android:layout_height="400dp"
+                android:layout_height="300dp"
                 android:layout_margin="16dp"
                 android:visibility="gone"
                 app:cardCornerRadius="12dp"
@@ -68,7 +78,7 @@
                 <androidx.viewpager2.widget.ViewPager2
                     android:id="@+id/avatarPager"
                     android:layout_width="match_parent"
-                    android:layout_height="400dp"
+                    android:layout_height="280dp"
                     android:padding="12dp"
                     android:clipToPadding="false"
                     android:visibility="gone"/>
