@@ -2,6 +2,7 @@ package ftn.project.domain.usecase;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -266,5 +267,13 @@ public class StatsService {
         return days;
     }
 
+    public int getBestActivityStreak(){
+        List<TaskInstance> tasksWithInstances = taskInstanceRepository.getAllTaskInstances(userId);
+
+        BestStreakStatsService bestStreakStatsService = new BestStreakStatsService();
+
+        return  bestStreakStatsService.computeStreaks(tasksWithInstances, ZoneId.systemDefault());
+
+    }
 }
 

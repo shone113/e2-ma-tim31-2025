@@ -4,16 +4,23 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2025-10-03T16:52:27.538618100Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT90YNCVJ" />
+            </handle>
+          </Target>
+        </DropdownSelection>
         <DialogSelection>
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT90YNCVJ" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT31PHVTB" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\nenad\.android\avd\Pixel_4.avd" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CT90YNCVJ" />
               </handle>
             </Target>
           </targets>

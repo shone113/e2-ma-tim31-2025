@@ -20,8 +20,12 @@ public interface TaskInstanceRepositoryInterface {
 
     @Update
     void update(TaskInstance taskInstance);
-    @Query("SELECT * FROM task_instances")
-    List<TaskInstance> getAllTasksInstances();
+    @Transaction
+    @Query("SELECT ti.* FROM task_instances ti " +
+            "INNER JOIN tasks t ON ti.taskId = t.id " +
+            "WHERE t.userId = :userId")
+    List<TaskInstance> getAllTaskInstances(int userId);
+
 
     @Query("UPDATE task_instances SET status = :status WHERE id = :id")
     void updateStatus(int id, TaskInstance.TaskStatusEnum status);

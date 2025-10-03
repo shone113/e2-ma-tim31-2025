@@ -27,6 +27,8 @@ public class Alliance {
     @Nullable
     private int leaderUserId;
 
+    private AllianceStatus allianceStatus;
+
     public Alliance() {}
 
     public int getAllianceId() { return allianceId;}
@@ -34,6 +36,11 @@ public class Alliance {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public int getLeaderUserId(){ return leaderUserId; }
-
     public void setLeaderUserId(int leaderUserId) { this.leaderUserId = leaderUserId; }
+    public AllianceStatus getAllianceStatus() {
+        return allianceStatus;
+    }
+    public void setAllianceStatus(AllianceStatus allianceStatus) {
+        this.allianceStatus = allianceStatus;
+    }
 }

@@ -130,10 +130,12 @@ public class AllianceActivity extends AppCompatActivity {
 
         });
 
+        //DISBAND ALLIANCEEE
         btnDisband.setOnClickListener(v -> {
             etName.setEnabled(false);
             btnDisband.setVisibility(View.VISIBLE);
             btnDisband.setEnabled(false);
+            db.allianceRepository().disbandAlliance(currentAllianceId);
         });
 
         btnChat.setOnClickListener(v -> {
@@ -178,7 +180,8 @@ public class AllianceActivity extends AppCompatActivity {
                     allianceId,
                     allianceName,
                     loggedUser.getUsername(),
-                    loggedUser.getUserId()
+                    loggedUser.getUserId(),
+                    friend.getUsername()
             );
         });
 
@@ -194,7 +197,8 @@ public class AllianceActivity extends AppCompatActivity {
             int allianceId,
             String allianceName,
             String inviterName,
-            int inviterUserId
+            int inviterUserId,
+            String inviteeName
     ) {
         FirebaseFirestore fs = FirebaseFirestore.getInstance();
         String docId = fs.collection("allianceInvites").document().getId();
@@ -220,6 +224,7 @@ public class AllianceActivity extends AppCompatActivity {
             inv.put("inviterUserId", inviterUserId);
             inv.put("inviteeUserId", inviteeUserId);
             inv.put("inviterName", inviterName);
+            inv.put("inviteeName", inviteeName);
             inv.put("status", "PENDING");
             inv.put("createdAt", FieldValue.serverTimestamp());
 

@@ -49,7 +49,10 @@ public class AllianceInvitationReceiver extends BroadcastReceiver {
                             FirebaseFirestore.getInstance()
                                     .collection("allianceInvites")
                                     .document(inviteId)
-                                    .update("status", "ACCEPTED")
+                                    .update(
+                                            "status", "ACCEPTED",
+                                            "respondedAt", com.google.firebase.firestore.FieldValue.serverTimestamp()
+                                            )
                                     .addOnSuccessListener(unused ->{
                                         db.allianceInvitationRepository()
                                                 .updateStatus(invitationId, InvitationStatus.ACCEPTED);
@@ -73,26 +76,11 @@ public class AllianceInvitationReceiver extends BroadcastReceiver {
                             }
                     )
                     .addOnCompleteListener(done -> {
-                        if (nid != 0) NotificationManagerCompat.from(ctx).cancel(nid);
+                        NotificationManagerCompat.from(ctx).cancel(nid);
                         pr.finish();
                     });
         } else {
             pr.finish();
         }
-
-
-//        final String newStatus = tmpStatus;
-//        FirebaseFirestore.getInstance()
-//                .collection("allianceInvites")
-//                .document(inviteId)
-//                .update("status", newStatus)
-//                .addOnSuccessListener(unused -> {
-//                    db.allianceInvitationRepository().updateStatus(
-//                            invitationId,  // ili drugi ID koji koristiš u Room
-//                            InvitationStatus.valueOf(newStatus)
-//                    );
-//                });
-
-//        if (nid != 0) NotificationManagerCompat.from(ctx).cancel(nid);
     }
 }

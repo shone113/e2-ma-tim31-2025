@@ -19,15 +19,15 @@ public enum Title {
 
     public static Title fromLevel(int level){
         switch (level) {
-            case 1:
+            case 0:
                 return OWL_EGG;
-            case 2:
+            case 1:
                 return OWL_BABY;
-            case 3:
+            case 2:
                 return OWL_SCHOOL;
-            case 4:
+            case 3:
                 return OWL_AVIATOR;
-            case 5:
+            case 4:
                 return OWL_PEDIA;
             default:
                 return OWL_EGG;

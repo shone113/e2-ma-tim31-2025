@@ -12,12 +12,12 @@ import ftn.project.domain.entity.User;
 public interface AllianceRepositoryInterface {
     @Insert
     long insert(Alliance alliance);
-
     @Update
     void update(Alliance alliance);
     @Query("SELECT * FROM Alliance WHERE allianceId = :allianceID")
     Alliance getAlliance(int allianceID);
     @Query("SELECT * FROM Alliance WHERE leader_user_id = :userId")
     Alliance getAllianceByUser(int userId);
-
+    @Query("UPDATE Alliance SET allianceStatus = :allianceStatus")
+    void disbandAlliance(int allianceStatus);
 }

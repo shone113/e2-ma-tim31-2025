@@ -32,8 +32,8 @@ public class MyApp extends Application {
     private ListenerRegistration chatReg;
     private long sessionStartMs;
     private ListenerRegistration inviteRespondReg;
-
     private FirebaseUser fu;
+    private  com.google.firebase.Timestamp startTime;
 
     @Override public void onCreate() {
         super.onCreate();
@@ -42,6 +42,8 @@ public class MyApp extends Application {
         createInvitationRespondChannel();
         db = AppDatabase.getInstance(getApplicationContext());
         sessionStartMs = System.currentTimeMillis();
+
+        startTime = com.google.firebase.Timestamp.now();
 
         FirebaseAuth.getInstance().addAuthStateListener(auth -> {
             fu = auth.getCurrentUser();
@@ -210,50 +212,57 @@ public class MyApp extends Application {
 
         inviteRespondReg = fs.collection("allianceInvites")
                 .whereEqualTo("inviterUid", myUid)
-                .whereEqualTo("status", "ACCEPTED")
+//                .whereEqualTo("status", "ACCEPTED")
+//                .whereGreaterThan("respondedAt", startTime)
+//                .orderBy("respondedAt")
+//                .startAfter(startTime)
                 .addSnapshotListener((snap, e) -> {
                     if (e != null || snap == null) return;
-
-                    if (!warmed[0]) { warmed[0] = true; return; } // ne diži retro obaveštenja
+                    //if (!warmed[0]) { warmed[0] = true; return; } // ne diži retro obaveštenja
 
                     for (com.google.firebase.firestore.DocumentChange dc : snap.getDocumentChanges()) {
 
-                        if (dc.getType() != com.google.firebase.firestore.DocumentChange.Type.ADDED
-                                && dc.getType() != com.google.firebase.firestore.DocumentChange.Type.MODIFIED) continue;
+                        if (dc.getType() != com.google.firebase.firestore.DocumentChange.Type.MODIFIED) continue;
 
                         var d = dc.getDocument();
+                        String invStatus = d.getString("status");
 
-                        // Polja iz dokumenta (pretpostavljamo da ih već upisuješ)
-                        Long aIdL = d.getLong("allianceId"); if (aIdL == null) continue;
-                        int allianceId = aIdL.intValue();
+                        // Ovde reaguješ SAMO kad status postane ACCEPTED
+                        if ("ACCEPTED".equals(invStatus)) {
 
-                        Long invIdL = d.getLong("invitationId");
-                        int invitationId = invIdL != null ? invIdL.intValue() : 0;
+                            // Polja iz dokumenta (pretpostavljamo da ih već upisuješ)
+                            Long aIdL = d.getLong("allianceId");
+                            if (aIdL == null) continue;
+                            int allianceId = aIdL.intValue();
 
-                        String allianceName = d.getString("allianceName");
-                        if (allianceName == null) allianceName = "Savez";
+                            Long invIdL = d.getLong("invitationId");
+                            int invitationId = invIdL != null ? invIdL.intValue() : 0;
 
-                        String inviteeName = d.getString("inviteeName");
-                        if (inviteeName == null) inviteeName = "Korisnik";
+                            String allianceName = d.getString("allianceName");
+                            if (allianceName == null) allianceName = "Savez";
 
-                        Long inviterUserIdLong = d.getLong("inviterUserId");
-                        int inviterUserId = inviterUserIdLong != null ? inviterUserIdLong.intValue() : 0;
+                            String inviteeName = d.getString("inviteeName");
+                            if (inviteeName == null) inviteeName = "Korisnik";
 
-                        String status = d.getString("status"); // "ACCEPTED" ili "NONE"
+                            Long inviterUserIdLong = d.getLong("inviterUserId");
+                            int inviterUserId = inviterUserIdLong != null ? inviterUserIdLong.intValue() : 0;
 
-                        String inviteStatus = "ACCEPTED".equals(status) ? "Accepted" : "Declined";
+                            String status = d.getString("status"); // "ACCEPTED" ili "NONE"
 
-                        // Notifikacija kreatoru saveza
-                        User user = db.userRepository().getByFirebaseUid(fu.getUid());
+                            String inviteStatus = "ACCEPTED".equals(status) ? "Accepted" : "Declined";
+
+                            // Notifikacija kreatoru saveza
+                            User user = db.userRepository().getByFirebaseUid(fu.getUid());
 //                        if(inviterUserId == user.getUserId())
-                        ftn.project.presentation.notification.Notifier.showInvitationRespond(
-                                getApplicationContext(),
-                                allianceId,
-                                allianceName,
-                                invitationId,
-                                inviteeName,
-                                inviteStatus
-                        );
+                            ftn.project.presentation.notification.Notifier.showInvitationRespond(
+                                    getApplicationContext(),
+                                    allianceId,
+                                    allianceName,
+                                    invitationId,
+                                    inviteeName,
+                                    inviteStatus
+                            );
+                        }
                     }
                 });
     }

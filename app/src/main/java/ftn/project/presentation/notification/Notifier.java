@@ -43,6 +43,8 @@ public final class Notifier {
         Intent decline = new Intent(ctx, AllianceInvitationReceiver.class)
                 .setAction("ftn.project.ACTION_DECLINE_INVITE")
                 .putExtra("inviteId", inviteId)
+                .putExtra("allianceId", allianceId)
+                .putExtra("invitationId", invitationId)
                 .putExtra("notificationId", nid);
         PendingIntent piDecline = PendingIntent.getBroadcast(
                 ctx, nid + 1, decline, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE

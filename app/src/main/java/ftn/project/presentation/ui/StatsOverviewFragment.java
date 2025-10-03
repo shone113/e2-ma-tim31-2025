@@ -53,7 +53,12 @@ public class StatsOverviewFragment extends Fragment {
     }
 
     private void bindData() {
-        int bestStreak    = statsService.getBestStreakDays();
+        int longestStreak = statsService.getBestActivityStreak();
+        tvStreak.setText(Integer.toString(longestStreak));
+
+        int bestStreak = statsService.getBestStreakDays();
+        tvBestStreak.setText(Integer.toString(bestStreak));
+
         Map<String, Integer> missionStats = statsService.getSpecialMissionStats();
         int finished   = missionStats.getOrDefault("Finished", 0);
         int unfinished = missionStats.getOrDefault("Unfinished", 0);
