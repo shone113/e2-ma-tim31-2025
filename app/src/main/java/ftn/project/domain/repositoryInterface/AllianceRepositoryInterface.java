@@ -18,6 +18,6 @@ public interface AllianceRepositoryInterface {
     Alliance getAlliance(int allianceID);
     @Query("SELECT * FROM Alliance WHERE leader_user_id = :userId")
     Alliance getAllianceByUser(int userId);
-    @Query("UPDATE Alliance SET allianceStatus = :allianceStatus")
-    void disbandAlliance(int allianceStatus);
+    @Query("UPDATE Alliance SET allianceStatus = 'DISBANDED' WHERE allianceId = :allianceId")
+    void disbandAlliance(int allianceId);
 }

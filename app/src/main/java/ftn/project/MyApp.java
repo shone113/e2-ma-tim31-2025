@@ -1,5 +1,7 @@
 package ftn.project;
 
+import static java.sql.Types.NULL;
+
 import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -34,6 +36,7 @@ public class MyApp extends Application {
     private ListenerRegistration inviteRespondReg;
     private FirebaseUser fu;
     private  com.google.firebase.Timestamp startTime;
+    private ListenerRegistration allianceDisbandReg;
 
     @Override public void onCreate() {
         super.onCreate();
@@ -66,6 +69,7 @@ public class MyApp extends Application {
 
                         resolveAllianceAndStartListener(fu.getUid(), intId);
                         startInviteRespondListener(fu.getUid());
+                        startAllianceDisbandListener(fu.getUid());
                     });
         });
     }
@@ -203,6 +207,9 @@ public class MyApp extends Application {
     private void tearDownInviteRespondListener() {
         if (inviteRespondReg != null) { inviteRespondReg.remove(); inviteRespondReg = null; }
     }
+    private void tearDownAllianceDisbandListener() {
+        if (allianceDisbandReg != null) { allianceDisbandReg.remove(); allianceDisbandReg = null; }
+    }
     private void startInviteRespondListener(String myUid) {
         tearDownInviteRespondListener();
 
@@ -262,6 +269,34 @@ public class MyApp extends Application {
                                     inviteeName,
                                     inviteStatus
                             );
+                        }
+                    }
+                });
+    }
+
+    private void startAllianceDisbandListener(String myUid){
+        tearDownAllianceDisbandListener();
+        User user = db.userRepository().getByFirebaseUid(myUid);
+
+        FirebaseFirestore fs = FirebaseFirestore.getInstance();
+        allianceDisbandReg = fs.collection("alliances")
+                .whereEqualTo("allianceId", user.getAllianceId())
+                .addSnapshotListener((snap, e) -> {
+                    if (e != null || snap == null) return;
+
+                    for (com.google.firebase.firestore.DocumentChange dc : snap.getDocumentChanges()) {
+
+                        if (dc.getType() != com.google.firebase.firestore.DocumentChange.Type.ADDED &&
+                                dc.getType() != com.google.firebase.firestore.DocumentChange.Type.MODIFIED) continue;
+
+                        var d = dc.getDocument();
+                        String allianceStatus = d.getString("allianceStatus");
+
+                        // Ovde reaguješ SAMO kad status postane ACCEPTED
+                        if ("DISBANDED".equals(allianceStatus)) {
+
+                            db.userRepository().removeFromAlliance(user.getUserId());
+                            Log.w("DISBANDOVANAAAA ALIANSA", "disbanded");
                         }
                     }
                 });

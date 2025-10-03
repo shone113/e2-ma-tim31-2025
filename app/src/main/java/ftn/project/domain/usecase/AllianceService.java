@@ -18,6 +18,7 @@ import java.util.Map;
 
 import ftn.project.data.db.AppDatabase;
 import ftn.project.data.dto.UserFriendDTO;
+import ftn.project.domain.entity.AllianceStatus;
 import ftn.project.domain.entity.User;
 import kotlin.collections.ArrayDeque;
 
@@ -29,7 +30,7 @@ public class AllianceService {
         this.fs = FirebaseFirestore.getInstance();
         db = AppDatabase.getInstance(ctx);
     }
-    public Task<Integer> createAlliance(String name, Integer leaderUserId, Runnable onDone) {
+    public Task<Integer> createAlliance(String name, Integer leaderUserId, AllianceStatus allianceStatus,  Runnable onDone) {
         com.google.firebase.firestore.DocumentReference counterRef =
                 fs.collection("counters").document("alliances");
         DocumentReference allianceRef = fs.collection("alliances").document();
@@ -54,6 +55,7 @@ public class AllianceService {
             data.put("name", name);
             data.put("leaderUserId", leaderUserId);
             data.put("createdAt", com.google.firebase.Timestamp.now());
+            data.put("allianceStatus", allianceStatus);
 
             tr.set(allianceRef, data);
             return (int) next;  // rezultat transakcije
@@ -64,4 +66,32 @@ public class AllianceService {
             Log.e("FS_SYNC", "Failed to create alliance", e);
         });
     }
+
+    public Task<Void> disbandAlliance(int allianceId) {
+        return fs.collection("alliances")
+                .whereEqualTo("allianceId", allianceId)
+                .limit(1)
+                .get()
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful()) throw task.getException();
+                    var snap = task.getResult();
+                    if (snap == null || snap.isEmpty()) {
+                        throw new IllegalStateException("Alliance not found for allianceId=" + allianceId);
+                    }
+
+                    DocumentReference doc = snap.getDocuments().get(0).getReference();
+
+                    Map<String, Object> patch = new HashMap<>();
+                    patch.put("allianceStatus", "DISBANDED");
+                    patch.put("disbandedAt", com.google.firebase.firestore.FieldValue.serverTimestamp());
+
+                    // merge → ne briše postojeća polja (name, leaderUserId, members...)
+                    return doc.set(patch, SetOptions.merge());
+                })
+                .addOnSuccessListener(v -> {
+                    Log.i("FS_SYNC", "Alliance " + allianceId + " disbanded on Firestore");
+                })
+                .addOnFailureListener(e -> Log.e("FS_SYNC", "Disband failed for allianceId=" + allianceId, e));
+    }
+
 }

@@ -90,4 +90,7 @@ public interface UserRepositoryInterface {
 
     @Query("DELETE FROM User WHERE firebaseUid=:firebaseId")
     void deleteByFirebaseUid(String firebaseId);
+
+    @Query("UPDATE User SET alliance_id = NULL WHERE userId = :userId")
+    void removeFromAlliance(int userId);
 }

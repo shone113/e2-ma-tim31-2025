@@ -36,6 +36,7 @@ import ftn.project.data.dto.UserFriendDTO;
 import ftn.project.domain.entity.Alliance;
 import ftn.project.domain.entity.AllianceInvitation;
 import ftn.project.domain.entity.AllianceMessage;
+import ftn.project.domain.entity.AllianceStatus;
 import ftn.project.domain.entity.Friendship;
 import ftn.project.domain.entity.InvitationStatus;
 import ftn.project.domain.entity.User;
@@ -101,6 +102,14 @@ public class AllianceActivity extends AppCompatActivity {
             }else{
                 btnDisband.setVisibility(View.GONE);
             }
+            Alliance currentAlliance = db.allianceRepository().getAlliance(currentAllianceId);
+            if(currentAlliance.getAllianceStatus() == AllianceStatus.ACTIVE){
+                btnDisband.setEnabled(true);
+                btnChat.setEnabled(true);
+            }else{
+                btnDisband.setEnabled(false);
+                btnChat.setEnabled(false);
+            }
         }
 
         btnCreate.setOnClickListener(v -> {
@@ -112,9 +121,11 @@ public class AllianceActivity extends AppCompatActivity {
 
             alliance.setName(etName.getText().toString());
             alliance.setLeaderUserId(loggedUser.getUserId());
+            alliance.setAllianceStatus(AllianceStatus.ACTIVE);
 
             allianceService.createAlliance(etName.getText().toString(),
                             loggedUser.getUserId(),
+                            alliance.getAllianceStatus(),
                             () -> Toast.makeText(getApplicationContext(), "Alliances synced ✔", Toast.LENGTH_SHORT).show()
                     )
                     .addOnSuccessListener(allianceId -> {
@@ -136,6 +147,7 @@ public class AllianceActivity extends AppCompatActivity {
             btnDisband.setVisibility(View.VISIBLE);
             btnDisband.setEnabled(false);
             db.allianceRepository().disbandAlliance(currentAllianceId);
+            allianceService.disbandAlliance(currentAllianceId);
         });
 
         btnChat.setOnClickListener(v -> {
