@@ -42,6 +42,7 @@ import ftn.project.domain.entity.InvitationStatus;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.AllianceService;
 import ftn.project.domain.usecase.FriendshipService;
+import ftn.project.domain.usecase.UserService;
 import ftn.project.presentation.adapter.FriendAdapter;
 import ftn.project.presentation.notification.AllianceInvitationReceiver;
 
@@ -52,6 +53,7 @@ public class AllianceActivity extends AppCompatActivity {
     private ArrayList<UserFriendDTO> friendDTOs;
     private FriendshipService friendshipService;
     private AllianceService allianceService;
+    private UserService userService;
     private AppDatabase db;
     private User loggedUser;
     private ListenerRegistration sentInvitesReg;
@@ -73,6 +75,7 @@ public class AllianceActivity extends AppCompatActivity {
         loggedUser = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
         friendshipService = new FriendshipService();
         allianceService = new AllianceService(this);
+        userService = new UserService(this);
 
         int fromIntent = getIntent().getIntExtra(EXTRA_ALLIANCE_ID, -1);
         if (fromIntent != -1) {
@@ -83,6 +86,7 @@ public class AllianceActivity extends AppCompatActivity {
 
         MaterialButton btnCreate = findViewById(R.id.btnCreateAlliance);
         MaterialButton btnDisband = findViewById(R.id.btnDisbandAlliance);
+        MaterialButton btnLeave = findViewById(R.id.btnLeaveAlliance);
         TextInputEditText etName = findViewById(R.id.etAllianceName);
         MaterialButton btnChat = findViewById(R.id.btnChat);
         if(currentAllianceId == null){
@@ -99,8 +103,11 @@ public class AllianceActivity extends AppCompatActivity {
             showFriends(alliance.getAllianceId(), alliance.getName());
             if(alliance.getLeaderUserId() == loggedUser.getUserId()){
                 btnDisband.setVisibility(View.VISIBLE);
+                btnLeave.setVisibility(View.GONE);
             }else{
+                btnCreate.setVisibility(View.GONE);
                 btnDisband.setVisibility(View.GONE);
+                btnLeave.setVisibility(View.VISIBLE);
             }
             Alliance currentAlliance = db.allianceRepository().getAlliance(currentAllianceId);
             if(currentAlliance.getAllianceStatus() == AllianceStatus.ACTIVE){
@@ -110,6 +117,10 @@ public class AllianceActivity extends AppCompatActivity {
                 btnDisband.setEnabled(false);
                 btnChat.setEnabled(false);
             }
+        }else{
+            btnCreate.setVisibility(View.VISIBLE);
+            btnDisband.setVisibility(View.GONE);
+            btnLeave.setVisibility(View.GONE);
         }
 
         btnCreate.setOnClickListener(v -> {
@@ -147,7 +158,23 @@ public class AllianceActivity extends AppCompatActivity {
             btnDisband.setVisibility(View.VISIBLE);
             btnDisband.setEnabled(false);
             db.allianceRepository().disbandAlliance(currentAllianceId);
+            if(currentAllianceId != null) userService.removeUsersFromAlliance(currentAllianceId);
             allianceService.disbandAlliance(currentAllianceId);
+            allianceService.deleteAllianceInvitesByAllianceId(currentAllianceId)
+                    .addOnSuccessListener(r -> {
+                        db.allianceInvitationRepository().deleteForAlliance(currentAllianceId);
+                        Log.i("FS", "Invite-ovi obrisani za allianceId=" + currentAllianceId);
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("FS", "Greška pri brisanju invite-ova", e);
+                    });
+        });
+
+        //LEAVE
+        btnLeave.setOnClickListener(v -> {
+            db.userRepository().removeFromAlliance(loggedUser.getUserId());
+            btnLeave.setEnabled(false);
+            btnChat.setEnabled(false);
         });
 
         btnChat.setOnClickListener(v -> {

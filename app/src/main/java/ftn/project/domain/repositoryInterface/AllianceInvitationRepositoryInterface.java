@@ -33,4 +33,7 @@ public interface AllianceInvitationRepositoryInterface {
 
     @Query("DELETE FROM AllianceInvitation WHERE invitationId = 1")
     void deleteRow();
+
+    @Query("DELETE FROM AllianceInvitation WHERE allianceId = :allianceId")
+    void deleteForAlliance(int allianceId);
 }

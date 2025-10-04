@@ -43,6 +43,20 @@
         app:layout_constraintTop_toTopOf="@id/tilAllianceName"
         app:layout_constraintBottom_toBottomOf="@id/tilAllianceName" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnLeaveAlliance"
+        android:layout_width="110dp"
+        android:layout_height="60dp"
+        android:layout_marginEnd="16dp"
+        android:text="Leave"
+        android:tooltipText="Leave alliance"
+        android:contentDescription="Leave alliance"
+        app:cornerRadius="10dp"
+        android:padding="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tilAllianceName"
+        app:layout_constraintBottom_toBottomOf="@id/tilAllianceName" />
+
     <!-- DISBAND (initially hidden; appears after creating) -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnDisbandAlliance"

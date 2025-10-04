@@ -9,6 +9,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 
 import java.util.ArrayList;
@@ -92,6 +93,29 @@ public class AllianceService {
                     Log.i("FS_SYNC", "Alliance " + allianceId + " disbanded on Firestore");
                 })
                 .addOnFailureListener(e -> Log.e("FS_SYNC", "Disband failed for allianceId=" + allianceId, e));
+    }
+
+    public Task<Void> deleteAllianceInvitesByAllianceId(int allianceId) {
+        FirebaseFirestore fs = FirebaseFirestore.getInstance();
+
+        return fs.collection("allianceInvites")
+                .whereEqualTo("allianceId", allianceId)
+                .get()
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful()) throw task.getException();
+
+                    QuerySnapshot snap = task.getResult();
+                    if (snap == null || snap.isEmpty()) {
+                        return com.google.android.gms.tasks.Tasks.forResult(null);
+                    }
+
+                    List<Task<Void>> deletes = new ArrayList<>(snap.size());
+                    for (DocumentSnapshot d : snap.getDocuments()) {
+                        deletes.add(d.getReference().delete());
+                    }
+                    // sačekaj da se svi delete pozivi završe
+                    return com.google.android.gms.tasks.Tasks.whenAll(deletes);
+                });
     }
 
 }
