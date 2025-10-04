@@ -175,6 +175,18 @@ public class AllianceActivity extends AppCompatActivity {
             db.userRepository().removeFromAlliance(loggedUser.getUserId());
             btnLeave.setEnabled(false);
             btnChat.setEnabled(false);
+
+            userService.setUserAllianceIdByIntId(loggedUser.getUserId(), null)
+                    .addOnSuccessListener(vv -> {
+                        allianceService.deleteAllianceInvitesByInviteeUserId(currentAllianceId, loggedUser.getUserId())
+                                .addOnSuccessListener(r -> {
+                                    db.allianceInvitationRepository().deleteForAlliance(currentAllianceId);
+                                    Log.i("FS", "Invite-ovi obrisani za allianceId=" + currentAllianceId);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e("FS", "Greška pri brisanju invite-ova", e);
+                                });
+                    });
         });
 
         btnChat.setOnClickListener(v -> {

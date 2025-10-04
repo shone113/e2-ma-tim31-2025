@@ -37,6 +37,8 @@ public class MyApp extends Application {
     private FirebaseUser fu;
     private  com.google.firebase.Timestamp startTime;
     private ListenerRegistration allianceDisbandReg;
+    private ListenerRegistration userAllianceIdReg;
+
 
     @Override public void onCreate() {
         super.onCreate();
@@ -302,6 +304,66 @@ public class MyApp extends Application {
                 });
     }
 
+    private void tearDownUserAllianceIdListener() {
+        if (userAllianceIdReg != null) {
+            userAllianceIdReg.remove();
+            userAllianceIdReg = null;
+        }
+    }
+
+    private void startUserAllianceIdListener(String myUid) {
+        tearDownUserAllianceIdListener();
+
+        // Učitaj lokalnog korisnika (treba ti userId za Room update)
+        User localUser = db.userRepository().getByFirebaseUid(myUid);
+        if (localUser == null) {
+            Log.w("ALLIANCE_SYNC", "Local user not found for uid=" + myUid);
+            return;
+        }
+
+        FirebaseFirestore fs = FirebaseFirestore.getInstance();
+
+        // Ako je user dokument = myUid, može i doc-listener:
+        // userAllianceIdReg = fs.collection("users").document(myUid).addSnapshotListener((d, e) -> { ... });
+
+        userAllianceIdReg = fs.collection("users")
+                .whereEqualTo("firebaseUid", myUid)
+                .limit(1)
+                .addSnapshotListener((snap, e) -> {
+                    if (e != null || snap == null) return;
+
+                    for (com.google.firebase.firestore.DocumentChange dc : snap.getDocumentChanges()) {
+                        if (dc.getType() != com.google.firebase.firestore.DocumentChange.Type.ADDED
+                                && dc.getType() != com.google.firebase.firestore.DocumentChange.Type.MODIFIED) continue;
+
+                        var d = dc.getDocument();
+
+                        // allianceId je Number u Firestore-u (može biti null)
+                        Number n = d.get("allianceId", Number.class);
+                        Integer newAllianceId = (n != null) ? n.intValue() : null;
+
+                        // Uporedi sa lokalnim stanjem da izbegneš nepotrebne upise
+                        Integer oldAllianceId = localUser.getAllianceId();
+                        if (java.util.Objects.equals(oldAllianceId, newAllianceId)) {
+                            Log.d("ALLIANCE_SYNC", "No change in allianceId (still " + oldAllianceId + ")");
+                            continue;
+                        }
+
+                        // Room upis radi van glavne niti
+                        Executors.newSingleThreadExecutor().execute(() -> {
+                            if (newAllianceId == null) {
+                                db.userRepository().removeFromAlliance(localUser.getUserId());
+                                Log.i("ALLIANCE_SYNC", "Removed local alliance for userId=" + localUser.getUserId());
+                            } else {
+                                db.userRepository().updateAllianceId(localUser.getUserId(), newAllianceId);
+                                Log.i("ALLIANCE_SYNC", "Updated local allianceId=" + newAllianceId + " for userId=" + localUser.getUserId());
+                            }
+                            // osveži i u memoriji, ako držiš objekat
+                            localUser.setAllianceId(newAllianceId);
+                        });
+                    }
+                });
+    }
     private void postMain(Runnable r) {
         new Handler(Looper.getMainLooper()).post(r);
     }

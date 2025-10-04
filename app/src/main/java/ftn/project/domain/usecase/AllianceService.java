@@ -118,4 +118,29 @@ public class AllianceService {
                 });
     }
 
+
+    public Task<Void> deleteAllianceInvitesByInviteeUserId(int allianceId, int inviteeUserId) {
+        FirebaseFirestore fs = FirebaseFirestore.getInstance();
+
+        return fs.collection("allianceInvites")
+                .whereEqualTo("allianceId", allianceId)
+                .whereEqualTo("inviteeUserId", inviteeUserId)
+                .get()
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful()) throw task.getException();
+
+                    QuerySnapshot snap = task.getResult();
+                    if (snap == null || snap.isEmpty()) {
+                        return com.google.android.gms.tasks.Tasks.forResult(null);
+                    }
+
+                    List<Task<Void>> deletes = new ArrayList<>(snap.size());
+                    for (DocumentSnapshot d : snap.getDocuments()) {
+                        deletes.add(d.getReference().delete());
+                    }
+                    // sačekaj da se svi delete pozivi završe
+                    return com.google.android.gms.tasks.Tasks.whenAll(deletes);
+                });
+    }
+
 }
