@@ -26,6 +26,7 @@ import ftn.project.R;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.Battle;
 import ftn.project.domain.entity.Boss;
+import ftn.project.domain.entity.Equipment;
 import ftn.project.domain.entity.SpecialMission;
 import ftn.project.domain.entity.SpecialMissionProgress;
 import ftn.project.domain.entity.User;
@@ -37,7 +38,7 @@ public class BattleActivity extends AppCompatActivity {
     private ProgressBar bossHpBar, userPpBar;
     private TextView chanceToHitText, attacksLeftText, bossTitle, userPpText, rewardCoins;
     private Button attackButton;
-    private ImageView bossImageView;
+    private ImageView bossImageView, activeEquipmentImage;
     private MediaPlayer hitSound, missSound;
     private Animation punchAnimation;
 
@@ -102,6 +103,26 @@ public class BattleActivity extends AppCompatActivity {
             userPp = 50;
 
         setupUi();
+        Equipment activeEquipment = db.userEquipmentRepository()
+                .getActiveEquipmentForUser(currentUser.getUserId());
+
+        if (activeEquipment != null && activeEquipment.getImageName() != null) {
+            int resourceId = getResources().getIdentifier(
+                    activeEquipment.getImageName(),
+                    "drawable",
+                    getPackageName()
+            );
+
+            if (resourceId != 0) {
+                activeEquipmentImage.setImageResource(resourceId);
+            } else {
+                // Fallback slika
+                activeEquipmentImage.setImageResource(R.drawable.ic_close);
+            }
+        } else {
+            // Ako nema aktivnog equipmenta, sakrij ili postavi default
+            activeEquipmentImage.setImageResource(R.drawable.shield);
+        }
 
         // 🔹 Kad se završi battle, ide u RewardActivity
         battleService.setBattleResultListener(new BattleService.BattleResultListener() {
@@ -122,7 +143,7 @@ public class BattleActivity extends AppCompatActivity {
                 if (hit) {
                     AppDatabase db = AppDatabase.getInstance(getApplicationContext());
 
-                    bossImageView.startAnimation(punchAnimation);
+                   // bossImageView.startAnimation(punchAnimation);
 
                     // ZVUK
                     if (hitSound.isPlaying()) hitSound.seekTo(0);
@@ -210,10 +231,11 @@ public class BattleActivity extends AppCompatActivity {
         userPpText = findViewById(R.id.userPP);
         attackButton = findViewById(R.id.attackButton);
         bossImageView = findViewById(R.id.bossImage);
+        activeEquipmentImage = findViewById(R.id.activeEquipmentImage);
         rewardCoins = findViewById(R.id.rewardCoins);
         hitSound = MediaPlayer.create(this, R.raw.hit);
         missSound = MediaPlayer.create(this, R.raw.miss);
-        punchAnimation = AnimationUtils.loadAnimation(this, R.drawable.punch);
+       // punchAnimation = AnimationUtils.loadAnimation(this, R.drawable.punch);
     }
 
     private void setupUi() {

@@ -197,7 +197,6 @@ public class RewardActivity extends AppCompatActivity {
             bossService.ensureBossForLevel(userLevel);
         }
 
-        // Level up SAMO JEDNOM ✅
         db.userRepository().updateLevel(user.getUserId(), userLevel + 1);
 
 
