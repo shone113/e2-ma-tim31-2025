@@ -227,22 +227,15 @@
                         android:orientation="horizontal"
                         android:layout_marginTop="8dp">
 
-                        <ImageView
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:src="@drawable/gloves"
-                            android:layout_marginEnd="6dp"/>
 
                         <ImageView
+                            android:id="@+id/activeEquipmentImage"
                             android:layout_width="28dp"
                             android:layout_height="28dp"
                             android:src="@drawable/shield"
                             android:layout_marginEnd="6dp"/>
 
-                        <ImageView
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:src="@drawable/sword"/>
+
                     </LinearLayout>
                 </LinearLayout>
 

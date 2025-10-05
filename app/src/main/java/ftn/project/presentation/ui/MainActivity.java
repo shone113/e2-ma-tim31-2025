@@ -36,6 +36,7 @@ import ftn.project.domain.entity.SpecialMission;
 import ftn.project.domain.entity.SpecialMissionProgress;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.usecase.BattleStartService;
+import ftn.project.domain.usecase.LevelAdvancementService;
 import ftn.project.domain.usecase.LoggedUserService;
 import ftn.project.domain.worker.MissionEndWorker;
 import ftn.project.presentation.notification.Notifier;
@@ -47,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout btnLevelAdvancement, btnTaskCalendar, btnShop, btnNewTask, btnBattle, btnCategories, btnAllUsers;
     private ListenerRegistration inviteReg;
     private AppDatabase db;
+    private LevelAdvancementService levelAdvancementService;
 
     private void scheduleMissionEndWorker(int missionId, LocalDateTime endDate) {
         long delayMillis = ChronoUnit.MILLIS.between(LocalDateTime.now(), endDate);
@@ -135,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
 
 
             // --- Specijalna misija ---
-            btnActSpecMission.setOnClickListener(v -> {
+        btnActSpecMission.setOnClickListener(v -> {
                 List<User> allianceUsers = db.userRepository().getAllUserInAlliance(alliance.getAllianceId());
                 SpecialMission specialMission = new SpecialMission(
                         0,
@@ -186,19 +188,17 @@ public class MainActivity extends AppCompatActivity {
 
         btnBattle.setOnClickListener(v -> {
             FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+            levelAdvancementService = new LevelAdvancementService(db.levelRepository());
             if (firebaseUser == null) return; // safety check
-
-            String firebaseUid = firebaseUser.getUid();
-            User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
-
-            BattleStartService starter = new BattleStartService(this);
-            BattleStartService.BattleStartResult result = starter.startNewBattle(currentUser);
-
-            Intent intent = new Intent(this, BattleActivity.class);
-            intent.putExtra("battleId", result.battleId);
-            intent.putExtra("hitChance", result.hitChance);
+            User currentUser = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
+            int newPP = levelAdvancementService.getPPForLevel(currentUser.getLevel());
+            currentUser.setPowerPoints(newPP);
+            //currentUser.setNewLevelTime(LocalDateTime.now());
+            db.userRepository().update(currentUser);
+            Intent intent = new Intent(this, EquipmentActivationActivity.class);
             startActivity(intent);
         });
+
 
         btnCategories.setOnClickListener(v -> {
             startActivity(new Intent(this, CategoryListActivity.class));

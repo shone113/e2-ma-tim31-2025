@@ -321,7 +321,7 @@ public class AuthActivity extends AppCompatActivity {
                 // Merge inicijalnih polja AKO fale
                 java.util.Map<String, Object> patch = new java.util.HashMap<>();
                 if (snap.get("experiencePoints") == null) patch.put("experiencePoints", 0);
-                if (snap.get("level") == null)           patch.put("level", 3);
+                if (snap.get("level") == null)           patch.put("level", 0);
                 if (snap.get("avatarImage") == null)     patch.put("avatarImage", getResources().getResourceEntryName(selectedAvatarResId));
                 if (!patch.isEmpty()) {
                     userRef.set(patch, com.google.firebase.firestore.SetOptions.merge());
@@ -352,7 +352,7 @@ public class AuthActivity extends AppCompatActivity {
                 data.put("username", username);
                 data.put("avatarImage", getResources().getResourceEntryName(selectedAvatarResId));       // ← NOVO
                 data.put("experiencePoints", 0);           // ← NOVO
-                data.put("level", 3);
+                data.put("level", 0);
                 data.put("createdAt", com.google.firebase.Timestamp.now());
 
                 // DEADLINE za verifikaciju: sada + 24h
@@ -392,7 +392,7 @@ public class AuthActivity extends AppCompatActivity {
                 nu.setUsername(username);
                 nu.setAvatarImage(getResources().getResourceEntryName(selectedAvatarResId));     // ← NOVO
                 nu.setExperiencePoints(0);         // ← NOVO (dodaj field u entitet)
-                nu.setLevel(3);
+                nu.setLevel(0);
                 nu.setNewLevelTime(LocalDateTime.now());
                 db.userRepository().insert(nu);
             } else {

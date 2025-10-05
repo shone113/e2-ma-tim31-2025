@@ -46,4 +46,10 @@ public interface UserEquipmentRepositoryInterface {
 
     @Query("UPDATE UserEquipment SET active = 1 WHERE userEquipmentId = :userEquipmentId")
     void activateEquipment(int userEquipmentId);
+
+    @Query("SELECT e.* FROM Equipment e " +
+            "INNER JOIN UserEquipment ue ON e.equipmentId = ue.equipmentId " +
+            "WHERE ue.userId = :userId AND ue.active = 1 " +
+            "LIMIT 1")
+    Equipment getActiveEquipmentForUser(int userId);
 }

@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.ActiveType;
 import ftn.project.domain.entity.Battle;
 import ftn.project.domain.entity.Boss;
 import ftn.project.domain.entity.Equipment;
@@ -112,11 +113,12 @@ public class BattleService {
                 UserEquipment ue = new UserEquipment();
                 ue.setUserId(battle.getUserId());
                 ue.setEquipmentId(reward.getEquipmentId());
-                ue.setBattleCount(0);
+                if(reward.getActiveType() == ActiveType.ONE_USE)
+                    ue.setBattleCount(1);
+                else
+                    ue.setBattleCount(2);
                 ue.setActive(false);
                 db.userEquipmentRepository().add(ue);
-
-                // umesto " i opremu: sword" → vraćamo samo "sword"
                 return reward.getName(); // ili getName() ako nemaš posebno polje
             }
         }

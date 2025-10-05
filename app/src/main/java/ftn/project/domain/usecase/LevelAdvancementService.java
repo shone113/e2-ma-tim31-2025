@@ -33,7 +33,7 @@ public class LevelAdvancementService {
     }
 
     public boolean hasReachedNextLevel(int userXp, int levelNumber){
-        Level level = levelRepository.getByLevelNumber(levelNumber);
+        Level level = levelRepository.getByLevelNumber(levelNumber + 1);
 
         if(userXp >= level.getRequiredXP()){
             return true;
