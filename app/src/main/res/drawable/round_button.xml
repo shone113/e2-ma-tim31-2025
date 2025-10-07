@@ -1,0 +1,14 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Boja ivice -->
+    <stroke
+        android:width="2dp"
+        android:color="@android:color/black" />
+
+    <!-- Zaobljeni uglovi (ako želiš) -->
+    <corners android:radius="20dp" />
+
+    <!-- Pozadina (npr. bela, da ne bude providno) -->
+    <solid android:color="@android:color/white" />
+</shape>

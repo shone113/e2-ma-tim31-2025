@@ -1,0 +1,26 @@
+package ftn.project.domain.repositoryInterface;
+
+import androidx.room.Dao;
+import androidx.room.Query;
+
+import java.util.List;
+
+import ftn.project.domain.entity.Equipment;
+import ftn.project.domain.entity.EquipmentType;
+import ftn.project.domain.entity.User;
+
+@Dao
+public interface EquipmentRepositoryInterface {
+
+    @Query("SELECT * FROM Equipment")
+    List<Equipment> getAll();
+
+    @Query("SELECT * FROM Equipment WHERE equipmentId = :eid")
+    Equipment getById(int eid);
+
+    @Query("SELECT * FROM Equipment WHERE costPercentageOfReward IS NOT NULL")
+    List<Equipment> getPurchasable();
+
+    @Query("SELECT * FROM Equipment WHERE type = :type")
+    List<Equipment> getAllByType(EquipmentType type);
+}

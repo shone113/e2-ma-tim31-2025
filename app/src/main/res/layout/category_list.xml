@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <!-- Naslov -->
+    <TextView
+        android:id="@+id/tvCategoryTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Kategorije"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Dugme za dodavanje nove kategorije -->
+    <Button
+        android:id="@+id/btnAddCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Dodaj kategoriju"
+        android:layout_gravity="center"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Forma za dodavanje nove kategorije, inicijalno nevidljiva -->
+    <LinearLayout
+        android:id="@+id/layoutNewCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp">
+
+        <!-- Naziv kategorije -->
+        <EditText
+            android:id="@+id/etCategoryName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Naziv kategorije"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Dugme za biranje boje, preko cele širine -->
+        <TextView
+            android:id="@+id/tvPickColor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Odaberi boju"
+            android:textSize="16sp"/>
+        <Button
+            android:id="@+id/btnPickColor"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Dugme za čuvanje -->
+        <Button
+            android:id="@+id/btnSaveCategory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dodaj"/>
+    </LinearLayout>
+
+    <!-- RecyclerView za listu kategorija -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewCategories"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+</LinearLayout>

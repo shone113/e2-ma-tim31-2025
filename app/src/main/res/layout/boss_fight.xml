@@ -1,0 +1,334 @@
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/wall">
+
+    <!-- BOSS TITLE -->
+    <TextView
+        android:id="@+id/bossTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Fight Lvl 1"
+        android:textColor="@android:color/white"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
+    <!-- BOSS HP + IMAGE CARD -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/bossCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="@android:color/transparent"
+        android:layout_margin="16dp"
+        app:layout_constraintTop_toBottomOf="@id/bossTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Background slika -->
+            <ImageView
+                android:id="@+id/bossBackground"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/battleground"
+                android:scaleType="centerCrop"
+                android:adjustViewBounds="true"/>
+
+            <!-- Sadržaj preko slike -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:padding="16dp">
+
+                <!-- HP Bar -->
+                <ProgressBar
+                    android:id="@+id/bossHpBar"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="20dp"
+                    android:progress="180"
+                    android:max="200"
+                    android:progressTint="@android:color/holo_red_light"
+                    android:layout_marginBottom="12dp"/>
+
+                <!-- Boss Image -->
+                <ImageView
+                    android:id="@+id/bossImage"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    android:src="@drawable/boss_2"
+                    android:scaleType="fitCenter"
+                    android:adjustViewBounds="true"/>
+            </LinearLayout>
+        </FrameLayout>
+    </androidx.cardview.widget.CardView>
+
+
+    <!-- REWARDS CARD -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/rewardsCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="@android:color/transparent"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/bossCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Background slika (wood.jpg iz drawable) -->
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:adjustViewBounds="true"
+                android:scaleType="centerCrop"
+                android:src="@drawable/wood" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center">
+                <TextView
+                    android:id="@+id/rewardText"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="Nagrade"
+                    android:textStyle="bold"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/rewardCoinIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/coin" />
+
+                    <TextView
+                        android:id="@+id/rewardCoins"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="200"
+                        android:textColor="@android:color/white"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/rewardEquipment"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="24dp"
+                        android:src="@drawable/boots" />
+                </LinearLayout>
+
+            </LinearLayout>
+            <!-- Rewards sadržaj -->
+
+        </FrameLayout>
+    </androidx.cardview.widget.CardView>
+
+
+    <!-- PLAYER & FIGHT INFO CARD -->
+    <!-- PLAYER & FIGHT INFO CARD -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/fightInfoCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="@android:color/transparent"
+        android:layout_margin="16dp"
+        app:layout_constraintTop_toBottomOf="@id/rewardsCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Background slika (paper.jpg) -->
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="164dp"
+                android:adjustViewBounds="true"
+                android:scaleType="centerCrop"
+                android:src="@drawable/paper" />
+
+            <!-- Sadržaj panela -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp">
+
+                <!-- USER PANEL -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <ImageView
+                        android:id="@+id/userAvatar"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:src="@drawable/avatar_5"/>
+
+                    <TextView
+                        android:id="@+id/userPP"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="PP 145"
+                        android:textColor="@android:color/black"
+                        android:textSize="14sp"
+                        android:layout_marginTop="6dp"/>
+
+                    <ProgressBar
+                        android:id="@+id/userPpBar"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="90dp"
+                        android:layout_height="12dp"
+                        android:progress="145"
+                        android:max="200"
+                        android:progressTint="@android:color/holo_blue_light"
+                        android:layout_marginTop="4dp"/>
+
+                    <!-- Equipment Row -->
+                    <LinearLayout
+                        android:id="@+id/equipmentRow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="8dp">
+
+
+                        <ImageView
+                            android:id="@+id/activeEquipmentImage"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:src="@drawable/shield"
+                            android:layout_marginEnd="6dp"/>
+
+
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- FIGHT INFO -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="8dp">
+
+                    <!-- Chance to Hit -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_close"
+                            app:tint="@android:color/black"
+                            android:layout_marginEnd="6dp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Chance: "
+                            android:textColor="@android:color/black"
+                            android:textSize="14sp"/>
+
+                        <TextView
+                            android:id="@+id/chanceToHit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="67%"
+                            android:textColor="@android:color/holo_green_dark"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:layout_marginStart="4dp"/>
+                    </LinearLayout>
+
+                    <!-- Attacks Left -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/sword"
+                            app:tint="@android:color/black"
+                            android:layout_marginEnd="6dp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Attacks left: "
+                            android:textColor="@android:color/black"
+                            android:textSize="14sp"/>
+
+                        <TextView
+                            android:id="@+id/attacksLeft"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="5"
+                            android:textColor="@android:color/holo_red_dark"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:layout_marginStart="4dp"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
+    </androidx.cardview.widget.CardView>
+
+
+    <!-- ATTACK BUTTON -->
+    <Button
+        android:id="@+id/attackButton"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="ATTACK"
+        android:textAllCaps="true"
+        android:backgroundTint="@android:color/holo_red_dark"
+        app:layout_constraintTop_toBottomOf="@id/fightInfoCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="20dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

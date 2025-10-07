@@ -2,26 +2,140 @@ package ftn.project.data.db;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import androidx.room.TypeConverters;
+import androidx.room.migration.Migration;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
+import ftn.project.domain.entity.Alliance;
+import ftn.project.domain.entity.AllianceInvitation;
+import ftn.project.domain.entity.AllianceMessage;
+import ftn.project.domain.entity.Battle;
+import ftn.project.domain.entity.Boss;
+import ftn.project.domain.entity.Category;
+import ftn.project.domain.entity.Converters;
+import ftn.project.domain.entity.Equipment;
+import ftn.project.domain.entity.Friendship;
+import ftn.project.domain.entity.Level;
+import ftn.project.domain.entity.SpecialMission;
+import ftn.project.domain.entity.SpecialMissionProgress;
+import ftn.project.domain.entity.Task;
+import ftn.project.domain.entity.TaskInstance;
 import ftn.project.domain.entity.User;
+import ftn.project.domain.repositoryInterface.AllianceInvitationRepositoryInterface;
+import ftn.project.domain.repositoryInterface.AllianceMessageRepositoryInterface;
+import ftn.project.domain.repositoryInterface.AllianceRepositoryInterface;
+import ftn.project.domain.repositoryInterface.BattleRepositoryInterface;
+import ftn.project.domain.repositoryInterface.BossRepositoryInterface;
+import ftn.project.domain.entity.UserBadge;
+import ftn.project.domain.repositoryInterface.CategoryRepositoryInterface;
+import ftn.project.domain.entity.UserEquipment;
+import ftn.project.domain.repositoryInterface.EquipmentRepositoryInterface;
+import ftn.project.domain.repositoryInterface.FriendshipRepositoryInterface;
+import ftn.project.domain.repositoryInterface.LevelRepositoryInterface;
+import ftn.project.domain.repositoryInterface.SpecialMissionProgressRepositoryInterface;
+import ftn.project.domain.repositoryInterface.SpecialMissionRepositoryInterface;
+import ftn.project.domain.repositoryInterface.TaskInstanceRepositoryInterface;
+import ftn.project.domain.repositoryInterface.TaskRepositoryInterface;
+import ftn.project.domain.repositoryInterface.UserBadgeRepositoryInterface;
+import ftn.project.domain.repositoryInterface.UserEquipmentRepositoryInterface;
 import ftn.project.domain.repositoryInterface.UserRepositoryInterface;
 
-@Database(entities = {User.class}, version = 1)
+
+@Database(entities = {User.class, Task.class, Category.class, TaskInstance.class,
+        Equipment.class, UserEquipment.class, UserBadge.class, Level.class, Friendship.class,
+        Alliance.class, Battle.class, Boss.class, SpecialMission.class, SpecialMissionProgress.class,
+        AllianceInvitation.class, AllianceMessage.class}, version = 1, exportSchema = false)
+@TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
     public abstract UserRepositoryInterface userRepository();
+    public abstract TaskRepositoryInterface taskRepository();
+    public abstract TaskInstanceRepositoryInterface taskInstanceRepository();
+    public abstract CategoryRepositoryInterface categoryRepository();
+    public abstract EquipmentRepositoryInterface equipmentRepository();
+    public abstract UserEquipmentRepositoryInterface userEquipmentRepository();
+    public abstract BossRepositoryInterface bossRepository();
+    public abstract BattleRepositoryInterface battleRepository();
+    public abstract UserBadgeRepositoryInterface userBadgeRepository();
+    public abstract LevelRepositoryInterface levelRepository();
+    public abstract FriendshipRepositoryInterface friendshipRepository();
+    public abstract AllianceRepositoryInterface allianceRepository();
+    public abstract SpecialMissionProgressRepositoryInterface specialMissionProgressRepository();
+    public abstract SpecialMissionRepositoryInterface specialMissionRepository();
+    public abstract AllianceInvitationRepositoryInterface allianceInvitationRepository();
+    public abstract AllianceMessageRepositoryInterface allianceMessageRepository();
     private static AppDatabase INSTANCE;
+    private static Context appContext;
+
+    static final Migration MIGRATION_1_2 = new Migration(1, 2) {
+        @Override public void migrate(@NonNull SupportSQLiteDatabase db) {
+            // primer: db.execSQL("ALTER TABLE Equipment ADD COLUMN description TEXT");
+        }
+    };
+
+    static final Migration MIGRATION_2_3 = new Migration(2, 3) {
+        @Override public void migrate(@NonNull SupportSQLiteDatabase db) {
+            // primer: db.execSQL("ALTER TABLE Equipment ADD COLUMN description TEXT");
+        }
+    };
 
     public static AppDatabase getInstance(Context context) {
         if (INSTANCE == null) {
+            appContext = context.getApplicationContext();
             INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
-                            AppDatabase.class, "habit_quest.db")
+                     AppDatabase.class, "habit_quest_baza73.db")
+                    //.addMigrations(MIGRATION_1_2)
+                    .addCallback(prepopulateCallback)
                     .allowMainThreadQueries()
                     .build();
         }
         return INSTANCE;
     }
+
+    private static final RoomDatabase.Callback prepopulateCallback =
+            new RoomDatabase.Callback() {
+                @Override
+                public void onCreate(@NonNull SupportSQLiteDatabase db) {
+                    super.onCreate(db);
+                    loadSqlFromAssets(appContext, db,
+                            "sql/insert.sql"
+                    );
+                }
+            };
+
+    private static void loadSqlFromAssets(Context appContext, SupportSQLiteDatabase db, String assetPath) {
+        try (InputStream is = appContext.getAssets().open(assetPath);
+             BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+            String line;
+            StringBuilder stmt = new StringBuilder();
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("--")) continue;
+                stmt.append(line);
+                // ako se komanda završava sa ;
+                if (line.endsWith(";")) {
+                    db.execSQL(stmt.substring(0, stmt.length() - 1)); // ukloni ;
+                    stmt.setLength(0);
+                } else {
+                    stmt.append(' ');
+                }
+            }
+            // poslednja komanda ako nema ;
+            if (stmt.length() > 0) {
+                db.execSQL(stmt.toString().trim());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }

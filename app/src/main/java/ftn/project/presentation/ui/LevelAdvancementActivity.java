@@ -1,0 +1,72 @@
+package ftn.project.presentation.ui;
+
+import android.os.Bundle;
+import android.widget.ImageView;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+import java.util.ArrayList;
+
+import ftn.project.R;
+import ftn.project.data.db.AppDatabase;
+import ftn.project.data.dto.LevelDTO;
+import ftn.project.data.repository.LevelRepository;
+import ftn.project.domain.entity.Level;
+import ftn.project.domain.entity.User;
+import ftn.project.domain.repositoryInterface.LevelRepositoryInterface;
+import ftn.project.domain.usecase.LevelAdvancementService;
+import ftn.project.presentation.adapter.LevelAdvancementAdapter;
+import ftn.project.presentation.adapter.ShopAdapter;
+import ftn.project.presentation.util.StatusBarBinder;
+
+public class LevelAdvancementActivity extends AppCompatActivity {
+
+    private LevelAdvancementAdapter adapter;
+    private LevelAdvancementService levelAdvancementService;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_level_advancement);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+        //status bar
+        TextView tvXP = findViewById(R.id.tvXP);
+        TextView tvPP = findViewById(R.id.tvPP);
+        TextView tvCoins = findViewById(R.id.tvCoins);
+        ImageView ivTitle = findViewById(R.id.ivTitle);
+        StatusBarBinder.bind(this, ivTitle, tvXP, tvPP, tvCoins);
+
+        AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+
+        levelAdvancementService = new LevelAdvancementService(db.levelRepository());
+
+        ArrayList<Level> levels = new ArrayList<>(db.levelRepository().getAll());
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        User user = db.userRepository().getByFirebaseUid(firebaseUser.getUid());
+
+        ArrayList<LevelDTO> levelDTOs = levelAdvancementService.getLevelsForUser(levels, user);
+
+        adapter = new LevelAdvancementAdapter(
+                this,
+                levelDTOs,
+                user.getLevel());
+
+        ListView list = findViewById(R.id.listLevels);
+        list.setAdapter(adapter);
+    }
+}

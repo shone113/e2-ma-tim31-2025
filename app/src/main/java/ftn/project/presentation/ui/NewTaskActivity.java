@@ -1,7 +1,9 @@
 package ftn.project.presentation.ui;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CalendarView;
 import android.widget.EditText;
@@ -15,22 +17,31 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import ftn.project.R;
+import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Category;
 import ftn.project.domain.entity.Task;
-import ftn.project.data.database.DatabaseHelper;
+import ftn.project.domain.entity.TaskInstance;
+import ftn.project.domain.entity.User;
 
 public class NewTaskActivity extends AppCompatActivity {
 
     // polja
-    private EditText etNaziv, etOpis;
+    private EditText etNaziv, etOpis, etInterval;
     private RadioGroup rgUestalost, rgTezina, rgBitnost;
     private CalendarView calendarViewStart, calendarViewEnd;
-    private TimePicker timePicker;
-    private Spinner spinnerFrequencyUnit;
+    private TimePicker startTimeExecution, endTimeExecution;
+    private Spinner spinnerFrequencyUnit, spinnerCategory;
+    private List<Category> categories;
 
     private LocalDate startDate, endDate;
 
@@ -47,8 +58,11 @@ public class NewTaskActivity extends AppCompatActivity {
         rgBitnost = findViewById(R.id.rgBitnost);
         calendarViewStart = findViewById(R.id.calendarViewStart);
         calendarViewEnd = findViewById(R.id.calendarViewEnd);
-        timePicker = findViewById(R.id.timePicker);
         spinnerFrequencyUnit = findViewById(R.id.spinnerFrequencyUnit);
+        spinnerCategory = findViewById(R.id.spinnerCategory);
+        etInterval = findViewById(R.id.intervalText);
+        startTimeExecution = findViewById(R.id.timePickerStart);
+        endTimeExecution = findViewById(R.id.timePickerEnd);
 
         // pamti izabrane datume
         calendarViewStart.setOnDateChangeListener((view, year, month, dayOfMonth) ->
@@ -58,6 +72,9 @@ public class NewTaskActivity extends AppCompatActivity {
                 endDate = LocalDate.of(year, month + 1, dayOfMonth)
         );
 
+        //dobavljanje kategorija
+        getAllCategories();
+
         // dugme Sačuvaj
         Button btnSacuvaj = findViewById(R.id.btnSacuvaj);
         btnSacuvaj.setOnClickListener(v -> saveTask());
@@ -65,14 +82,18 @@ public class NewTaskActivity extends AppCompatActivity {
         // logika za sakrivanje/prikazivanje delova
         LinearLayout startDateContainer = findViewById(R.id.startDateContainer);
         LinearLayout endDateContainer = findViewById(R.id.endDateContainer);
-        LinearLayout timeLinearLayout = findViewById(R.id.timeContainer);
+        LinearLayout timeStartLinearLayout = findViewById(R.id.timeContainer);
+        LinearLayout timeEndLinearLayout = findViewById(R.id.timeContainer2);
         LinearLayout frequencyLayout = findViewById(R.id.frequencyUnitContainer);
         TextView tvPocetniDatum = findViewById(R.id.tvPocetniDatum);
+        EditText intervalNumber = findViewById(R.id.intervalText);
 
         startDateContainer.setVisibility(View.GONE);
         endDateContainer.setVisibility(View.GONE);
-        timeLinearLayout.setVisibility(View.GONE);
+        timeStartLinearLayout.setVisibility(View.GONE);
+        timeEndLinearLayout.setVisibility(View.GONE);
         frequencyLayout.setVisibility(View.GONE);
+        intervalNumber.setVisibility(View.GONE);
 
         rgUestalost.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rbJednokratna) {
@@ -80,33 +101,76 @@ public class NewTaskActivity extends AppCompatActivity {
                 endDateContainer.setVisibility(View.GONE);
                 frequencyLayout.setVisibility(View.GONE);
                 tvPocetniDatum.setText("Datum izvršavanja");
-                timeLinearLayout.setVisibility(View.VISIBLE);
+                timeStartLinearLayout.setVisibility(View.VISIBLE);
+                timeEndLinearLayout.setVisibility(View.VISIBLE);
+                intervalNumber.setVisibility(View.GONE);
             } else if (checkedId == R.id.rbPonavljajuci) {
                 startDateContainer.setVisibility(View.VISIBLE);
                 endDateContainer.setVisibility(View.VISIBLE);
-                timeLinearLayout.setVisibility(View.VISIBLE);
+                timeStartLinearLayout.setVisibility(View.VISIBLE);
+                timeEndLinearLayout.setVisibility(View.VISIBLE);
                 frequencyLayout.setVisibility(View.VISIBLE);
+                intervalNumber.setVisibility(View.VISIBLE);
             }
         });
     }
 
+    private void getAllCategories(){
+        AppDatabase db = AppDatabase.getInstance(this);
+        new Thread(() -> {
+            categories = db.categoryRepository().getAll();
+
+            List<String> names = new ArrayList<>();
+            for (Category c : categories) {
+                names.add(c.getName());
+            }
+
+            runOnUiThread(() -> {
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                        NewTaskActivity.this,
+                        android.R.layout.simple_spinner_item,
+                        names
+                );
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinnerCategory.setAdapter(adapter);
+            });
+        }).start();
+    }
     private void saveTask() {
+        AppDatabase db = AppDatabase.getInstance(this);
         String name = etNaziv.getText().toString();
         String description = etOpis.getText().toString();
+        //Kategorija
+
+        int selectedPosition = spinnerCategory.getSelectedItemPosition();
+        int categoryId = categories.get(selectedPosition).getId();
+
+        //User
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            Toast.makeText(this, "Nema ulogovanog korisnika!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String firebaseUid = firebaseUser.getUid();
+        User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+        if (currentUser == null) {
+            Toast.makeText(this, "Korisnik ne postoji u lokalnoj bazi!", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         // Težina
-        Task.DifficultyEnum difficulty = Task.DifficultyEnum.VERY_EASY;
+        TaskInstance.DifficultyEnum difficulty = TaskInstance.DifficultyEnum.VERY_EASY;
         int selectedDiffId = rgTezina.getCheckedRadioButtonId();
-        if (selectedDiffId == R.id.rbLak) difficulty = Task.DifficultyEnum.EASY;
-        else if (selectedDiffId == R.id.rbTezak) difficulty = Task.DifficultyEnum.HARD;
-        else if (selectedDiffId == R.id.rbEkstremnoTezak) difficulty = Task.DifficultyEnum.EXTREME;
+        if (selectedDiffId == R.id.rbLak) difficulty = TaskInstance.DifficultyEnum.EASY;
+        else if (selectedDiffId == R.id.rbTezak) difficulty = TaskInstance.DifficultyEnum.HARD;
+        else if (selectedDiffId == R.id.rbEkstremnoTezak) difficulty = TaskInstance.DifficultyEnum.EXTREME;
 
         // Bitnost
-        Task.ImportanceEnum importance = Task.ImportanceEnum.NORMAL;
+        TaskInstance.ImportanceEnum importance = TaskInstance.ImportanceEnum.NORMAL;
         int selectedImpId = rgBitnost.getCheckedRadioButtonId();
-        if (selectedImpId == R.id.rbVazan) importance = Task.ImportanceEnum.IMPORTANT;
-        else if (selectedImpId == R.id.rbEkstremnoVazan) importance = Task.ImportanceEnum.VERY_IMPORTANT;
-        else if (selectedImpId == R.id.rbSpecijalan) importance = Task.ImportanceEnum.SPECIAL;
+        if (selectedImpId == R.id.rbVazan) importance = TaskInstance.ImportanceEnum.IMPORTANT;
+        else if (selectedImpId == R.id.rbEkstremnoVazan) importance = TaskInstance.ImportanceEnum.VERY_IMPORTANT;
+        else if (selectedImpId == R.id.rbSpecijalan) importance = TaskInstance.ImportanceEnum.SPECIAL;
 
         // Učestalost
         Task.FrequencyEnum frequency = Task.FrequencyEnum.ONE_TIME;
@@ -115,40 +179,86 @@ public class NewTaskActivity extends AppCompatActivity {
         if (rgUestalost.getCheckedRadioButtonId() == R.id.rbPonavljajuci) {
             frequency = Task.FrequencyEnum.REPEATING;
             String selectedUnit = spinnerFrequencyUnit.getSelectedItem().toString();
-            frequencyUnit = selectedUnit.equals("DAY") ? Task.FrequencyUnitEnum.DAY : Task.FrequencyUnitEnum.WEEK;
-            interval = 1; // možeš kasnije dodati input za interval
+            frequencyUnit = selectedUnit.equals("Dani") ? Task.FrequencyUnitEnum.DAY : Task.FrequencyUnitEnum.WEEK;
+
+            String intervalStr = etInterval.getText().toString();
+            interval = (!intervalStr.isEmpty()) ? Integer.parseInt(intervalStr) : 1;
         }
 
-        // Datum + vreme
-        int hour = timePicker.getHour();
-        int minute = timePicker.getMinute();
-        LocalTime time = LocalTime.of(hour, minute);
+        // Ako startDate/endDate nisu postavljeni, podesi ih na danas
+        if (startDate == null) startDate = LocalDate.now();
+        if (endDate == null) endDate = LocalDate.now();
 
-        LocalDateTime startDateTime = startDate != null ? startDate.atTime(time) : null;
-        LocalDateTime endDateTime = (frequency == Task.FrequencyEnum.REPEATING && endDate != null) ? endDate.atTime(time) : null;
+        int startHour = startTimeExecution.getHour();
+        int startMinute = startTimeExecution.getMinute();
+        LocalTime startTime = LocalTime.of(startHour, startMinute);
 
-        // Napravi task
+        int endHour = endTimeExecution.getHour();
+        int endMinute = endTimeExecution.getMinute();
+        LocalTime endTime = LocalTime.of(endHour, endMinute);
+
+        LocalDateTime startDateTime = startDate.atTime(startTime);
+        LocalDateTime endDateTime = endDate.atTime(endTime);
+
+        // Napravi Task
         Task task = new Task(
                 0,
-                1, // userId test
-                1, // categoryId = 1
-                difficulty,
-                importance,
+                currentUser.getUserId(),
+                categoryId,
                 frequency,
                 interval != null ? interval : 0,
                 frequencyUnit,
                 startDateTime,
                 endDateTime,
                 name,
-                description,
-                startDateTime,
-                Task.TaskStatusEnum.ACTIVE
+                description
         );
 
-        // Snimi u bazu
-        DatabaseHelper db = new DatabaseHelper(this);
-        db.insertTask(task);
+        long taskId = db.taskRepository().insert(task);
+
+        // Kreiraj TaskInstance
+        if (frequency == Task.FrequencyEnum.REPEATING) {
+            LocalDateTime current = startDateTime;
+            while (!current.isAfter(endDateTime)) {
+                TaskInstance instance = new TaskInstance(
+                        0,
+                        (int) taskId,
+                        importance,
+                        difficulty,
+                        current,
+                        current.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
+                        TaskInstance.TaskStatusEnum.ACTIVE,
+                        0,
+                        0,
+                        false
+                );
+                instance.setValueXp(instance.computeDifficultyXpForLevel(currentUser.getLevel()) +
+                        instance.computeImportanceXpForLevel(currentUser.getLevel()));
+                db.taskInstanceRepository().insert(instance);
+
+                if (frequencyUnit == Task.FrequencyUnitEnum.DAY) current = current.plusDays(interval);
+                else current = current.plusWeeks(interval);
+            }
+        } else {
+            // jednokratni zadatak - uvek kreiraj instancu
+            TaskInstance instance = new TaskInstance(
+                    0,
+                    (int) taskId,
+                    importance,
+                    difficulty,
+                    startDateTime,
+                    startDateTime.withHour(endTime.getHour()).withMinute(endTime.getMinute()),
+                    TaskInstance.TaskStatusEnum.ACTIVE,
+                    0,
+                    0,
+                    false
+            );
+            instance.setValueXp(instance.computeDifficultyXpForLevel(currentUser.getLevel()) +
+                    instance.computeImportanceXpForLevel(currentUser.getLevel()));
+            db.taskInstanceRepository().insert(instance);
+        }
 
         Toast.makeText(this, "Zadatak sačuvan!", Toast.LENGTH_SHORT).show();
     }
+
 }

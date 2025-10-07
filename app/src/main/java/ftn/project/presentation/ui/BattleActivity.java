@@ -1,0 +1,295 @@
+package ftn.project.presentation.ui;
+
+import android.content.Context;
+import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.media.MediaPlayer;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+import ftn.project.R;
+import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Battle;
+import ftn.project.domain.entity.Boss;
+import ftn.project.domain.entity.Equipment;
+import ftn.project.domain.entity.SpecialMission;
+import ftn.project.domain.entity.SpecialMissionProgress;
+import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.BattleService;
+import ftn.project.domain.usecase.SpecialMissionProgressService;
+
+public class BattleActivity extends AppCompatActivity {
+
+    private ProgressBar bossHpBar, userPpBar;
+    private TextView chanceToHitText, attacksLeftText, bossTitle, userPpText, rewardCoins;
+    private Button attackButton;
+    private ImageView bossImageView, activeEquipmentImage;
+    private MediaPlayer hitSound, missSound;
+    private Animation punchAnimation;
+
+    private Boss currentBoss;
+    private Battle currentBattle;
+
+    private int userPp;
+    private int hitChance;
+
+    private BattleService battleService;
+    private SpecialMissionProgressService specialMissionProgressService;
+    private AppDatabase db;
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private SensorEventListener shakeListener;
+
+    private static final float SHAKE_THRESHOLD = 15f; // koliko jako treba da se protrese
+    private long lastShakeTime = 0;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.boss_fight);
+
+        initViews();
+        battleService = new BattleService(this);
+        db = AppDatabase.getInstance(this);
+        specialMissionProgressService = new SpecialMissionProgressService(
+                db.specialMissionRepository(),
+                db.specialMissionProgressRepository(),
+                db.taskInstanceRepository(),
+                db.allianceMessageRepository()
+        );
+
+        int battleId = getIntent().getIntExtra("battleId", -1);
+        hitChance = getIntent().getIntExtra("hitChance", -1);
+        if (battleId == -1) {
+            Toast.makeText(this, "Greška: battleId nije prosleđen", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        currentBattle = db.battleRepository().getBattleById(battleId);
+        if (currentBattle == null) {
+            Toast.makeText(this, "Greška: nema battle-a u bazi", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        currentBoss = db.bossRepository().getBossById(currentBattle.getBossId());
+        if (currentBoss == null) {
+            Toast.makeText(this, "Greška: nema bossa u bazi", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        String firebaseUid = firebaseUser.getUid();
+        User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+        userPp = currentUser.getPowerPoints();
+        if (userPp == 0)
+            userPp = 50;
+
+        setupUi();
+        Equipment activeEquipment = db.userEquipmentRepository()
+                .getActiveEquipmentForUser(currentUser.getUserId());
+
+        if (activeEquipment != null && activeEquipment.getImageName() != null) {
+            int resourceId = getResources().getIdentifier(
+                    activeEquipment.getImageName(),
+                    "drawable",
+                    getPackageName()
+            );
+
+            if (resourceId != 0) {
+                activeEquipmentImage.setImageResource(resourceId);
+            } else {
+                // Fallback slika
+                activeEquipmentImage.setImageResource(R.drawable.ic_close);
+            }
+        } else {
+            // Ako nema aktivnog equipmenta, sakrij ili postavi default
+            activeEquipmentImage.setImageResource(R.drawable.shield);
+        }
+
+        // 🔹 Kad se završi battle, ide u RewardActivity
+        battleService.setBattleResultListener(new BattleService.BattleResultListener() {
+            @Override
+            public void onBattleFinished(Battle battle, int coins, String equipmentIcon) {
+                Intent rewardIntent = new Intent(BattleActivity.this, RewardActivity.class);
+                rewardIntent.putExtra("coins", coins);
+                rewardIntent.putExtra("equipment", equipmentIcon);
+                rewardIntent.putExtra("battleId", battle.getId());
+                rewardIntent.putExtra("hitChance", hitChance);
+                startActivity(rewardIntent);
+                finish();
+            }
+
+
+            @Override
+            public void onAttackResult(boolean hit, Battle battle, Boss boss) {
+                if (hit) {
+                    AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+
+                   // bossImageView.startAnimation(punchAnimation);
+
+                    // ZVUK
+                    if (hitSound.isPlaying()) hitSound.seekTo(0);
+                    hitSound.start();
+
+                    if (specialMissionProgressService.punchByBattle(currentUser.getUserId())) {
+                        SpecialMission specialMission = specialMissionProgressService.getActiveMission(currentUser.getUserId());
+                        if (specialMission != null) {
+                            SpecialMissionProgress smp = specialMissionProgressService
+                                    .getActiveMissionProgress(specialMission.getId(), currentUser.getUserId());
+
+                            if (smp != null) {
+                                smp.setRegularBossHits(smp.getRegularBossHits() + 1);
+                                smp.setTotalDamage(smp.getTotalDamage() + 2);
+                                db.specialMissionProgressRepository().update(smp);
+
+                                specialMission.setBossHp(specialMission.getBossHp() - 2);
+                                db.specialMissionRepository().update(specialMission);
+                            }
+                        }
+                    }
+                }
+                else {
+                    Toast.makeText(BattleActivity.this, "Promašaj!", Toast.LENGTH_SHORT).show();
+
+                    // ZVUK
+                    if (missSound.isPlaying()) missSound.seekTo(0);
+                    missSound.start();
+
+                }
+            }
+
+        });
+
+
+
+        attackButton.setOnClickListener(v -> {
+            Log.d("BattleActivity", "Attack button clicked!");
+            battleService.performAttack(
+                    currentBattle,
+                    currentBoss,
+                    userPp,
+                    hitChance,
+                    this::onBattleUpdate
+            );
+        });
+        // 🔹 Setup senzora za shake
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        shakeListener = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                float x = event.values[0];
+                float y = event.values[1];
+                float z = event.values[2];
+
+                double acceleration = Math.sqrt(x * x + y * y + z * z) - SensorManager.GRAVITY_EARTH;
+
+                long now = System.currentTimeMillis();
+                if (acceleration > SHAKE_THRESHOLD && (now - lastShakeTime) > 1000) {
+                    lastShakeTime = now;
+                    battleService.performAttack(
+                            currentBattle,
+                            currentBoss,
+                            userPp,
+                            hitChance,
+                            () -> onBattleUpdate()
+                    );
+                }
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+        };
+    }
+
+
+    private void initViews() {
+        bossHpBar = findViewById(R.id.bossHpBar);
+        userPpBar = findViewById(R.id.userPpBar);
+        chanceToHitText = findViewById(R.id.chanceToHit);
+        attacksLeftText = findViewById(R.id.attacksLeft);
+        bossTitle = findViewById(R.id.bossTitle);
+        userPpText = findViewById(R.id.userPP);
+        attackButton = findViewById(R.id.attackButton);
+        bossImageView = findViewById(R.id.bossImage);
+        activeEquipmentImage = findViewById(R.id.activeEquipmentImage);
+        rewardCoins = findViewById(R.id.rewardCoins);
+        hitSound = MediaPlayer.create(this, R.raw.hit);
+        missSound = MediaPlayer.create(this, R.raw.miss);
+       // punchAnimation = AnimationUtils.loadAnimation(this, R.drawable.punch);
+    }
+
+    private void setupUi() {
+        bossHpBar.setMax(currentBoss.getMaxHp());
+        bossHpBar.setProgress(currentBoss.getHp());
+
+        userPpBar.setMax(200);
+        userPpBar.setProgress(userPp);
+
+        bossTitle.setText("Fight Lvl " + currentBoss.getLevel());
+        userPpText.setText("PP " + userPp);
+
+        rewardCoins.setText(String.valueOf(currentBoss.getCoinReward()));
+
+        chanceToHitText.setText(hitChance + "%");
+        attacksLeftText.setText(String.valueOf(currentBattle.getAttacksRemaining()));
+
+        int imageResId = getResources().getIdentifier(
+                currentBoss.getBossImage(),
+                "drawable",
+                getPackageName()
+        );
+        if (imageResId != 0) {
+            bossImageView.setImageResource(imageResId);
+        } else {
+            bossImageView.setImageResource(R.drawable.boss_2); // fallback
+        }
+    }
+
+    /**
+     * Poziva se posle svakog napada
+     */
+    private void onBattleUpdate() {
+        runOnUiThread(() -> {
+            bossHpBar.setProgress(currentBoss.getHp());
+            attacksLeftText.setText(String.valueOf(currentBattle.getAttacksRemaining()));
+
+            if (currentBattle.isFinished() || currentBattle.getAttacksRemaining() == 0) {
+                attackButton.setEnabled(false);
+                // ❌ nema više checkForNextBattle → to ide posle RewardActivity
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        sensorManager.registerListener(shakeListener, accelerometer, SensorManager.SENSOR_DELAY_UI);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        sensorManager.unregisterListener(shakeListener);
+    }
+
+}

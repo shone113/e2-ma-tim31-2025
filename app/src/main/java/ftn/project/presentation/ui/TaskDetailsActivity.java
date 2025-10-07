@@ -1,0 +1,398 @@
+package ftn.project.presentation.ui;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.Executors;
+
+import ftn.project.R;
+import ftn.project.data.db.AppDatabase;
+import ftn.project.domain.entity.Category;
+import ftn.project.domain.entity.SpecialMission;
+import ftn.project.domain.entity.SpecialMissionProgress;
+import ftn.project.domain.entity.Task;
+import ftn.project.domain.entity.TaskInstance;
+import ftn.project.domain.entity.TaskInstanceWithTask;
+import ftn.project.domain.entity.User;
+import ftn.project.domain.usecase.BattleStartService;
+import ftn.project.domain.usecase.CheckQuotaService;
+import ftn.project.domain.usecase.LevelAdvancementService;
+import ftn.project.domain.usecase.LoggedUserService;
+import ftn.project.domain.usecase.SpecialMissionProgressService;
+
+public class TaskDetailsActivity extends AppCompatActivity {
+
+    private TextView tvName, tvDescription, tvStatus, tvStartExecutionTime, tvEndExecutionTime,
+            tvDifficulty, tvImportance, tvFrequency, tvXP, tvTaskCategory;
+    private Button btnDone, btnCanceled, btnPaused, btnUpdateTask, btnDeleteTask;
+    private SpecialMissionProgressService smps;
+    private LevelAdvancementService levelAdvancementService;
+
+    private int taskInstanceId;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.task_details);
+
+        tvName = findViewById(R.id.tvTaskName);
+        tvDescription = findViewById(R.id.tvTaskDescription);
+        tvStatus = findViewById(R.id.tvTaskStatus);
+        tvStartExecutionTime = findViewById(R.id.tvTaskStartExecutionTime);
+        tvEndExecutionTime = findViewById(R.id.tvTaskEndExecutionTime);
+        tvDifficulty = findViewById(R.id.tvTaskDifficulty);
+        tvImportance = findViewById(R.id.tvTaskImportance);
+        tvFrequency = findViewById(R.id.tvTaskFrequency);
+        tvXP = findViewById(R.id.tvTaskXP);
+        tvTaskCategory = findViewById(R.id.tvTaskCategory);
+
+        btnDone = findViewById(R.id.btnDone);
+        btnCanceled = findViewById(R.id.btnCanceled);
+        btnPaused = findViewById(R.id.btnPaused);
+        btnUpdateTask = findViewById(R.id.btnUpdateTask);
+        btnDeleteTask = findViewById(R.id.btnDeleteTask);
+
+        // Čuvamo taskInstanceId
+        taskInstanceId = getIntent().getIntExtra("task_instance_id", -1);
+
+        btnUpdateTask.setOnClickListener(v -> {
+            Intent intent = new Intent(TaskDetailsActivity.this, TaskEditActivity.class);
+            intent.putExtra("task_instance_id", taskInstanceId);
+            startActivity(intent);
+        });
+
+
+        if (taskInstanceId != -1) {
+            loadTaskDetails(taskInstanceId);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (taskInstanceId != -1) {
+            loadTaskDetails(taskInstanceId);
+
+        }
+    }
+
+    private void loadTaskDetails(int taskInstanceId) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            TaskInstanceWithTask taskAndInstance = db.taskInstanceRepository().getTaskInstanceWithTaskById(taskInstanceId);
+            int categoryId = taskAndInstance.task.getCategoryId();
+            Category category = db.categoryRepository().getCategory(categoryId);
+            runOnUiThread(() -> {
+                if (taskAndInstance != null) {
+                    tvName.setText(taskAndInstance.task.getName());
+                    tvDescription.setText(taskAndInstance.task.getDescription());
+                    tvStatus.setText("Status: " + taskAndInstance.taskInstance.getStatus().name());
+                    tvStartExecutionTime.setText("Datum i vreme pocetka zadatka: " +
+                            taskAndInstance.taskInstance.getStartExecutionTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+                    tvEndExecutionTime.setText("Datum i vreme kraja zadatka: " +
+                            taskAndInstance.taskInstance.getEndExecutionTime().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+                    tvDifficulty.setText("Težina: " + taskAndInstance.taskInstance.getDifficultyInstance().name());
+                    tvImportance.setText("Važnost: " + taskAndInstance.taskInstance.getImportanceInstance().name());
+                    tvFrequency.setText("Tip zadatka: " + taskAndInstance.task.getFrequency().name());
+                    tvXP.setText("Vrednost XP: " + taskAndInstance.taskInstance.getValueXp());
+                    tvTaskCategory.setText("Kategorija: "+ category.getName());
+                    configureUpdateButton(taskAndInstance);
+                    configureDeleteButton(taskAndInstance);
+                    configureStatusButtons(taskAndInstance);
+                }
+            });
+        });
+    }
+
+    private void configureUpdateButton(TaskInstanceWithTask taskAndInstance) {
+        TaskInstance.TaskStatusEnum status = taskAndInstance.taskInstance.getStatus();
+        LocalDateTime now = LocalDateTime.now();
+
+        if (status == TaskInstance.TaskStatusEnum.DONE || taskAndInstance.taskInstance.getEndExecutionTime().isBefore(now)) {
+            btnUpdateTask.setEnabled(false);
+        } else if (taskAndInstance.task.getFrequency() == Task.FrequencyEnum.REPEATING &&
+                ((now.isBefore(taskAndInstance.taskInstance.getEndExecutionTime()) &&
+                        now.isAfter(taskAndInstance.taskInstance.getStartExecutionTime()))
+                        || taskAndInstance.taskInstance.getEndExecutionTime().isBefore(now))) {
+            btnUpdateTask.setEnabled(false);
+        } else {
+            btnUpdateTask.setEnabled(true);
+        }
+    }
+
+    private void configureStatusButtons(TaskInstanceWithTask taskAndInstance) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.ACTIVE &&
+                taskAndInstance.taskInstance.getEndExecutionTime().plusDays(3).isBefore(now))
+        {
+            updateTaskStatus(taskAndInstance,TaskInstance.TaskStatusEnum.UNFINISHED);
+            btnDone.setEnabled(false);
+            btnPaused.setEnabled(false);
+            btnCanceled.setEnabled(false);
+            btnDeleteTask.setEnabled(false);
+            btnUpdateTask.setEnabled(false);
+            Toast.makeText(this, "Zadatak je istekao i označen kao neurađen", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if(!taskAndInstance.taskInstance.getEndExecutionTime().plusDays(3).isBefore(now)) {
+            if (taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.CANCELED ||
+                    taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.UNFINISHED ||
+                    taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.DONE) {
+                btnDone.setEnabled(false);
+                btnPaused.setEnabled(false);
+                btnCanceled.setEnabled(false);
+                btnDeleteTask.setEnabled(false);
+                btnUpdateTask.setEnabled(false);
+            }
+            if (taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.PAUSED &&
+                    taskAndInstance.task.getFrequency() == Task.FrequencyEnum.REPEATING) {
+                btnDone.setEnabled(false);
+                btnCanceled.setEnabled(false);
+                btnDeleteTask.setEnabled(false);
+                btnUpdateTask.setEnabled(true);
+
+                btnPaused.setText("Aktiviraj");
+                btnPaused.setEnabled(true);
+                //btnActive.setEnabled(true);
+                btnPaused.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.ACTIVE));
+            } else {
+                btnPaused.setText("Pauziran");
+                btnPaused.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.PAUSED));
+            }
+            if (taskAndInstance.taskInstance.getStatus() == TaskInstance.TaskStatusEnum.ACTIVE) {
+                if (taskAndInstance.task.getFrequency() == Task.FrequencyEnum.REPEATING)
+                    btnPaused.setEnabled(true);
+                else
+                    btnPaused.setEnabled(false);
+                btnDone.setEnabled(true);
+                btnCanceled.setEnabled(true);
+                btnDeleteTask.setEnabled(true);
+                btnUpdateTask.setEnabled(true);
+            }
+        }
+        else
+        {
+            btnDone.setEnabled(false);
+            btnPaused.setEnabled(false);
+            btnCanceled.setEnabled(false);
+            btnDeleteTask.setEnabled(false);
+            btnUpdateTask.setEnabled(false);
+        }
+
+        btnDone.setOnClickListener(v -> {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                AppDatabase db = AppDatabase.getInstance(this);
+                LoggedUserService loggedService = new LoggedUserService(this);
+                User user = loggedService.getCurrentUser();
+                smps = new SpecialMissionProgressService(
+                        db.specialMissionRepository(),
+                        db.specialMissionProgressRepository(),
+                        db.taskInstanceRepository(),
+                        db.allianceMessageRepository()
+                );
+
+                // ✅ Izračunaj XP na osnovu kvota
+                int earnedXp = CheckQuotaService.calculateEarnedXP(taskAndInstance.taskInstance,user.getUserId(),user.getLevel(), db);
+
+
+                taskAndInstance.taskInstance.setStatus(TaskInstance.TaskStatusEnum.DONE);
+                taskAndInstance.taskInstance.setEarnedXp(earnedXp);
+
+                // ✅ Update baze: status + XP + withinQuota flag
+                db.taskInstanceRepository().updateStatus(
+                        taskAndInstance.taskInstance.getId(),
+                        TaskInstance.TaskStatusEnum.DONE
+                );
+                db.taskInstanceRepository().updateEarnedXpAndQuota(
+                        taskAndInstance.taskInstance.getId(),
+                        earnedXp,
+                        taskAndInstance.taskInstance.isWithinQuota()
+                );
+
+                // ✅ Ako ima XP, dodaj korisniku
+                if (earnedXp > 0) {
+                    updateLoggedUserPoints(taskAndInstance.task.getUserId(), earnedXp);
+                }
+                int increment = smps.punchByEasyTaskIncrement(user.getUserId(), taskAndInstance.taskInstance);
+                int incrementHard = smps.punchByHardTaskIncerement(user.getUserId(), taskAndInstance.taskInstance);
+                if (increment > 0) {
+                    SpecialMission mission = smps.getActiveMission(user.getUserId());
+                    SpecialMissionProgress smp = smps.getActiveMissionProgress(mission.getId(), user.getUserId());
+
+
+                    smp.setEasyNormalTasks(smp.getEasyNormalTasks() + increment);
+                    smp.setTotalDamage(smp.getTotalDamage() + increment);
+
+                    db.specialMissionProgressRepository().update(smp);
+
+                    mission.setBossHp(mission.getBossHp() - increment);
+                    db.specialMissionRepository().update(mission);
+                }
+
+                if(incrementHard > 0)
+                {
+                    SpecialMission mission = smps.getActiveMission(user.getUserId());
+                    SpecialMissionProgress smp = smps.getActiveMissionProgress(mission.getId(), user.getUserId());
+
+                    smp.setOtherTasks(smp.getOtherTasks() + incrementHard);
+                    smp.setTotalDamage(smp.getTotalDamage() + incrementHard * 4);
+
+                    db.specialMissionProgressRepository().update(smp);
+
+                    mission.setBossHp(mission.getBossHp() - incrementHard * 4);
+                    db.specialMissionRepository().update(mission);
+                }
+
+                // ✅ Refresh UI odmah
+                runOnUiThread(() -> {
+                    tvStatus.setText("Status: DONE");
+                    Toast.makeText(this, "Zadatak završen! Dobio si " + earnedXp + " XP", Toast.LENGTH_SHORT).show();
+
+                    configureUpdateButton(taskAndInstance);
+                    configureDeleteButton(taskAndInstance);
+                    configureStatusButtons(taskAndInstance);
+                });
+            });
+        });
+
+        btnCanceled.setOnClickListener(v -> updateTaskStatus(taskAndInstance, TaskInstance.TaskStatusEnum.CANCELED));
+    }
+
+    private void updateLoggedUserPoints(int userId, int xPValue) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+            if (firebaseUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Nema aktivnog korisnika!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            String firebaseUid = firebaseUser.getUid();
+            User currentUser = db.userRepository().getByFirebaseUid(firebaseUid);
+
+            if (currentUser == null) {
+                runOnUiThread(() -> Toast.makeText(this, "Korisnik nije pronađen!", Toast.LENGTH_SHORT).show());
+                return;
+            }
+            levelAdvancementService = new LevelAdvancementService(db.levelRepository());
+            int oldXP = currentUser.getExperiencePoints();
+            int newXP = oldXP + xPValue;
+            boolean isNewLevel = levelAdvancementService.hasReachedNextLevel(newXP, currentUser.getLevel());
+            if (userId == currentUser.getUserId()) {
+                db.userRepository().updateExperiencePoints(userId, newXP);
+
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Dodato " + xPValue + " XP (ukupno: " + newXP + ")", Toast.LENGTH_SHORT).show()
+                );
+                if(isNewLevel)
+                {
+                    int newPP = levelAdvancementService.getPPForLevel(currentUser.getLevel());
+                    currentUser.setPowerPoints(newPP);
+                    db.userRepository().update(currentUser);
+                    BattleStartService starter = new BattleStartService(this);
+                    BattleStartService.BattleStartResult result = starter.startNewBattle(currentUser);
+
+                    Intent intent = new Intent(this, BattleActivity.class);
+                    intent.putExtra("battleId", result.battleId);
+                    intent.putExtra("hitChance", result.hitChance);
+                    startActivity(intent);
+                    currentUser.setNewLevelTime(LocalDateTime.now());
+                    db.userRepository().update(currentUser);
+                }
+            } else {
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Nije pravilan korisnik!", Toast.LENGTH_SHORT).show()
+                );
+            }
+        });
+    }
+
+    private void updateTaskStatus(TaskInstanceWithTask taskAndInstance, TaskInstance.TaskStatusEnum newStatus) {
+        taskAndInstance.taskInstance.setStatus(newStatus);
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+            db.taskInstanceRepository().updateStatus(taskAndInstance.taskInstance.getId(), taskAndInstance.taskInstance.getStatus());
+        });
+
+        runOnUiThread(() -> {
+            tvStatus.setText("Status: " + newStatus.name());
+            Toast.makeText(this, "Status uspešno ažuriran!", Toast.LENGTH_SHORT).show();
+            configureUpdateButton(taskAndInstance);
+            configureDeleteButton(taskAndInstance);
+            configureStatusButtons(taskAndInstance);
+        });
+    }
+    private void configureDeleteButton(TaskInstanceWithTask taskAndInstance) {
+        TaskInstance.TaskStatusEnum status = taskAndInstance.taskInstance.getStatus();
+        LocalDateTime now = LocalDateTime.now();
+        if(status == TaskInstance.TaskStatusEnum.DONE || now.isAfter(taskAndInstance.taskInstance.getEndExecutionTime()))
+            btnDeleteTask.setEnabled(false);
+        else
+        {
+            btnDeleteTask.setEnabled(true);
+            btnDeleteTask.setOnClickListener(v -> {
+                deleteTaskAndInstances(taskAndInstance);
+            });
+        }
+    }
+    private void deleteTaskAndInstances(TaskInstanceWithTask taskAndInstance) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = AppDatabase.getInstance(this);
+
+            Task task = taskAndInstance.task;
+            TaskInstance instance = taskAndInstance.taskInstance;
+
+            LocalDateTime now = LocalDateTime.now();
+
+            // ovo cisto radi preventive, necemo ni dopustiti da bude enable dugme za brisanje
+            if (instance.getStatus() != TaskInstance.TaskStatusEnum.ACTIVE
+                    || instance.getStartExecutionTime().isBefore(now)) {
+                runOnUiThread(() ->
+                        Toast.makeText(this, "Nije moguće obrisati završen zadatak!", Toast.LENGTH_SHORT).show()
+                );
+                return;
+            }
+
+            boolean isAnyInstanceCompleted = db.taskInstanceRepository().hasLockedInstances(task.getId(),now);
+            // ovo vazi za jednokratne, tu brisemo i instancu i task
+            if (task.getFrequency() == Task.FrequencyEnum.ONE_TIME && !isAnyInstanceCompleted) {
+                db.taskInstanceRepository().deleteByTaskId(task.getId());
+                db.taskRepository().delete(task);
+            }
+
+            // ponavljajuci, ako imamo neku instancu taska koja je izvrsena, onda ne smemo brisati task
+            //jer i dalje postoji instanca taska u tabeli, posto je receno da se prethondno izvrseni ponavljajuci
+            //zadaci i dalje prikazuju i ne brisu, pa ce se samo obrisati instance tog taska koje jos nisu izvrsene
+            else if (task.getFrequency() == Task.FrequencyEnum.REPEATING) {
+
+                if(isAnyInstanceCompleted)
+                {
+                    db.taskInstanceRepository().deleteFutureInstances(task.getId(), now);
+                }
+                else
+                {
+                    db.taskInstanceRepository().deleteFutureInstances(task.getId(), now);
+                    db.taskRepository().delete(task);
+                }
+            }
+
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Zadatak obrisan!", Toast.LENGTH_SHORT).show();
+                finish();
+            });
+        });
+    }
+
+}

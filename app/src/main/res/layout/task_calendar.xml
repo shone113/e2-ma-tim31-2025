@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <!-- Header: trenutna nedelja -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:background="@android:color/darker_gray"
+        android:padding="8dp">
+
+        <ImageButton
+            android:id="@+id/btnPrevDay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_media_previous"/>
+
+        <TextView
+            android:id="@+id/tvCurrentWeek"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="23 Aug 2025"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:paddingHorizontal="16dp"/>
+
+        <ImageButton
+            android:id="@+id/btnNextDay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_media_next"/>
+    </LinearLayout>
+
+    <!-- Glavni dnevni prikaz: H-scroll + V-scroll za obe kolone zajedno -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:scrollbars="none"
+        android:layout_marginTop="10dp">
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent">
+
+            <!-- Ovo je jedini vertikalni skrol za obe kolone -->
+            <ScrollView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:fillViewport="true"
+                android:scrollbars="vertical">
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <!-- Levi stub sa satima -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvHours"
+                        android:layout_width="60dp"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        android:overScrollMode="never"
+                        android:scrollbars="none" />
+
+                    <!-- Desni stub sa taskovima -->
+                    <FrameLayout
+                        android:id="@+id/flDaySchedule"
+                        android:layout_width="300dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="2880dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"/>
+                </LinearLayout>
+            </ScrollView>
+        </LinearLayout>
+    </HorizontalScrollView>
+
+
+    <!-- Floating Action Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end|bottom"
+        android:padding="16dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabListTasks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            app:srcCompat="@android:drawable/ic_menu_agenda"
+            app:tint="@android:color/white"
+            android:contentDescription="Prikaz liste zadataka"/>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabAddTask"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@android:drawable/ic_input_add"
+            app:tint="@android:color/white"
+            android:contentDescription="Dodaj novi zadatak"/>
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabBattle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@android:drawable/ic_input_get"
+            app:tint="@android:color/white"
+            android:contentDescription="Dodaj novi zadatak"/>
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabAlliance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@android:drawable/ic_input_get"
+            app:tint="@android:color/white"
+            android:contentDescription="Dodaj novi zadatak"/>
+
+
+    </LinearLayout>
+
+
+</LinearLayout>

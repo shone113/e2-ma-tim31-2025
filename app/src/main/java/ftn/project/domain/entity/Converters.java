@@ -1,0 +1,78 @@
+package ftn.project.domain.entity;
+
+import androidx.room.TypeConverter;
+
+import java.time.LocalDateTime;
+
+public class Converters {
+    @TypeConverter
+    public static LocalDateTime fromTimestamp(String value) {
+        return value == null ? null : LocalDateTime.parse(value);
+    }
+
+    @TypeConverter
+    public static String dateToTimestamp(LocalDateTime date) {
+        return date == null ? null : date.toString();
+    }
+
+    // Enum konverteri
+    @TypeConverter
+    public static String fromDifficulty(TaskInstance.DifficultyEnum difficulty) {
+        return difficulty == null ? null : difficulty.name();
+    }
+
+    @TypeConverter
+    public static TaskInstance.DifficultyEnum toDifficulty(String value) {
+        return value == null ? null : TaskInstance.DifficultyEnum.valueOf(value);
+    }
+
+    @TypeConverter
+    public static String fromImportance(TaskInstance.ImportanceEnum importance) {
+        return importance == null ? null : importance.name();
+    }
+
+    @TypeConverter
+    public static TaskInstance.ImportanceEnum toImportance(String value) {
+        return value == null ? null : TaskInstance.ImportanceEnum.valueOf(value);
+    }
+
+    @TypeConverter
+    public static String fromFrequency(Task.FrequencyEnum frequency) {
+        return frequency == null ? null : frequency.name();
+    }
+
+    @TypeConverter
+    public static Task.FrequencyEnum toFrequency(String value) {
+        return value == null ? null : Task.FrequencyEnum.valueOf(value);
+    }
+
+    @TypeConverter
+    public static String fromFrequencyUnit(Task.FrequencyUnitEnum unit) {
+        return unit == null ? null : unit.name();
+    }
+
+    @TypeConverter
+    public static Task.FrequencyUnitEnum toFrequencyUnit(String value) {
+        return value == null ? null : Task.FrequencyUnitEnum.valueOf(value);
+    }
+
+    @TypeConverter
+    public static String fromStatus(TaskInstance.TaskStatusEnum status) {
+        return status == null ? null : status.name();
+    }
+
+
+    @TypeConverter
+    public static TaskInstance.TaskStatusEnum toStatus(String value) {
+        return value == null ? null : TaskInstance.TaskStatusEnum.valueOf(value);
+    }
+    @TypeConverter
+    public static String fromEquipmentType(EquipmentType type) {
+        return type == null ? null : type.name();
+    }
+
+    @TypeConverter
+    public static EquipmentType toEquipmentType(String type) {
+        return type == null ? null : EquipmentType.valueOf(type);
+    }
+}

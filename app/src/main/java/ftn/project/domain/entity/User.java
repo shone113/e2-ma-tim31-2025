@@ -1,13 +1,120 @@
 package ftn.project.domain.entity;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.ForeignKey;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity
-public class User {
-    @PrimaryKey(autoGenerate = true)
-    public int userId;
+import java.time.LocalDateTime;
 
-    public String username;
-    public String password;
+@Entity(
+        tableName = "User",
+        indices = { @Index("alliance_id") },
+        foreignKeys = {
+                @ForeignKey(
+                        entity = Alliance.class,
+                        parentColumns = "allianceId",
+                        childColumns = "alliance_id",
+                        onDelete = ForeignKey.SET_NULL
+                )
+        }
+)
+public class User {
+    @PrimaryKey(autoGenerate = false)
+    private int userId;
+    @NonNull public String firebaseUid;
+    private String username;
+    private String password;
+    private String email;
+    @ColumnInfo(defaultValue = "0")
+    private Integer powerPoints = 0;
+    @ColumnInfo(defaultValue = "0")
+    private Integer experiencePoints = 0;
+    @ColumnInfo(defaultValue = "1000")
+    private Long coins = 1000L;
+    @NonNull
+    @ColumnInfo(defaultValue = "0")
+    private boolean emailVerified = false;
+    private String avatarImage;
+    @ColumnInfo(defaultValue = "0")
+    private int level = 0;
+    @ColumnInfo(name = "alliance_id", defaultValue = "NULL")
+    @Nullable
+    private Integer allianceId;
+
+    private LocalDateTime newLevelTime;
+
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
+    public void setFirebaseUid(String firebaseUid){ this.firebaseUid = firebaseUid; }
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setPowerPoints(Integer powerPoints) {
+        this.powerPoints = powerPoints;
+    }
+
+    public void setExperiencePoints(Integer experiencePoints) {
+        this.experiencePoints = experiencePoints;
+    }
+
+    public void setCoins(Long coins) {
+        this.coins = coins;
+    }
+
+    public void setEmailVerified(boolean emailVerified){ this.emailVerified = emailVerified; }
+
+    public void setEmail(String email) { this.email = email; }
+    public void setAvatarImage(String avatarImage) { this.avatarImage = avatarImage; }
+    public void setLevel(int level) { this.level = level; }
+    public void setAllianceId(Integer allianceId) { this.allianceId = allianceId; }
+
+    public void setNewLevelTime(LocalDateTime newLevelTime) {
+        this.newLevelTime = newLevelTime;
+    }
+
+    public String getUsername(){
+        return username;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+    public String getPassword() {
+        return password;
+    }
+
+    public Integer getPowerPoints() {
+        return powerPoints;
+    }
+
+    public Integer getExperiencePoints() {
+        return experiencePoints;
+    }
+
+    public Long getCoins() {
+        return coins;
+    }
+
+    public boolean getEmailVerified(){ return emailVerified; }
+    public String getEmail() { return email; }
+    public String getAvatarImage() { return avatarImage; }
+    public int getLevel() { return level; }
+
+    public LocalDateTime getNewLevelTime() {
+        return newLevelTime;
+    }
+
+    public String getFirebaseUid(){ return firebaseUid; }
+    public Integer getAllianceId(){ return allianceId; }
+    
 }
