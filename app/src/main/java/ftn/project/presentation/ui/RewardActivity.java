@@ -199,8 +199,6 @@ public class RewardActivity extends AppCompatActivity {
 
         db.userRepository().updateLevel(user.getUserId(), userLevel + 1);
 
-
-
         Intent backIntent = new Intent(this, MainActivity.class);
         startActivity(backIntent);
         finish();

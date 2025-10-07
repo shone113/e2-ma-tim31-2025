@@ -251,7 +251,7 @@
                         android:id="@+id/allianceAvatar"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
-                        android:src="@drawable/avatar_2"
+                        android:src="@drawable/badge_5"
                         android:layout_marginEnd="8dp"/>
 
                     <LinearLayout

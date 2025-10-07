@@ -56,7 +56,7 @@ public class SpecialMissionActivity extends AppCompatActivity {
         // Boss HP
         User loggedUser = loggedUserService.getCurrentUser();
         SpecialMission specialMission = specialMissionProgressService.getActiveMission(loggedUser.getUserId());
-        Alliance alliance = db.allianceRepository().getAllianceByUser(loggedUser.getUserId());
+        Alliance alliance = db.allianceRepository().getAlliance(loggedUser.getAllianceId());
         int allianceCount = db.userRepository().allianceCount(alliance.getAllianceId());
         SpecialMissionProgress loggedProgress = specialMissionProgressService.getActiveMissionProgress(specialMission.getId(),loggedUser.getUserId());
 

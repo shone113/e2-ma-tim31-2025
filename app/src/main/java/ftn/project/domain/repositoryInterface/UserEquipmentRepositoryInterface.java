@@ -17,7 +17,7 @@ import ftn.project.domain.entity.UserEquipment;
 
 @Dao
 public interface UserEquipmentRepositoryInterface {
-    @Insert(onConflict = OnConflictStrategy.ABORT)
+    @Insert
     void add(UserEquipment link);
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)

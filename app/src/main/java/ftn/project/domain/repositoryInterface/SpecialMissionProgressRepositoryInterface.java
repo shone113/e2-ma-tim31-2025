@@ -33,4 +33,7 @@ public interface SpecialMissionProgressRepositoryInterface {
 
     @Query("SELECT * FROM special_mission_progress WHERE userId = :userId")
     List<SpecialMissionProgress> getAllProgressForUser(int userId);
+
+    @Query("SELECT EXISTS(SELECT 1 FROM special_mission_progress WHERE userId = :userId LIMIT 1)")
+    boolean existsByUserId(int userId);
 }

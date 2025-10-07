@@ -135,6 +135,8 @@ public class ProfileActivity extends AppCompatActivity {
         tvBadgesTitle.setText("Badges: " + badges.size());
 
         List<UserEquipment> userEquipment = db.userEquipmentRepository().getAllForUser(userId);
+
+        Log.w("EQUIPMENNNNNTTTT", String.valueOf(userEquipment.size()));
         ArrayList<Equipment> equipment = new ArrayList<>();
         for (UserEquipment ue : userEquipment) {
             Equipment e = db.equipmentRepository().getById(ue.getEquipmentId());

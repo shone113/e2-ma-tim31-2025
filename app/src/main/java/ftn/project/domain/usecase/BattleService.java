@@ -1,15 +1,19 @@
 package ftn.project.domain.usecase;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.Toast;
+
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import ftn.project.data.database.FirestoreSync;
 import ftn.project.data.db.AppDatabase;
 import ftn.project.domain.entity.ActiveType;
 import ftn.project.domain.entity.Battle;
@@ -18,6 +22,7 @@ import ftn.project.domain.entity.Equipment;
 import ftn.project.domain.entity.EquipmentType;
 import ftn.project.domain.entity.User;
 import ftn.project.domain.entity.UserEquipment;
+import ftn.project.presentation.ui.AuthActivity;
 
 //MORAM UPDATOVATI COINSE KOD OVOG USERA
 public class BattleService {
@@ -117,8 +122,23 @@ public class BattleService {
                     ue.setBattleCount(1);
                 else
                     ue.setBattleCount(2);
-                ue.setActive(false);
+                ue.setActive(reward.getInitActiveType());
                 db.userEquipmentRepository().add(ue);
+
+
+                FirebaseUser fb = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+                if (fb == null) {
+                    return null;
+                }
+
+                String uid = fb.getUid();
+                FirestoreSync.mirrorUserEquipmentToFirestore(
+                        context,
+                        uid,
+                        battle.getUserId(),
+                        ue
+                );
+
                 return reward.getName(); // ili getName() ako nemaš posebno polje
             }
         }
